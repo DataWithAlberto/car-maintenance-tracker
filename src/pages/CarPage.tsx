@@ -96,7 +96,7 @@ export const CarPage = () => {
 
       {/* 3D Viewer */}
       <div className="flex-1 relative bg-gradient-to-b from-gray-950 to-gray-900">
-        <CarViewer onPartClick={handlePartClick} autoRotate={autoRotate} />
+        <CarViewer onPartClick={handlePartClick} autoRotate={autoRotate} modelUrl="/models/ford_focus.glb" />
 
         {/* Click hint */}
         {!selectedPart && (
