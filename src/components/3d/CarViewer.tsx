@@ -1,5 +1,6 @@
 import { Suspense, useRef, useState, useEffect } from 'react';
-import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import type { ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
 import { CAR_PARTS } from '../../utils/constants';
