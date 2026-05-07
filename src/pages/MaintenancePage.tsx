@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Filter, X } from 'lucide-react';
 import { MaintenanceList } from '../components/maintenance/MaintenanceList';
 import { MaintenanceForm } from '../components/maintenance/MaintenanceForm';
+import { Button } from '../components/ui/Button';
+import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useMaintenance } from '../hooks/useMaintenance';
 import { MAINTENANCE_TYPES } from '../utils/constants';
+import { formatCurrency } from '../utils/formatters';
+import { cn } from '../utils/cn';
 import toast from 'react-hot-toast';
 
 export const MaintenancePage = () => {
@@ -24,6 +28,7 @@ export const MaintenancePage = () => {
   if (!selectedVehicle) return null;
 
   const filtered = filterType ? records.filter((r) => r.type === filterType) : records;
+  const totalCost = records.reduce((s, r) => s + (r.cost ?? 0), 0);
 
   const handleCreate = async (data: Parameters<typeof createRecord>[0]) => {
     await createRecord(data);
@@ -36,46 +41,69 @@ export const MaintenancePage = () => {
     toast.success('Registro eliminado');
   };
 
-  const totalCost = records.reduce((s, r) => s + (r.cost ?? 0), 0);
-
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-4xl mx-auto">
+      <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-white">Mantenimiento</h1>
-          <p className="text-gray-400 text-sm mt-1">
-            {records.length} registros · {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(totalCost)} total
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-1">
+            {selectedVehicle.brand} {selectedVehicle.model}
+          </p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Mantenimiento</h1>
+          <p className="text-gray-400 text-sm mt-1.5">
+            <span className="font-semibold text-white tabular-nums">{records.length}</span> registros · total{' '}
+            <span className="font-semibold text-accent-400 tabular-nums">{formatCurrency(totalCost)}</span>
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Añadir
-        </button>
-      </div>
+        <Button onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" />}>
+          Añadir registro
+        </Button>
+      </header>
 
-      <div className="mb-4 flex items-center gap-2">
-        <Filter className="h-4 w-4 text-gray-500" />
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500"
+      <div className="flex items-center gap-2 mb-5 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+        <span className="shrink-0 inline-flex items-center gap-1.5 text-xs text-gray-500">
+          <Filter className="h-3 w-3" /> Filtros:
+        </span>
+        <button
+          onClick={() => setFilterType('')}
+          className={cn(
+            'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+            !filterType
+              ? 'bg-brand-500/20 text-brand-300 border-brand-500/40'
+              : 'border-border text-gray-400 hover:text-white hover:border-gray-600',
+          )}
         >
-          <option value="">Todos los tipos</option>
-          {MAINTENANCE_TYPES.map((t) => <option key={t}>{t}</option>)}
-        </select>
+          Todos
+        </button>
+        {MAINTENANCE_TYPES.map((t) => {
+          const active = filterType === t;
+          return (
+            <button
+              key={t}
+              onClick={() => setFilterType(active ? '' : t)}
+              className={cn(
+                'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+                active
+                  ? 'bg-brand-500/20 text-brand-300 border-brand-500/40'
+                  : 'border-border text-gray-400 hover:text-white hover:border-gray-600',
+              )}
+            >
+              {t}
+            </button>
+          );
+        })}
         {filterType && (
-          <button onClick={() => setFilterType('')} className="text-gray-400 hover:text-white text-sm">
-            Limpiar
+          <button
+            onClick={() => setFilterType('')}
+            className="shrink-0 inline-flex items-center gap-1 text-gray-500 hover:text-white text-xs"
+          >
+            <X className="h-3 w-3" /> Limpiar
           </button>
         )}
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+        <div className="space-y-2">
+          {[0, 1, 2, 3].map((i) => <SkeletonRow key={i} />)}
         </div>
       ) : (
         <MaintenanceList records={filtered} onDelete={handleDelete} />

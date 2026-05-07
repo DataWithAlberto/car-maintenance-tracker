@@ -1,8 +1,12 @@
-import { useState } from 'react';
-import { Upload, X } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Upload, FileCheck2, Star } from 'lucide-react';
 import { DOCUMENT_TYPES } from '../../utils/constants';
 import { storageService } from '../../services/storage.service';
 import { documentsService } from '../../services/documents.service';
+import { Modal } from '../ui/Modal';
+import { Button } from '../ui/Button';
+import { FloatingInput, FloatingSelect } from '../ui/FloatingInput';
+import { cn } from '../../utils/cn';
 
 interface Props {
   vehicleId: string;
@@ -16,6 +20,8 @@ export const DocumentUpload = ({ vehicleId, userId, onSuccess, onClose }: Props)
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +29,6 @@ export const DocumentUpload = ({ vehicleId, userId, onSuccess, onClose }: Props)
       setError('Archivo y tipo son obligatorios');
       return;
     }
-
     setLoading(true);
     setError('');
     try {
@@ -45,62 +50,102 @@ export const DocumentUpload = ({ vehicleId, userId, onSuccess, onClose }: Props)
     }
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) setFile(dropped);
+  };
+
+  const sizeKb = file ? Math.round(file.size / 1024) : 0;
+
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-2xl w-full max-w-md border border-gray-800">
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-xl font-semibold text-white">Subir documento</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X className="h-5 w-5" />
-          </button>
+    <Modal
+      open
+      onClose={onClose}
+      title="Subir documento"
+      description="ITV, seguro, ficha técnica o cualquier archivo"
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} fullWidth>Cancelar</Button>
+          <Button type="submit" form="upload-form" loading={loading} fullWidth disabled={!file || !form.doc_type}>
+            {loading ? 'Subiendo...' : 'Subir documento'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="upload-form" onSubmit={handleSubmit} className="space-y-4">
+        <FloatingSelect
+          label="Tipo de documento"
+          value={form.doc_type}
+          onChange={(e) => setForm({ ...form, doc_type: e.target.value })}
+          options={[
+            { value: '', label: 'Seleccionar...' },
+            ...DOCUMENT_TYPES.map((t) => ({ value: t, label: t })),
+          ]}
+        />
+
+        <div>
+          <label
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            className={cn(
+              'relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-2xl cursor-pointer transition-all',
+              file
+                ? 'border-success-500/50 bg-success-500/5'
+                : dragOver
+                ? 'border-brand-400 bg-brand-500/10'
+                : 'border-border hover:border-brand-400/50 hover:bg-brand-500/5',
+            )}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept=".pdf,.jpg,.jpeg,.png,.heic"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+            {file ? (
+              <>
+                <FileCheck2 className="h-7 w-7 text-success-400 mb-1.5" />
+                <span className="text-white text-sm font-medium truncate max-w-full px-4">{file.name}</span>
+                <span className="text-gray-500 text-xs mt-0.5">{sizeKb} KB · click para cambiar</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-7 w-7 text-gray-400 mb-1.5" />
+                <span className="text-white text-sm font-medium">Arrastra un archivo o haz clic</span>
+                <span className="text-gray-500 text-xs mt-0.5">PDF, JPG, PNG, HEIC</span>
+              </>
+            )}
+          </label>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Tipo de documento</label>
-            <select
-              value={form.doc_type}
-              onChange={(e) => setForm({ ...form, doc_type: e.target.value })}
-              className={inputCls}
-            >
-              <option value="">Seleccionar...</option>
-              {DOCUMENT_TYPES.map((t) => <option key={t}>{t}</option>)}
-            </select>
-          </div>
+        <FloatingInput
+          type="date"
+          label="Fecha de vencimiento"
+          value={form.expiry_date}
+          onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
+          hint="Opcional · te avisaremos antes de vencer"
+        />
 
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Archivo</label>
-            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-700 rounded-xl cursor-pointer hover:border-blue-500 transition-colors">
-              <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              <Upload className="h-6 w-6 text-gray-500 mb-1" />
-              <span className="text-gray-500 text-sm">{file ? file.name : 'PDF, JPG o PNG'}</span>
-            </label>
-          </div>
+        <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-surface-2/40 border border-border/50 hover:border-accent-500/40 transition-colors">
+          <input
+            type="checkbox"
+            checked={form.is_important}
+            onChange={(e) => setForm({ ...form, is_important: e.target.checked })}
+            className="h-4 w-4 rounded accent-accent-500"
+          />
+          <Star className={cn('h-4 w-4', form.is_important ? 'text-accent-400 fill-accent-400' : 'text-gray-500')} />
+          <span className="text-sm text-gray-300 flex-1">Marcar como importante</span>
+        </label>
 
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Fecha de vencimiento</label>
-            <input type="date" value={form.expiry_date} onChange={(e) => setForm({ ...form, expiry_date: e.target.value })} className={inputCls} />
-          </div>
-
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={form.is_important} onChange={(e) => setForm({ ...form, is_important: e.target.checked })} className="rounded" />
-            <span className="text-sm text-gray-400">Documento importante</span>
-          </label>
-
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg py-2.5 text-sm transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg py-2.5 text-sm font-medium transition-colors">
-              {loading ? 'Subiendo...' : 'Subir'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {error && (
+          <p className="text-danger-400 text-sm bg-danger-500/10 border border-danger-500/30 rounded-lg px-3 py-2">{error}</p>
+        )}
+      </form>
+    </Modal>
   );
 };
-
-const inputCls = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors';

@@ -7,4 +7,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ['three', '@react-three/fiber', '@react-three/drei'],
   },
+  build: {
+    chunkSizeWarningLimit: 1500,
+  },
 });

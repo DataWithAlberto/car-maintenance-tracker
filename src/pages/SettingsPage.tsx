@@ -1,22 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Pencil, Trash2, AlertTriangle, Settings as SettingsIcon, Car, LogOut } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useVehicle } from '../hooks/useVehicle';
+import { useAuth } from '../hooks/useAuth';
 import { VehicleForm } from '../components/vehicle/VehicleForm';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
 import { formatKm } from '../utils/formatters';
 import toast from 'react-hot-toast';
 
 export const SettingsPage = () => {
   const { selectedVehicle } = useVehicleStore();
   const { updateVehicle, deleteVehicle } = useVehicle();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [showEditForm, setShowEditForm] = useState(false);
 
   if (!selectedVehicle) {
     return (
-      <div className="p-6 text-center text-gray-500">
-        <p>Selecciona un vehículo desde el Dashboard</p>
+      <div className="px-4 sm:px-6 lg:px-8 py-12 max-w-md mx-auto">
+        <EmptyState
+          icon={Car}
+          title="Selecciona un vehículo"
+          description="Elige un vehículo desde el Dashboard para configurar sus ajustes."
+          action={
+            <Button onClick={() => navigate('/dashboard')}>
+              Ir al Dashboard
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -34,30 +47,59 @@ export const SettingsPage = () => {
     navigate('/dashboard');
   };
 
-  return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-white mb-6">Ajustes del vehículo</h1>
+  const handleLogout = async () => {
+    await logout();
+    toast.success('Sesión cerrada');
+    navigate('/login');
+  };
 
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4">
-        <div className="flex items-start justify-between mb-4">
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-2xl mx-auto space-y-6">
+      <header>
+        <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-1">
+          {selectedVehicle.brand} {selectedVehicle.model}
+        </p>
+        <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
+          <SettingsIcon className="h-7 w-7 text-brand-300" />
+          Ajustes
+        </h1>
+      </header>
+
+      {/* Account section */}
+      <section className="bg-surface border border-border/60 rounded-2xl p-5">
+        <h2 className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-3">Tu cuenta</h2>
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white text-lg font-semibold flex items-center justify-center">
+            {(user?.email?.[0] ?? 'U').toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-medium truncate">{user?.email}</p>
+            <p className="text-gray-500 text-xs">Sesión iniciada</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={handleLogout} iconLeft={<LogOut className="h-4 w-4" />}>
+            Salir
+          </Button>
+        </div>
+      </section>
+
+      {/* Vehicle data */}
+      <section className="bg-surface border border-border/60 rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Datos del vehículo</h2>
+            <p className="text-white text-xl font-semibold tracking-tight mt-1">
               {selectedVehicle.brand} {selectedVehicle.model}
-            </h2>
-            <p className="text-gray-400 text-sm">{selectedVehicle.year}</p>
+              <span className="text-gray-500 font-normal"> · {selectedVehicle.year}</span>
+            </p>
           </div>
           {selectedVehicle.role === 'owner' && (
-            <button
-              onClick={() => setShowEditForm(true)}
-              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
-            >
-              <Pencil className="h-4 w-4" />
+            <Button variant="secondary" size="sm" onClick={() => setShowEditForm(true)} iconLeft={<Pencil className="h-3.5 w-3.5" />}>
               Editar
-            </button>
+            </Button>
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
             ['Kilómetros', formatKm(selectedVehicle.current_km)],
             ['Matrícula', selectedVehicle.license_plate ?? '—'],
@@ -66,33 +108,32 @@ export const SettingsPage = () => {
             ['Transmisión', selectedVehicle.transmission ?? '—'],
             ['VIN', selectedVehicle.vin ?? '—'],
           ].map(([label, value]) => (
-            <div key={label}>
-              <p className="text-xs text-gray-500">{label}</p>
-              <p className="text-white text-sm font-medium">{value}</p>
+            <div key={label} className="bg-surface-2/60 border border-border/40 rounded-xl px-3 py-2.5">
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{label}</p>
+              <p className="text-white text-sm font-medium tabular-nums truncate">{value}</p>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
+      {/* Danger zone */}
       {selectedVehicle.role === 'owner' && (
-        <div className="bg-red-900/10 border border-red-500/20 rounded-2xl p-6">
+        <section className="bg-gradient-to-br from-danger-500/10 to-transparent border border-danger-500/30 rounded-2xl p-5">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="h-10 w-10 rounded-xl bg-danger-500/15 border border-danger-500/30 flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-5 w-5 text-danger-400" />
+            </div>
             <div className="flex-1">
-              <h3 className="text-white font-medium">Zona peligrosa</h3>
-              <p className="text-gray-400 text-sm mt-1 mb-4">
-                Eliminar el vehículo borrará todos sus registros, gastos y documentos.
+              <h3 className="text-white font-semibold tracking-tight">Zona peligrosa</h3>
+              <p className="text-gray-400 text-sm mt-1 mb-4 leading-relaxed">
+                Eliminar el vehículo borrará permanentemente todos sus registros, gastos, documentos y accesos compartidos.
               </p>
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
+              <Button variant="danger" size="sm" onClick={handleDelete} iconLeft={<Trash2 className="h-4 w-4" />}>
                 Eliminar vehículo
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </section>
       )}
 
       {showEditForm && (

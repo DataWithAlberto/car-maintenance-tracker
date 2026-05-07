@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { maintenanceSchema, type MaintenanceInput } from '../../utils/validators';
 import { MAINTENANCE_TYPES } from '../../utils/constants';
 import { getNextServiceKm } from '../../utils/calculations';
-import { X } from 'lucide-react';
 import { format } from 'date-fns';
+import { Modal } from '../ui/Modal';
+import { Button } from '../ui/Button';
+import { FloatingInput, FloatingTextarea, FloatingSelect } from '../ui/FloatingInput';
 
 interface Props {
   initialType?: string;
@@ -55,73 +57,87 @@ export const MaintenanceForm = ({ initialType, currentKm = 0, onSubmit, onClose 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-2xl w-full max-w-lg border border-gray-800 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-xl font-semibold text-white">Nuevo registro</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X className="h-5 w-5" />
-          </button>
+    <Modal
+      open
+      onClose={onClose}
+      title="Nuevo registro"
+      description="Documenta un mantenimiento o reparación"
+      size="lg"
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} fullWidth>Cancelar</Button>
+          <Button type="submit" form="maintenance-form" loading={loading} fullWidth>
+            {loading ? 'Guardando...' : 'Guardar registro'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="maintenance-form" onSubmit={handleSubmit} className="space-y-4">
+        <FloatingSelect
+          label="Tipo de mantenimiento"
+          value={form.type ?? ''}
+          onChange={(e) => handleTypeChange(e.target.value)}
+          options={[
+            { value: '', label: 'Seleccionar...' },
+            ...MAINTENANCE_TYPES.map((t) => ({ value: t, label: t })),
+          ]}
+          error={errors.type}
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <FloatingInput
+            type="date"
+            label="Fecha"
+            value={form.date ?? ''}
+            onChange={(e) => set('date', e.target.value)}
+            error={errors.date}
+          />
+          <FloatingInput
+            type="number"
+            label="Kilómetros"
+            value={form.km_at_service ?? ''}
+            onChange={(e) => set('km_at_service', e.target.value)}
+            error={errors.km_at_service}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <Field label="Tipo de mantenimiento" error={errors.type}>
-            <select value={form.type ?? ''} onChange={(e) => handleTypeChange(e.target.value)} className={inputCls}>
-              <option value="">Seleccionar...</option>
-              {MAINTENANCE_TYPES.map((t) => <option key={t}>{t}</option>)}
-            </select>
-          </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <FloatingInput
+            type="number"
+            step="0.01"
+            label="Coste (€)"
+            value={form.cost ?? ''}
+            onChange={(e) => set('cost', e.target.value || undefined)}
+          />
+          <FloatingInput
+            type="number"
+            label="Próximo servicio (km)"
+            value={form.next_service_km ?? ''}
+            onChange={(e) => set('next_service_km', e.target.value || undefined)}
+          />
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Fecha" error={errors.date}>
-              <input type="date" value={form.date ?? ''} onChange={(e) => set('date', e.target.value)} className={inputCls} />
-            </Field>
-            <Field label="Kilómetros" error={errors.km_at_service}>
-              <input type="number" value={form.km_at_service ?? ''} onChange={(e) => set('km_at_service', e.target.value)} className={inputCls} />
-            </Field>
-          </div>
+        <FloatingInput
+          type="date"
+          label="Próximo servicio (fecha)"
+          value={form.next_service_date ?? ''}
+          onChange={(e) => set('next_service_date', e.target.value || undefined)}
+        />
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Coste (€)">
-              <input type="number" step="0.01" value={form.cost ?? ''} onChange={(e) => set('cost', e.target.value || undefined)} className={inputCls} placeholder="45.00" />
-            </Field>
-            <Field label="Próximo servicio (km)">
-              <input type="number" value={form.next_service_km ?? ''} onChange={(e) => set('next_service_km', e.target.value || undefined)} className={inputCls} />
-            </Field>
-          </div>
+        <FloatingTextarea
+          label="Descripción"
+          value={form.description ?? ''}
+          onChange={(e) => set('description', e.target.value)}
+          hint="Notas, taller, observaciones..."
+        />
 
-          <Field label="Próximo servicio (fecha)">
-            <input type="date" value={form.next_service_date ?? ''} onChange={(e) => set('next_service_date', e.target.value || undefined)} className={inputCls} />
-          </Field>
-
-          <Field label="Descripción">
-            <textarea value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} className={`${inputCls} h-20 resize-none`} placeholder="Notas adicionales..." />
-          </Field>
-
-          <Field label="Localización de piezas">
-            <input value={form.parts_location ?? ''} onChange={(e) => set('parts_location', e.target.value)} className={inputCls} placeholder="Caja naranja en el maletero" />
-          </Field>
-
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg py-2.5 text-sm transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg py-2.5 text-sm font-medium transition-colors">
-              {loading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <FloatingInput
+          label="Localización de piezas"
+          value={form.parts_location ?? ''}
+          onChange={(e) => set('parts_location', e.target.value)}
+          hint="Ej: Caja naranja en el maletero"
+        />
+      </form>
+    </Modal>
   );
 };
-
-const inputCls = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors';
-
-const Field = ({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) => (
-  <div>
-    <label className="block text-xs text-gray-400 mb-1">{label}</label>
-    {children}
-    {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
-  </div>
-);

@@ -1,6 +1,7 @@
-import { Wrench, Trash2, ChevronRight } from 'lucide-react';
+import { Wrench, Trash2, ChevronRight, Calendar, Gauge, Receipt } from 'lucide-react';
 import type { MaintenanceRecord } from '../../types';
 import { formatDate, formatCurrency, formatKm } from '../../utils/formatters';
+import { EmptyState } from '../ui/EmptyState';
 
 interface Props {
   records: MaintenanceRecord[];
@@ -11,63 +12,69 @@ interface Props {
 export const MaintenanceList = ({ records, onDelete, onSelect }: Props) => {
   if (records.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <Wrench className="h-12 w-12 mx-auto mb-3 opacity-30" />
-        <p>Sin registros de mantenimiento</p>
-        <p className="text-sm mt-1">Añade el primero usando el modelo 3D o el botón de arriba</p>
-      </div>
+      <EmptyState
+        icon={Wrench}
+        title="Sin registros de mantenimiento"
+        description="Añade el primero usando el modelo 3D o el botón de arriba para empezar a llevar el control."
+      />
     );
   }
 
   return (
-    <div className="space-y-2">
+    <ul className="space-y-2">
       {records.map((record) => (
-        <div
+        <li
           key={record.id}
-          className="bg-gray-800 rounded-xl p-4 flex items-center gap-4 hover:bg-gray-750 transition-colors cursor-pointer group"
           onClick={() => onSelect?.(record)}
+          className="group bg-surface border border-border/60 hover:border-brand-400/40 rounded-2xl p-4 flex items-center gap-4 transition-all hover:-translate-y-0.5 cursor-pointer"
         >
-          <div className="bg-blue-600/20 rounded-lg p-2.5 shrink-0">
-            <Wrench className="h-5 w-5 text-blue-400" />
+          <div className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-brand-500/20 to-brand-500/5 border border-brand-500/30 flex items-center justify-center">
+            <Wrench className="h-5 w-5 text-brand-300" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-white font-medium truncate">{record.type}</p>
-            <div className="flex items-center gap-3 mt-0.5">
-              <span className="text-gray-400 text-sm">{formatDate(record.date)}</span>
-              <span className="text-gray-600 text-xs">·</span>
-              <span className="text-gray-400 text-sm">{formatKm(record.km_at_service)}</span>
-              {record.cost && (
-                <>
-                  <span className="text-gray-600 text-xs">·</span>
-                  <span className="text-green-400 text-sm">{formatCurrency(record.cost)}</span>
-                </>
-              )}
+            <p className="text-white font-medium truncate tracking-tight">{record.type}</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-400">
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {formatDate(record.date)}
+              </span>
+              <span className="inline-flex items-center gap-1 tabular-nums">
+                <Gauge className="h-3 w-3" />
+                {formatKm(record.km_at_service)}
+              </span>
+              {record.cost ? (
+                <span className="inline-flex items-center gap-1 text-accent-400 font-semibold tabular-nums">
+                  <Receipt className="h-3 w-3" />
+                  {formatCurrency(record.cost)}
+                </span>
+              ) : null}
             </div>
             {record.description && (
-              <p className="text-gray-500 text-xs mt-1 truncate">{record.description}</p>
+              <p className="text-gray-500 text-xs mt-1.5 line-clamp-1">{record.description}</p>
             )}
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             {record.next_service_km && (
-              <div className="text-right hidden sm:block">
-                <p className="text-xs text-gray-500">Próximo</p>
-                <p className="text-xs text-yellow-400">{formatKm(record.next_service_km)}</p>
+              <div className="text-right hidden sm:block px-2 py-1 rounded-lg bg-warn-500/10 border border-warn-500/30">
+                <p className="text-[9px] uppercase tracking-wider text-warn-400/80 font-medium">Próximo</p>
+                <p className="text-xs text-warn-400 tabular-nums font-semibold">{formatKm(record.next_service_km)}</p>
               </div>
             )}
-            <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-gray-400 transition-colors" />
+            <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-brand-300 group-hover:translate-x-0.5 transition-all" />
             {onDelete && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(record.id); }}
-                className="text-gray-600 hover:text-red-400 transition-colors p-1"
+                className="text-gray-600 hover:text-danger-400 hover:bg-danger-500/10 rounded-md p-1.5 -mr-1 transition-colors"
+                aria-label="Eliminar registro"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
           </div>
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 };

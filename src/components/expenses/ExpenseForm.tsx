@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { expenseSchema, type ExpenseInput } from '../../utils/validators';
 import { EXPENSE_CATEGORIES } from '../../utils/constants';
-import { X } from 'lucide-react';
 import { format } from 'date-fns';
+import { Modal } from '../ui/Modal';
+import { Button } from '../ui/Button';
+import { FloatingInput, FloatingTextarea, FloatingSelect } from '../ui/FloatingInput';
 
 interface Props {
   onSubmit: (data: ExpenseInput) => Promise<void>;
@@ -41,56 +43,57 @@ export const ExpenseForm = ({ onSubmit, onClose }: Props) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-2xl w-full max-w-md border border-gray-800">
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-xl font-semibold text-white">Nuevo gasto</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X className="h-5 w-5" />
-          </button>
+    <Modal
+      open
+      onClose={onClose}
+      title="Nuevo gasto"
+      description="Registra un gasto del vehículo"
+      footer={
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" onClick={onClose} fullWidth>Cancelar</Button>
+          <Button type="submit" form="expense-form" variant="accent" loading={loading} fullWidth>
+            {loading ? 'Guardando...' : 'Guardar gasto'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="expense-form" onSubmit={handleSubmit} className="space-y-4">
+        <FloatingSelect
+          label="Categoría"
+          value={form.category ?? ''}
+          onChange={(e) => set('category', e.target.value)}
+          options={[
+            { value: '', label: 'Seleccionar...' },
+            ...EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c })),
+          ]}
+          error={errors.category}
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <FloatingInput
+            type="date"
+            label="Fecha"
+            value={form.date ?? ''}
+            onChange={(e) => set('date', e.target.value)}
+            error={errors.date}
+          />
+          <FloatingInput
+            type="number"
+            step="0.01"
+            label="Importe (€)"
+            value={form.amount ?? ''}
+            onChange={(e) => set('amount', e.target.value)}
+            error={errors.amount}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <Field label="Categoría" error={errors.category}>
-            <select value={form.category ?? ''} onChange={(e) => set('category', e.target.value)} className={inputCls}>
-              <option value="">Seleccionar...</option>
-              {EXPENSE_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </Field>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Fecha" error={errors.date}>
-              <input type="date" value={form.date ?? ''} onChange={(e) => set('date', e.target.value)} className={inputCls} />
-            </Field>
-            <Field label="Importe (€)" error={errors.amount}>
-              <input type="number" step="0.01" value={form.amount ?? ''} onChange={(e) => set('amount', e.target.value)} className={inputCls} placeholder="0.00" />
-            </Field>
-          </div>
-
-          <Field label="Descripción">
-            <textarea value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} className={`${inputCls} h-20 resize-none`} placeholder="Descripción opcional..." />
-          </Field>
-
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg py-2.5 text-sm transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg py-2.5 text-sm font-medium transition-colors">
-              {loading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <FloatingTextarea
+          label="Descripción"
+          value={form.description ?? ''}
+          onChange={(e) => set('description', e.target.value)}
+          hint="Detalles opcionales"
+        />
+      </form>
+    </Modal>
   );
 };
-
-const inputCls = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors';
-
-const Field = ({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) => (
-  <div>
-    <label className="block text-xs text-gray-400 mb-1">{label}</label>
-    {children}
-    {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
-  </div>
-);

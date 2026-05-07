@@ -1,5 +1,5 @@
 import { Suspense, useRef, useState, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
@@ -190,9 +190,16 @@ const ProceduralCar = ({ onPartClick }: { onPartClick: (info: PartClickInfo) => 
 // ─── Loader placeholder ───────────────────────────────────────────────────────
 const CarLoader = () => (
   <Html center>
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-10 h-10 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-      <p className="text-gray-400 text-sm">Cargando modelo 3D...</p>
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative h-16 w-16">
+        <div className="absolute inset-0 rounded-full border-2 border-blue-500/20" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-400 animate-spin" />
+        <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-lime-300/70 animate-spin" style={{ animationDuration: '1.4s', animationDirection: 'reverse' }} />
+      </div>
+      <div className="text-center">
+        <p className="text-gray-200 text-sm font-medium">Cargando modelo 3D</p>
+        <p className="text-gray-500 text-xs mt-1">Preparando tu Ford Focus...</p>
+      </div>
     </div>
   </Html>
 );

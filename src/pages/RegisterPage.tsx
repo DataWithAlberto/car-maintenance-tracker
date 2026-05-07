@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { registerSchema } from '../utils/validators';
-import { Car } from 'lucide-react';
+import { Logo } from '../components/ui/Logo';
+import { FloatingInput } from '../components/ui/FloatingInput';
+import { Button } from '../components/ui/Button';
 import toast from 'react-hot-toast';
 
 export const RegisterPage = () => {
@@ -15,7 +17,6 @@ export const RegisterPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-
     const result = registerSchema.safeParse(form);
     if (!result.success) {
       const errs: Record<string, string> = {};
@@ -25,7 +26,6 @@ export const RegisterPage = () => {
       setErrors(errs);
       return;
     }
-
     setLoading(true);
     try {
       await register(form);
@@ -39,68 +39,60 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <Car className="h-12 w-12 text-blue-400" />
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute -top-40 -left-40 h-96 w-96 bg-brand-500/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 h-96 w-96 bg-accent-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md relative">
+        <div className="text-center mb-8 page-enter">
+          <div className="flex justify-center mb-4">
+            <Logo size={48} withText={false} />
           </div>
-          <h1 className="text-3xl font-bold text-white">CarHub</h1>
-          <p className="text-gray-400 mt-1">Crea tu cuenta</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            Focus<span className="bg-gradient-to-br from-brand-300 via-brand-500 to-accent-500 bg-clip-text text-transparent">Hub</span>
+          </h1>
+          <p className="text-gray-400 mt-1.5 text-sm">Empieza tu garaje digital</p>
         </div>
 
-        <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
-          <h2 className="text-xl font-semibold text-white mb-6">Registrarse</h2>
+        <div className="glass-strong border border-border rounded-3xl p-8 shadow-2xl shadow-brand-500/10">
+          <h2 className="text-xl font-semibold text-white tracking-tight mb-1">Crear cuenta</h2>
+          <p className="text-gray-400 text-sm mb-6">Es gratis y tarda 30 segundos</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Nombre completo</label>
-              <input
-                type="text"
-                value={form.full_name}
-                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="Tu nombre"
-              />
-              {errors.full_name && <p className="text-red-400 text-xs mt-1">{errors.full_name}</p>}
-            </div>
+            <FloatingInput
+              type="text"
+              label="Nombre completo"
+              value={form.full_name}
+              onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+              error={errors.full_name}
+              autoComplete="name"
+            />
+            <FloatingInput
+              type="email"
+              label="Email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              error={errors.email}
+              autoComplete="email"
+            />
+            <FloatingInput
+              type="password"
+              label="Contraseña"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              error={errors.password}
+              hint="Mínimo 6 caracteres"
+              autoComplete="new-password"
+            />
 
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="tu@email.com"
-              />
-              {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Contraseña</label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-                placeholder="Mínimo 6 caracteres"
-              />
-              {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg py-2.5 font-medium transition-colors"
-            >
+            <Button type="submit" loading={loading} fullWidth size="lg">
               {loading ? 'Creando cuenta...' : 'Crear cuenta'}
-            </button>
+            </Button>
           </form>
 
           <p className="text-center text-gray-400 text-sm mt-6">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-blue-400 hover:text-blue-300">
+            <Link to="/login" className="text-brand-300 hover:text-brand-200 font-medium transition-colors">
               Inicia sesión
             </Link>
           </p>

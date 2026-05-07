@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Share2, UserPlus, Trash2, Check, X } from 'lucide-react';
+import { Share2, UserPlus, Trash2, Check, X, Mail, Crown, Pencil, Eye } from 'lucide-react';
 import { ShareModal } from '../components/sharing/ShareModal';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import { sharingService } from '../services/sharing.service';
 import type { SharedAccess } from '../types';
+import { cn } from '../utils/cn';
 import toast from 'react-hot-toast';
+
+const roleConfig = {
+  owner: { Icon: Crown, label: 'Propietario', cls: 'bg-brand-500/15 text-brand-300 border-brand-500/30' },
+  editor: { Icon: Pencil, label: 'Editor', cls: 'bg-success-500/15 text-success-400 border-success-500/30' },
+  viewer: { Icon: Eye, label: 'Visor', cls: 'bg-gray-700/40 text-gray-400 border-gray-700' },
+} as const;
 
 export const SharingPage = () => {
   const { selectedVehicle } = useVehicleStore();
@@ -55,82 +65,133 @@ export const SharingPage = () => {
   const isOwner = selectedVehicle.role === 'owner';
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-3xl mx-auto">
+      <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-white">Compartir</h1>
-          <p className="text-gray-400 text-sm mt-1">Gestiona accesos al vehículo</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-1">
+            {selectedVehicle.brand} {selectedVehicle.model}
+          </p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Compartir acceso</h1>
+          <p className="text-gray-400 text-sm mt-1.5">
+            Invita a tu pareja, familia o mecánico al control de este vehículo.
+          </p>
         </div>
         {isOwner && (
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-          >
-            <UserPlus className="h-4 w-4" />
+          <Button onClick={() => setShowModal(true)} iconLeft={<UserPlus className="h-4 w-4" />}>
             Invitar
-          </button>
+          </Button>
         )}
-      </div>
+      </header>
 
       {pendingInvites.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm text-gray-400 uppercase tracking-wider mb-3">Invitaciones pendientes</h2>
+        <section className="mb-6">
+          <h2 className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-3 flex items-center gap-1.5">
+            <Mail className="h-3 w-3" />
+            Invitaciones pendientes para ti
+          </h2>
           <div className="space-y-2">
             {pendingInvites.map((inv) => (
-              <div key={inv.id} className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
-                <p className="text-white text-sm">Invitación a vehículo como <span className="text-blue-400">{inv.role}</span></p>
-                <div className="flex gap-2">
-                  <button onClick={() => handleRespond(inv.id, true)} className="text-green-400 hover:text-green-300 p-1">
-                    <Check className="h-5 w-5" />
+              <div
+                key={inv.id}
+                className="bg-gradient-to-r from-brand-500/10 to-transparent border border-brand-500/30 rounded-2xl p-4 flex items-center justify-between gap-3"
+              >
+                <p className="text-white text-sm">
+                  Invitación a vehículo como <span className="text-brand-300 font-semibold capitalize">{inv.role}</span>
+                </p>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => handleRespond(inv.id, true)}
+                    className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-success-500/15 border border-success-500/30 text-success-400 hover:bg-success-500/25 transition-colors"
+                    aria-label="Aceptar"
+                  >
+                    <Check className="h-4 w-4" />
                   </button>
-                  <button onClick={() => handleRespond(inv.id, false)} className="text-red-400 hover:text-red-300 p-1">
-                    <X className="h-5 w-5" />
+                  <button
+                    onClick={() => handleRespond(inv.id, false)}
+                    className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-danger-500/15 border border-danger-500/30 text-danger-400 hover:bg-danger-500/25 transition-colors"
+                    aria-label="Rechazar"
+                  >
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      <div>
-        <h2 className="text-sm text-gray-400 uppercase tracking-wider mb-3">Accesos actuales</h2>
+      <section>
+        <h2 className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-3">Accesos del vehículo</h2>
         {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-2">
+            <SkeletonRow />
+            <SkeletonRow />
           </div>
         ) : accesses.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Share2 className="h-10 w-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Sin accesos compartidos</p>
-          </div>
+          <EmptyState
+            icon={Share2}
+            title="Sin accesos compartidos"
+            description={isOwner
+              ? 'Comparte el coche con quien necesite ver o registrar mantenimientos.'
+              : 'El propietario aún no ha compartido el vehículo con nadie más.'}
+            action={
+              isOwner ? (
+                <Button onClick={() => setShowModal(true)} iconLeft={<UserPlus className="h-4 w-4" />}>
+                  Invitar a alguien
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
-          <div className="space-y-2">
-            {accesses.map((acc) => (
-              <div key={acc.id} className="bg-gray-800 rounded-xl p-4 flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="text-white">{acc.user?.email ?? 'Usuario'}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      acc.role === 'editor' ? 'bg-green-600/20 text-green-400' : 'bg-gray-700 text-gray-400'
-                    }`}>
-                      {acc.role}
-                    </span>
-                    <span className={`text-xs ${acc.status === 'accepted' ? 'text-green-400' : acc.status === 'pending' ? 'text-yellow-400' : 'text-red-400'}`}>
-                      {acc.status === 'accepted' ? 'Activo' : acc.status === 'pending' ? 'Pendiente' : 'Rechazado'}
-                    </span>
+          <ul className="space-y-2">
+            {accesses.map((acc) => {
+              const cfg = roleConfig[acc.role] ?? roleConfig.viewer;
+              const RoleIcon = cfg.Icon;
+              const initial = (acc.user?.email?.[0] ?? '?').toUpperCase();
+              return (
+                <li
+                  key={acc.id}
+                  className="bg-surface border border-border/60 rounded-2xl p-4 flex items-center gap-4"
+                >
+                  <div className="shrink-0 h-11 w-11 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white text-base font-semibold flex items-center justify-center">
+                    {initial}
                   </div>
-                </div>
-                {isOwner && (
-                  <button onClick={() => handleRemove(acc.id)} className="text-gray-600 hover:text-red-400 transition-colors">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate">{acc.user?.email ?? 'Usuario'}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={cn('inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border', cfg.cls)}>
+                        <RoleIcon className="h-3 w-3" />
+                        {cfg.label}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-[10px] font-medium px-2 py-0.5 rounded-full border',
+                          acc.status === 'accepted'
+                            ? 'bg-success-500/10 text-success-400 border-success-500/30'
+                            : acc.status === 'pending'
+                            ? 'bg-warn-500/10 text-warn-400 border-warn-500/30'
+                            : 'bg-danger-500/10 text-danger-400 border-danger-500/30',
+                        )}
+                      >
+                        {acc.status === 'accepted' ? 'Activo' : acc.status === 'pending' ? 'Pendiente' : 'Rechazado'}
+                      </span>
+                    </div>
+                  </div>
+                  {isOwner && (
+                    <button
+                      onClick={() => handleRemove(acc.id)}
+                      className="p-2 text-gray-600 hover:text-danger-400 hover:bg-danger-500/10 rounded-md transition-colors"
+                      aria-label="Revocar acceso"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </div>
+      </section>
 
       {showModal && (
         <ShareModal vehicleId={selectedVehicle.id} onClose={() => { setShowModal(false); load(); }} />

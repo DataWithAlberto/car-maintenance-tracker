@@ -1,17 +1,127 @@
 @import "tailwindcss";
 
+/* ─── Design tokens (Tailwind v4 @theme) ──────────────────────────────────── */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Brand palette — deep midnight + electric blue + lime accent */
+  --color-bg: #07080d;
+  --color-surface: #0f1320;
+  --color-surface-2: #161b2c;
+  --color-border: #232a40;
+
+  --color-brand-50:  #eef4ff;
+  --color-brand-100: #d9e6ff;
+  --color-brand-200: #b3ccff;
+  --color-brand-300: #7da6ff;
+  --color-brand-400: #4d82ff;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1e40af;
+
+  --color-accent-400: #c0f73c;
+  --color-accent-500: #a3e012;
+
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+
+  --color-warn-400: #fbbf24;
+  --color-warn-500: #f59e0b;
+
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+
+  /* Animation curves */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Animation tokens */
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-fade-in: fade-in 0.4s var(--ease-out-expo);
+  --animate-slide-up: slide-up 0.45s var(--ease-out-expo);
+  --animate-slide-in-right: slide-in-right 0.4s var(--ease-out-expo);
+  --animate-pulse-ring: pulse-ring 2.4s ease-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.85); opacity: 0.9; }
+  70% { transform: scale(2); opacity: 0; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ─── Globals ─────────────────────────────────────────────────────────────── */
 * {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
-  background-color: #030712;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: #e5e7eb;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(37, 99, 235, 0.12), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(163, 224, 18, 0.05), transparent 60%),
+    var(--color-bg);
+  min-height: 100vh;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* Selection */
+::selection {
+  background: var(--color-brand-500);
+  color: white;
+}
+
+/* Scrollbar (webkit) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2f3a55;
+  background-clip: padding-box;
 }
 
 .scrollbar-none {
@@ -20,4 +130,46 @@ body {
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background-color: rgba(15, 19, 32, 0.65);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+}
+
+.glass-strong {
+  background-color: rgba(11, 14, 24, 0.85);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #161b2c 0%, #1c2238 50%, #161b2c 100%);
+  background-size: 1000px 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* Subtle ring focus */
+.focus-ring {
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 3px rgba(77, 130, 255, 0.35);
+  border-color: var(--color-brand-400);
+}
+
+/* Page transition */
+.page-enter {
+  animation: var(--animate-fade-in), var(--animate-slide-up);
+}
+
+/* iOS safe-area padding for bottom nav */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
 }

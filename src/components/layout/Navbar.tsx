@@ -1,15 +1,25 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Car, Bell, LogOut, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { LogOut, ChevronDown, User } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useVehicleStore } from '../../store/vehicleStore';
+import { Logo } from '../ui/Logo';
 import toast from 'react-hot-toast';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const { selectedVehicle } = useVehicleStore();
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -17,53 +27,64 @@ export const Navbar = () => {
     navigate('/login');
   };
 
+  const initials = user?.email?.[0]?.toUpperCase() ?? 'U';
+
   return (
-    <nav className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/dashboard" className="flex items-center gap-2 text-white font-bold text-lg">
-            <Car className="h-6 w-6 text-blue-400" />
-            <span className="hidden sm:block">CarHub</span>
+    <nav className="glass border-b border-border sticky top-0 z-30">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 gap-4">
+          <Link to="/dashboard" className="shrink-0 transition-transform hover:scale-[1.02]">
+            <Logo />
           </Link>
 
           {selectedVehicle && (
-            <div className="hidden md:block text-gray-400 text-sm">
-              {selectedVehicle.brand} {selectedVehicle.model} {selectedVehicle.year}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-surface-2/60 border border-border rounded-full text-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-success-500 animate-pulse" />
+              <span className="text-gray-300 font-medium">
+                {selectedVehicle.brand} {selectedVehicle.model}
+              </span>
+              <span className="text-gray-500 text-xs">· {selectedVehicle.year}</span>
             </div>
           )}
 
-          <div className="hidden md:flex items-center gap-4">
-            <span className="text-gray-400 text-sm">{user?.email}</span>
+          <div className="relative" ref={menuRef}>
             <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+              onClick={() => setMenuOpen((s) => !s)}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-full hover:bg-surface-2 transition-colors focus-ring"
             >
-              <LogOut className="h-4 w-4" />
-              <span className="text-sm">Salir</span>
+              <span className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white text-sm font-semibold flex items-center justify-center">
+                {initials}
+              </span>
+              <ChevronDown className="h-4 w-4 text-gray-400 hidden sm:block" />
             </button>
+            {menuOpen && (
+              <div
+                className="absolute right-0 top-full mt-2 w-60 glass-strong border border-border rounded-xl shadow-2xl overflow-hidden"
+                style={{ animation: 'slide-up 0.2s var(--ease-out-expo)' }}
+              >
+                <div className="p-3 border-b border-border/60">
+                  <p className="text-white text-sm font-medium truncate">{user?.email}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">Tu cuenta</p>
+                </div>
+                <button
+                  onClick={() => { setMenuOpen(false); navigate('/settings'); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-surface-2 transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  Ajustes
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-danger-400 hover:bg-danger-500/10 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
           </div>
-
-          <button
-            className="md:hidden text-gray-400 hover:text-white"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
         </div>
       </div>
-
-      {mobileOpen && (
-        <div className="md:hidden bg-gray-900 border-t border-gray-800 px-4 py-3 space-y-2">
-          <p className="text-gray-400 text-sm">{user?.email}</p>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-gray-400 hover:text-white text-sm"
-          >
-            <LogOut className="h-4 w-4" />
-            Cerrar sesión
-          </button>
-        </div>
-      )}
     </nav>
   );
 };

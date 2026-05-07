@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, Trash2, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Plus, FileText, Trash2, ExternalLink, AlertTriangle, Star } from 'lucide-react';
 import { DocumentUpload } from '../components/documents/DocumentUpload';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import { documentsService } from '../services/documents.service';
 import type { Document } from '../types';
 import { formatDate } from '../utils/formatters';
 import { isBefore, parseISO, addDays } from 'date-fns';
+import { cn } from '../utils/cn';
 import toast from 'react-hot-toast';
 
 export const DocumentsPage = () => {
@@ -36,76 +40,121 @@ export const DocumentsPage = () => {
     toast.success('Documento eliminado');
   };
 
-  const isExpiringSoon = (expiry?: string) => {
-    if (!expiry) return false;
-    return isBefore(parseISO(expiry), addDays(new Date(), 30));
-  };
-
-  const isExpired = (expiry?: string) => {
-    if (!expiry) return false;
-    return isBefore(parseISO(expiry), new Date());
-  };
+  const isExpiringSoon = (expiry?: string) => expiry ? isBefore(parseISO(expiry), addDays(new Date(), 30)) : false;
+  const isExpired = (expiry?: string) => expiry ? isBefore(parseISO(expiry), new Date()) : false;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-4xl mx-auto">
+      <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-white">Documentos</h1>
-          <p className="text-gray-400 text-sm mt-1">{docs.length} archivos</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-1">
+            {selectedVehicle.brand} {selectedVehicle.model}
+          </p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Documentos</h1>
+          <p className="text-gray-400 text-sm mt-1.5">
+            <span className="font-semibold text-white tabular-nums">{docs.length}</span> archivos
+          </p>
         </div>
-        <button
-          onClick={() => setShowUpload(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Subir
-        </button>
-      </div>
+        <Button onClick={() => setShowUpload(true)} iconLeft={<Plus className="h-4 w-4" />}>
+          Subir documento
+        </Button>
+      </header>
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+        <div className="space-y-2">
+          {[0, 1, 2].map((i) => <SkeletonRow key={i} />)}
         </div>
       ) : docs.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>Sin documentos</p>
-          <p className="text-sm mt-1">Sube tu seguro, ITV, o cualquier documento del coche</p>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title="Sin documentos guardados"
+          description="Sube tu seguro, ITV, ficha técnica o cualquier documento importante del vehículo. Te avisaremos antes de que venzan."
+          action={
+            <Button onClick={() => setShowUpload(true)} iconLeft={<Plus className="h-4 w-4" />}>
+              Subir primer documento
+            </Button>
+          }
+        />
       ) : (
-        <div className="space-y-2">
+        <ul className="space-y-2">
           {docs.map((doc) => {
             const expired = isExpired(doc.expiry_date);
             const soon = !expired && isExpiringSoon(doc.expiry_date);
             return (
-              <div key={doc.id} className={`bg-gray-800 rounded-xl p-4 flex items-center gap-4 border ${expired ? 'border-red-500/30' : soon ? 'border-yellow-500/30' : 'border-transparent'}`}>
-                <div className={`rounded-lg p-2.5 shrink-0 ${expired ? 'bg-red-400/10' : 'bg-gray-700'}`}>
-                  <FileText className={`h-5 w-5 ${expired ? 'text-red-400' : 'text-gray-400'}`} />
+              <li
+                key={doc.id}
+                className={cn(
+                  'group bg-surface border rounded-2xl p-4 flex items-center gap-4 transition-all hover:-translate-y-0.5',
+                  expired
+                    ? 'border-danger-500/40 hover:border-danger-500/60'
+                    : soon
+                    ? 'border-warn-500/40 hover:border-warn-500/60'
+                    : 'border-border/60 hover:border-brand-400/40',
+                )}
+              >
+                <div className={cn(
+                  'shrink-0 h-11 w-11 rounded-xl flex items-center justify-center border',
+                  expired
+                    ? 'bg-danger-500/10 border-danger-500/30 text-danger-400'
+                    : soon
+                    ? 'bg-warn-500/10 border-warn-500/30 text-warn-400'
+                    : 'bg-surface-2 border-border text-gray-400',
+                )}>
+                  <FileText className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-white font-medium">{doc.doc_type}</p>
-                    {doc.is_important && <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">Importante</span>}
-                    {expired && <span className="text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded flex items-center gap-1"><AlertTriangle className="h-3 w-3" />Vencido</span>}
-                    {soon && !expired && <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">Vence pronto</span>}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-white font-medium tracking-tight">{doc.doc_type}</p>
+                    {doc.is_important && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-accent-500/15 text-accent-400 border border-accent-500/30 px-1.5 py-0.5 rounded-full">
+                        <Star className="h-2.5 w-2.5 fill-current" />
+                        Importante
+                      </span>
+                    )}
+                    {expired && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-danger-500/15 text-danger-400 border border-danger-500/30 px-1.5 py-0.5 rounded-full">
+                        <AlertTriangle className="h-2.5 w-2.5" />
+                        Vencido
+                      </span>
+                    )}
+                    {soon && !expired && (
+                      <span className="text-[10px] font-semibold bg-warn-500/15 text-warn-400 border border-warn-500/30 px-1.5 py-0.5 rounded-full">
+                        Vence pronto
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 text-gray-400 text-sm">
+                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
                     {doc.file_name && <span className="truncate">{doc.file_name}</span>}
-                    {doc.expiry_date && <span>· Vence: {formatDate(doc.expiry_date)}</span>}
+                    {doc.expiry_date && (
+                      <>
+                        <span className="text-gray-600">·</span>
+                        <span>Vence {formatDate(doc.expiry_date)}</span>
+                      </>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 transition-colors">
+                <div className="flex items-center gap-1 shrink-0">
+                  <a
+                    href={doc.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg text-gray-400 hover:text-brand-300 hover:bg-brand-500/10 transition-colors"
+                    aria-label="Abrir documento"
+                  >
                     <ExternalLink className="h-4 w-4" />
                   </a>
-                  <button onClick={() => handleDelete(doc.id)} className="text-gray-600 hover:text-red-400 transition-colors">
+                  <button
+                    onClick={() => handleDelete(doc.id)}
+                    className="p-2 rounded-lg text-gray-600 hover:text-danger-400 hover:bg-danger-500/10 transition-colors"
+                    aria-label="Eliminar"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
 
       {showUpload && (

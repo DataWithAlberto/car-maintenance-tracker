@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Car, CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Crown, Pencil, Eye } from 'lucide-react';
 import { sharingService } from '../services/sharing.service';
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/auth.service';
+import { Logo } from '../components/ui/Logo';
+import { Button } from '../components/ui/Button';
+import { FloatingInput } from '../components/ui/FloatingInput';
+import { cn } from '../utils/cn';
 import toast from 'react-hot-toast';
 
 type Step = 'loading' | 'confirm' | 'auth' | 'done' | 'error';
+
+const roleConfig = {
+  owner: { Icon: Crown, label: 'Propietario', cls: 'bg-brand-500/15 text-brand-300 border-brand-500/30' },
+  editor: { Icon: Pencil, label: 'Editor', cls: 'bg-success-500/15 text-success-400 border-success-500/30' },
+  viewer: { Icon: Eye, label: 'Visor', cls: 'bg-gray-700/40 text-gray-400 border-gray-700' },
+} as const;
 
 export const InvitePage = () => {
   const { token } = useParams<{ token: string }>();
@@ -14,7 +24,7 @@ export const InvitePage = () => {
   const { user } = useAuthStore();
 
   const [step, setStep] = useState<Step>('loading');
-  const [invite, setInvite] = useState<{ vehicles: { brand: string; model: string; year: number }; role: string } | null>(null);
+  const [invite, setInvite] = useState<{ vehicles: { brand: string; model: string; year: number }; role: keyof typeof roleConfig } | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [form, setForm] = useState({ email: '', password: '', full_name: '' });
   const [loading, setLoading] = useState(false);
@@ -30,7 +40,6 @@ export const InvitePage = () => {
       .catch(() => setStep('error'));
   }, [token]);
 
-  // Auto-accept if user logs in while on this page
   useEffect(() => {
     if (user && step === 'auth') setStep('confirm');
   }, [user]);
@@ -41,7 +50,7 @@ export const InvitePage = () => {
     try {
       await sharingService.acceptInviteByToken(token, user.id);
       setStep('done');
-      toast.success('Acceso aceptado');
+      toast.success('Acceso activado');
       setTimeout(() => navigate('/dashboard'), 2000);
     } catch {
       toast.error('Error al aceptar invitación');
@@ -60,7 +69,6 @@ export const InvitePage = () => {
       } else {
         await authService.login(form);
       }
-      // After auth, accept invite
       const session = await authService.getSession();
       if (session?.user && token) {
         await sharingService.acceptInviteByToken(token, session.user.id);
@@ -76,97 +84,122 @@ export const InvitePage = () => {
   };
 
   const vehicle = invite?.vehicles;
+  const cfg = invite ? roleConfig[invite.role] : null;
+  const RoleIcon = cfg?.Icon;
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute -top-40 -left-40 h-96 w-96 bg-brand-500/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 h-96 w-96 bg-accent-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md relative">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <Car className="h-12 w-12 text-blue-400" />
+          <div className="flex justify-center mb-4">
+            <Logo size={48} withText={false} />
           </div>
-          <h1 className="text-3xl font-bold text-white">CarHub</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            Focus<span className="bg-gradient-to-br from-brand-300 via-brand-500 to-accent-500 bg-clip-text text-transparent">Hub</span>
+          </h1>
         </div>
 
-        <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
+        <div className="glass-strong border border-border rounded-3xl p-8 shadow-2xl shadow-brand-500/10">
           {step === 'loading' && (
-            <div className="flex justify-center py-8">
-              <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+            <div className="flex flex-col items-center py-8">
+              <div className="relative h-12 w-12">
+                <div className="absolute inset-0 rounded-full border-2 border-brand-500/20" />
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-brand-400 animate-spin" />
+              </div>
+              <p className="text-gray-400 text-sm mt-4">Cargando invitación...</p>
             </div>
           )}
 
           {step === 'error' && (
-            <div className="text-center py-6">
-              <XCircle className="h-12 w-12 text-red-400 mx-auto mb-3" />
-              <h2 className="text-white font-semibold text-lg">Link inválido o expirado</h2>
-              <p className="text-gray-400 text-sm mt-2">Pide al propietario que genere un nuevo link.</p>
-              <Link to="/login" className="text-blue-400 text-sm mt-4 block hover:underline">Ir al login</Link>
+            <div className="text-center py-4">
+              <div className="h-16 w-16 mx-auto rounded-2xl bg-danger-500/15 border border-danger-500/30 flex items-center justify-center mb-4">
+                <XCircle className="h-8 w-8 text-danger-400" />
+              </div>
+              <h2 className="text-white font-semibold text-lg tracking-tight">Link inválido o expirado</h2>
+              <p className="text-gray-400 text-sm mt-2 leading-relaxed">
+                Pide al propietario que genere un link nuevo para volver a invitarte.
+              </p>
+              <Link to="/login" className="inline-block mt-6">
+                <Button variant="secondary">Ir al login</Button>
+              </Link>
             </div>
           )}
 
-          {step === 'confirm' && vehicle && (
+          {step === 'confirm' && vehicle && cfg && RoleIcon && (
             <div className="text-center">
-              <h2 className="text-white font-semibold text-xl mb-2">Invitación a vehículo</h2>
-              <p className="text-gray-400 mb-1">Te han invitado a acceder a:</p>
-              <div className="bg-gray-800 rounded-xl p-4 my-4">
-                <p className="text-white font-bold text-lg">{vehicle.brand} {vehicle.model} {vehicle.year}</p>
-                <p className="text-blue-400 text-sm mt-1">Rol: {invite?.role}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-2">Te han invitado</p>
+              <h2 className="text-white font-semibold text-2xl tracking-tight">Acceso a vehículo</h2>
+
+              <div className="mt-5 bg-gradient-to-br from-brand-500/10 via-surface-2 to-accent-500/5 border border-border/60 rounded-2xl p-5">
+                <p className="text-white font-bold text-xl tracking-tight">
+                  {vehicle.brand} {vehicle.model}
+                </p>
+                <p className="text-gray-400 text-sm mt-0.5">{vehicle.year}</p>
+                <span className={cn('inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border mt-3', cfg.cls)}>
+                  <RoleIcon className="h-3 w-3" />
+                  {cfg.label}
+                </span>
               </div>
-              <button
+
+              <Button
                 onClick={handleAccept}
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg py-3 font-medium transition-colors"
+                loading={loading}
+                fullWidth
+                size="lg"
+                className="mt-6"
               >
                 {loading ? 'Aceptando...' : 'Aceptar acceso'}
-              </button>
+              </Button>
             </div>
           )}
 
-          {step === 'auth' && vehicle && (
+          {step === 'auth' && vehicle && cfg && RoleIcon && (
             <div>
-              <h2 className="text-white font-semibold text-xl mb-1 text-center">Invitación a vehículo</h2>
-              <div className="bg-gray-800 rounded-xl p-3 my-3 text-center">
-                <p className="text-white font-medium">{vehicle.brand} {vehicle.model} {vehicle.year}</p>
-                <p className="text-blue-400 text-xs mt-1">Rol: {invite?.role}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-2 text-center">Te han invitado</p>
+              <h2 className="text-white font-semibold text-xl tracking-tight text-center mb-3">Acceso a vehículo</h2>
+              <div className="bg-gradient-to-br from-brand-500/10 via-surface-2 to-accent-500/5 border border-border/60 rounded-2xl p-4 mb-5 text-center">
+                <p className="text-white font-semibold">{vehicle.brand} {vehicle.model} {vehicle.year}</p>
+                <span className={cn('inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border mt-2', cfg.cls)}>
+                  <RoleIcon className="h-3 w-3" />
+                  {cfg.label}
+                </span>
               </div>
+
               <p className="text-gray-400 text-sm text-center mb-4">
                 {authMode === 'login' ? 'Inicia sesión para aceptar' : 'Crea una cuenta para aceptar'}
               </p>
 
               <form onSubmit={handleAuth} className="space-y-3">
                 {authMode === 'register' && (
-                  <input
-                    placeholder="Nombre completo"
+                  <FloatingInput
+                    label="Nombre completo"
                     value={form.full_name}
                     onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                    className={inputCls}
                   />
                 )}
-                <input
+                <FloatingInput
                   type="email"
-                  placeholder="Email"
+                  label="Email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className={inputCls}
                 />
-                <input
+                <FloatingInput
                   type="password"
-                  placeholder="Contraseña"
+                  label="Contraseña"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className={inputCls}
                 />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg py-2.5 font-medium transition-colors"
-                >
+                <Button type="submit" loading={loading} fullWidth>
                   {loading ? '...' : authMode === 'login' ? 'Entrar y aceptar' : 'Registrarme y aceptar'}
-                </button>
+                </Button>
               </form>
 
               <button
                 onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-                className="w-full text-center text-gray-400 text-sm mt-3 hover:text-white"
+                className="w-full text-center text-gray-400 text-sm mt-4 hover:text-white transition-colors"
               >
                 {authMode === 'login' ? '¿Sin cuenta? Regístrate' : '¿Ya tienes cuenta? Entra'}
               </button>
@@ -174,9 +207,11 @@ export const InvitePage = () => {
           )}
 
           {step === 'done' && (
-            <div className="text-center py-6">
-              <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-3" />
-              <h2 className="text-white font-semibold text-lg">¡Acceso activado!</h2>
+            <div className="text-center py-4">
+              <div className="h-16 w-16 mx-auto rounded-2xl bg-success-500/15 border border-success-500/30 flex items-center justify-center mb-4">
+                <CheckCircle className="h-8 w-8 text-success-400" />
+              </div>
+              <h2 className="text-white font-semibold text-lg tracking-tight">¡Acceso activado!</h2>
               <p className="text-gray-400 text-sm mt-2">Redirigiendo al dashboard...</p>
             </div>
           )}
@@ -185,5 +220,3 @@ export const InvitePage = () => {
     </div>
   );
 };
-
-const inputCls = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors';
