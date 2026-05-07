@@ -1,5 +1,5 @@
 import { Suspense, useRef, useState, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
 import { CAR_PARTS } from '../../utils/constants';
@@ -81,7 +81,7 @@ const GLTFCar = ({ url, onPartClick }: GLTFCarProps) => {
     return () => { document.body.style.cursor = 'auto'; };
   }, [hovered]);
 
-  const handlePointerOver = (e: THREE.Event & { object: THREE.Object3D }) => {
+  const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     const part = guessPartFromMesh((e.object as THREE.Mesh).name);
     if (part) setHovered(part);
@@ -89,7 +89,7 @@ const GLTFCar = ({ url, onPartClick }: GLTFCarProps) => {
 
   const handlePointerOut = () => setHovered(null);
 
-  const handleClick = (e: THREE.Event & { object: THREE.Object3D; point: THREE.Vector3 }) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     const part = guessPartFromMesh((e.object as THREE.Mesh).name);
     if (part) {
