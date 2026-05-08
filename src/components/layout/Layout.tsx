@@ -22,16 +22,17 @@ export const Layout = () => {
         position="top-right"
         toastOptions={{
           style: {
-            background: 'rgba(15, 19, 32, 0.92)',
-            color: '#f9fafb',
-            border: '1px solid #232a40',
-            backdropFilter: 'blur(12px)',
-            borderRadius: '12px',
-            fontSize: '14px',
-            padding: '12px 16px',
+            background: '#0f1013',
+            color: '#d4d4d8',
+            border: '1px solid #242629',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontFamily: 'var(--font-mono)',
+            padding: '10px 14px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
           },
-          success: { iconTheme: { primary: '#10b981', secondary: '#0f1320' } },
-          error: { iconTheme: { primary: '#ef4444', secondary: '#0f1320' } },
+          success: { iconTheme: { primary: '#10b981', secondary: '#0f1013' } },
+          error:   { iconTheme: { primary: '#ef4444', secondary: '#0f1013' } },
         }}
       />
     </div>

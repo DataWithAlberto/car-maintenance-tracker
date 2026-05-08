@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { loginSchema } from '../utils/validators';
-import { Logo } from '../components/ui/Logo';
 import { FloatingInput } from '../components/ui/FloatingInput';
 import { Button } from '../components/ui/Button';
 import toast from 'react-hot-toast';
@@ -17,17 +16,13 @@ export const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-
     const result = loginSchema.safeParse(form);
     if (!result.success) {
       const errs: Record<string, string> = {};
-      result.error.issues.forEach((e) => {
-        errs[e.path[0] as string] = e.message;
-      });
+      result.error.issues.forEach((e) => { errs[e.path[0] as string] = e.message; });
       setErrors(errs);
       return;
     }
-
     setLoading(true);
     try {
       await login(form);
@@ -40,61 +35,155 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Decorative gradient orbs */}
-      <div className="absolute -top-40 -left-40 h-96 w-96 bg-brand-500/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 h-96 w-96 bg-accent-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex relative overflow-hidden">
+      {/* ── Left panel — decorative ── */}
+      <div className="hidden lg:flex flex-col justify-between w-[42%] bg-surface border-r border-border p-10 relative overflow-hidden">
+        {/* Diagonal grid overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.035]"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(45deg, #fff 0px, #fff 1px, transparent 1px, transparent 40px)',
+          }}
+        />
+        {/* Corner accent */}
+        <div
+          className="absolute bottom-0 right-0 w-64 h-64 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle at 100% 100%, rgba(232,68,10,0.15), transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute top-0 left-0 w-48 h-48 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle at 0% 0%, rgba(59,130,246,0.10), transparent 70%)',
+          }}
+        />
 
-      <div className="w-full max-w-md relative">
-        <div className="text-center mb-8 page-enter">
-          <div className="flex justify-center mb-4">
-            <Logo size={48} withText={false} />
+        {/* Logo area */}
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="h-8 w-8 rounded-lg bg-accent-500 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3" />
+                <rect x="9" y="11" width="14" height="10" rx="2" />
+                <circle cx="12" cy="16" r="1" />
+              </svg>
+            </div>
+            <span
+              className="text-white font-black uppercase tracking-widest text-sm"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              FocusHub
+            </span>
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            Focus<span className="bg-gradient-to-br from-brand-300 via-brand-500 to-accent-500 bg-clip-text text-transparent">Hub</span>
-          </h1>
-          <p className="text-gray-400 mt-1.5 text-sm">Tu garaje digital</p>
-        </div>
 
-        <div className="glass-strong border border-border rounded-3xl p-8 shadow-2xl shadow-brand-500/10">
-          <h2 className="text-xl font-semibold text-white tracking-tight mb-1">Bienvenido de vuelta</h2>
-          <p className="text-gray-400 text-sm mb-6">Inicia sesión para continuar</p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <FloatingInput
-              type="email"
-              label="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              error={errors.email}
-              autoComplete="email"
-            />
-
-            <FloatingInput
-              type="password"
-              label="Contraseña"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              error={errors.password}
-              autoComplete="current-password"
-            />
-
-            <Button type="submit" loading={loading} fullWidth size="lg">
-              {loading ? 'Entrando...' : 'Entrar'}
-            </Button>
-          </form>
-
-          <p className="text-center text-gray-400 text-sm mt-6">
-            ¿Sin cuenta?{' '}
-            <Link to="/register" className="text-brand-300 hover:text-brand-200 font-medium transition-colors">
-              Regístrate
-            </Link>
+          {/* Big headline */}
+          <h2
+            className="text-white leading-none mb-4"
+            style={{ fontFamily: 'var(--font-display)', fontSize: '3.5rem', fontWeight: 900, letterSpacing: '0.02em' }}
+          >
+            TU GARAJE<br />
+            <span className="text-accent-500">DIGITAL.</span>
+          </h2>
+          <p className="text-gray-500 text-sm font-mono leading-relaxed max-w-xs">
+            Control total sobre el mantenimiento, gastos y documentación de tu vehículo.
           </p>
         </div>
 
-        <p className="text-center text-gray-600 text-xs mt-6">
-          © 2026 FocusHub · Hecho con cariño
+        {/* Feature list */}
+        <div className="relative space-y-3">
+          {[
+            { code: '01', label: 'Registro de mantenimiento' },
+            { code: '02', label: 'Alertas inteligentes por km' },
+            { code: '03', label: 'Modelo 3D interactivo' },
+            { code: '04', label: 'Historial de gastos' },
+          ].map(({ code, label }) => (
+            <div key={code} className="flex items-center gap-3">
+              <span className="text-[10px] font-mono text-accent-500/60 w-5 shrink-0">{code}</span>
+              <div className="h-px w-4 bg-border" />
+              <span className="text-[11px] font-mono text-gray-500 uppercase tracking-wider">{label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom note */}
+        <p className="text-[10px] font-mono text-gray-700 uppercase tracking-widest relative">
+          Sistema v0.2 · 2026
         </p>
+      </div>
+
+      {/* ── Right panel — auth form ── */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 relative">
+        {/* Subtle dot grid */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.025]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
+            backgroundSize: '20px 20px',
+          }}
+        />
+
+        <div className="w-full max-w-sm relative page-enter">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="tele-dot" />
+              <span className="text-[10px] font-mono text-gray-600 uppercase tracking-[0.2em]">Autenticación</span>
+            </div>
+            <h1
+              className="text-white leading-none mb-2"
+              style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', fontWeight: 900, letterSpacing: '0.03em' }}
+            >
+              ACCESO AL<br />SISTEMA
+            </h1>
+            <p className="text-gray-600 text-xs font-mono">
+              Introduce tus credenciales para continuar
+            </p>
+          </div>
+
+          {/* Form card */}
+          <div className="bg-surface border border-border rounded-xl p-6">
+            {/* Top stripe */}
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-accent-500/40 to-transparent -mt-6 mb-6 mx-[-24px] w-[calc(100%+48px)]" />
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <FloatingInput
+                type="email"
+                label="Email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                error={errors.email}
+                autoComplete="email"
+              />
+              <FloatingInput
+                type="password"
+                label="Contraseña"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                error={errors.password}
+                autoComplete="current-password"
+              />
+              <Button type="submit" loading={loading} fullWidth size="lg" className="mt-2">
+                {loading ? 'Verificando...' : 'Entrar'}
+              </Button>
+            </form>
+
+            <div className="mt-5 pt-4 border-t border-border/60 flex items-center justify-between">
+              <span className="text-[10px] font-mono text-gray-700 uppercase tracking-wider">¿Sin cuenta?</span>
+              <Link
+                to="/register"
+                className="text-[11px] font-mono text-accent-400 hover:text-accent-300 transition-colors uppercase tracking-wider"
+              >
+                Registrarse →
+              </Link>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <p className="text-center text-[10px] font-mono text-gray-700 uppercase tracking-widest mt-6">
+            FocusHub · Sistema de gestión vehicular
+          </p>
+        </div>
       </div>
     </div>
   );
