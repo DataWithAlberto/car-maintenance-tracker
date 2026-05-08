@@ -45,11 +45,11 @@ export const KpiCard = ({ icon: Icon, label, value, hint, trend, tone = 'brand',
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5">
             <span className={cn('h-1 w-1 rounded-full', t.bar)} />
-            <p className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-semibold font-mono">
+            <p className="font-manrope text-caption text-ink-charcoal/70 tracking-wide">
               {label}
             </p>
           </div>
-          <div className={cn('h-7 w-7 rounded-lg bg-surface-2 flex items-center justify-center border border-border/60', t.icon)}>
+          <div className={cn('h-7 w-7 rounded-lg bg-canvas-50 flex items-center justify-center border border-sky-blueprint/20', t.icon)}>
             <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
           </div>
         </div>

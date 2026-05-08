@@ -168,7 +168,7 @@ const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
       />
       {hovered && CAR_PARTS[hovered] && (
         <Html position={[0, 2, 0]} center>
-          <div className="bg-gray-900/90 text-white text-xs px-3 py-1.5 rounded-lg border border-blue-500/50 whitespace-nowrap pointer-events-none">
+          <div className="bg-cloud-white border border-sky-blueprint/40 shadow-card font-manrope text-caption text-ink-black px-3 py-1.5 rounded-card whitespace-nowrap pointer-events-none">
             {CAR_PARTS[hovered].label}
           </div>
         </Html>
@@ -332,13 +332,13 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
       </Canvas>
 
       {selectedPart && (
-        <div className="absolute top-4 left-4 bg-cloud-white/80 text-brand-400 text-xs font-mono px-3 py-1.5 rounded-lg border border-brand-500/30">
+        <div className="absolute top-4 left-4 bg-cloud-white border border-sky-blueprint/25 text-sky-dark font-manrope text-caption px-3 py-1.5 rounded-card shadow-subtle">
           {CAR_PARTS[selectedPart]?.label ?? selectedPart}
         </div>
       )}
 
       {loadError && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-warn-500/15 border border-warn-500/40 text-warn-300 px-4 py-2 rounded-lg text-xs font-mono">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-sunset-orange/10 border border-sunset-orange/30 text-sunset-orange font-manrope text-caption px-4 py-2 rounded-card">
           <span className="h-1.5 w-1.5 rounded-full bg-warn-400" />
           Usando modelo procedural — GLTF no disponible
         </div>

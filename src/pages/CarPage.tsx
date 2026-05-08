@@ -106,21 +106,21 @@ export const CarPage = () => {
             </div>
             <div className="min-w-0">
               <h1
-                className="text-ink-black font-black uppercase tracking-wide leading-none truncate"
-                style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem' }}
+                className="font-simeiz text-ink-black leading-none truncate"
+                style={{ fontSize: '1.2rem', fontWeight: 300, letterSpacing: '-0.01em' }}
               >
                 {selectedVehicle.brand} {selectedVehicle.model}
-                <span className="text-ink-charcoal/80 font-normal"> /{selectedVehicle.year}</span>
+                <span className="font-manrope text-body text-ink-charcoal/60 font-normal"> / {selectedVehicle.year}</span>
               </h1>
-              <p className="text-ink-charcoal text-[11px] font-mono flex items-center gap-1.5 mt-0.5">
+              <p className="font-manrope text-caption text-ink-charcoal/70 flex items-center gap-1.5 mt-0.5">
                 <Gauge className="h-3 w-3" />
                 {formatKm(selectedVehicle.current_km)}
                 {alerts.length > 0 && (
                   <>
                     <span className="text-ink-charcoal/65">·</span>
-                    <span className="text-warn-400 inline-flex items-center gap-1">
+                    <span className="text-sunset-orange inline-flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
-                      {alerts.length} {alerts.length === 1 ? 'ALERTA' : 'ALERTAS'}
+                      {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'}
                     </span>
                   </>
                 )}

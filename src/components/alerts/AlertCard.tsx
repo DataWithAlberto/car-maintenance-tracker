@@ -55,15 +55,15 @@ export const AlertCard = ({ alert, onDismiss }: Props) => {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <span className={cn('text-[9px] font-mono font-bold tracking-[0.15em]', config.label)}>
+          <span className={cn('font-manrope text-caption font-semibold tracking-wide', config.label)}>
             {config.code}
           </span>
           <span className="text-ink-charcoal/65 text-[9px]">·</span>
-          <span className="text-[9px] font-mono text-ink-charcoal/80 truncate">
+          <span className="font-manrope text-caption text-ink-charcoal/60 truncate">
             {alert.id.slice(0, 8).toUpperCase()}
           </span>
         </div>
-        <p className={cn('text-xs leading-relaxed', config.text)}>
+        <p className={cn('font-manrope text-body leading-relaxed', config.text)}>
           {alert.description}
         </p>
       </div>
