@@ -78,7 +78,7 @@ export const ShareModal = ({ vehicleId, onClose }: Props) => {
           className="mt-5 bg-gradient-to-br from-success-500/10 to-transparent border border-success-500/30 rounded-card p-4 space-y-3"
           style={{ animation: 'slide-up 0.3s var(--ease-out-expo)' }}
         >
-          <div className="flex items-center gap-2 text-success-400 text-sm font-medium">
+          <div className="flex items-center gap-2 text-success-500 font-manrope text-body font-medium">
             <Link2 className="h-4 w-4" />
             <span>Link de invitación listo</span>
           </div>
@@ -86,17 +86,17 @@ export const ShareModal = ({ vehicleId, onClose }: Props) => {
             <input
               readOnly
               value={inviteLink}
-              className="flex-1 bg-canvas-50 border border-sky-blueprint/25 rounded-lg px-3 py-2 text-ink-black text-xs truncate focus:outline-none focus:border-brand-400"
+              className="flex-1 bg-canvas-50 border border-sky-blueprint/25 rounded-input px-3 py-2 font-manrope text-caption text-ink-black truncate focus:outline-none focus:border-sky-blueprint/60"
             />
             <button
               onClick={handleCopy}
-              className="shrink-0 h-9 w-9 inline-flex items-center justify-center bg-brand-500 hover:bg-brand-400 text-white rounded-lg transition-colors"
+              className="shrink-0 h-9 w-9 inline-flex items-center justify-center bg-sky-blueprint hover:bg-sky-dark text-cloud-white rounded-input transition-colors"
               aria-label="Copiar"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </button>
           </div>
-          <p className="text-ink-charcoal text-xs leading-relaxed">
+          <p className="font-manrope text-caption text-ink-charcoal/70 leading-relaxed">
             Envía este link. Si el invitado no tiene cuenta podrá registrarse y el acceso se activará automáticamente.
           </p>
         </div>

@@ -235,7 +235,7 @@ const ProceduralCar = ({ onPartClick }: { onPartClick: (info: PartClickInfo) => 
           />
           {hovered === key && (
             <Html distanceFactor={8} position={[0, (size[1] / 2) + 0.3, 0]}>
-              <div className="bg-gray-900/90 text-white text-xs px-2 py-1 rounded-lg border border-blue-500/50 whitespace-nowrap pointer-events-none">
+              <div className="bg-cloud-white font-manrope text-caption text-ink-black px-2 py-1 rounded-card border border-sky-blueprint/40 shadow-subtle whitespace-nowrap pointer-events-none">
                 {CAR_PARTS[key]?.label}
               </div>
             </Html>
