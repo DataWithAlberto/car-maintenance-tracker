@@ -32,7 +32,8 @@ export const expensesController = {
       const { data: exp } = await supabaseAdmin
         .from('expenses').select('vehicle_id').eq('id', req.params.id).maybeSingle();
       if (!exp) throw new NotFoundError();
-      await accessService.requireWrite(req.user!.id, exp.vehicle_id);
+      // DELETE requires owner — editors cannot delete expenses
+      await accessService.requireOwner(req.user!.id, exp.vehicle_id);
       const { error } = await supabaseAdmin.from('expenses').delete().eq('id', req.params.id);
       if (error) throw error;
       res.status(204).end();

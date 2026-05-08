@@ -32,7 +32,8 @@ export const documentsController = {
       const { data: doc } = await supabaseAdmin
         .from('documents').select('vehicle_id').eq('id', req.params.id).maybeSingle();
       if (!doc) throw new NotFoundError();
-      await accessService.requireWrite(req.user!.id, doc.vehicle_id);
+      // DELETE requires owner — editors cannot delete documents
+      await accessService.requireOwner(req.user!.id, doc.vehicle_id);
       const { error } = await supabaseAdmin.from('documents').delete().eq('id', req.params.id);
       if (error) throw error;
       res.status(204).end();

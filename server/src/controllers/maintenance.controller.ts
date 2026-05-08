@@ -54,7 +54,8 @@ export const maintenanceController = {
       const { data: rec } = await supabaseAdmin
         .from('maintenance_records').select('vehicle_id').eq('id', req.params.id).maybeSingle();
       if (!rec) throw new NotFoundError();
-      await accessService.requireWrite(req.user!.id, rec.vehicle_id);
+      // DELETE requires owner — editors can create/update but not delete
+      await accessService.requireOwner(req.user!.id, rec.vehicle_id);
 
       const { error } = await supabaseAdmin.from('maintenance_records').delete().eq('id', req.params.id);
       if (error) throw error;
