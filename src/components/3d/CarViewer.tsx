@@ -5,6 +5,9 @@ import { OrbitControls, Environment, ContactShadows, Html, useGLTF, Center } fro
 import * as THREE from 'three';
 import { CAR_PARTS } from '../../utils/constants';
 
+// Preload the model so it's in cache before the component mounts
+useGLTF.preload('/models/ford_focus.glb');
+
 interface PartClickInfo {
   partKey: string;
   position: [number, number, number];
@@ -23,34 +26,64 @@ const CAR_PART_MESHES: Record<string, { position: [number, number, number]; size
   suspension: { position: [0, -0.1, 0], size: [1.8, 0.1, 2.4], color: '#6b7280' },
 };
 
-// Map mesh name keywords → part keys (for GLTF models)
-// Supports ford_focus_sedan.glb (Sketchfab) names + generic fallbacks
+// Map mesh name prefixes → part keys for ford_focus.glb (Sketchfab)
+// Mesh names from GLB (lowercased): TIRE_LF_rubber_0, WHEEL_RF_chrome_0, etc.
+// Strategy: exact prefix match first, then substring fallback.
 const MESH_PART_MAP: Record<string, string> = {
-  // Ford Focus Sedan – exact node names (lowercased at runtime)
+  // ── Tyres (rubber meshes) ──────────────────────────────────────────────────
   'tire_lf': 'tires_front_left',
   'tire_rf': 'tires_front_right',
   'tire_lr': 'tires_rear_left',
   'tire_rr': 'tires_rear_right',
+
+  // ── Lug nuts (chrome accent on wheels) ───────────────────────────────────
   'lugs_lf': 'tires_front_left',
   'lugs_rf': 'tires_front_right',
   'lugs_lr': 'tires_rear_left',
   'lugs_rr': 'tires_rear_right',
-  'body': 'engine',
-  'bod2': 'engine',
-  'cowl': 'engine',
+
+  // ── Wheels / rims ─────────────────────────────────────────────────────────
+  'wheel_lf': 'tires_front_left',
+  'wheel_rf': 'tires_front_right',
+  'wheel_lr': 'tires_rear_left',
+  'wheel_rr': 'tires_rear_right',
+
+  // ── Body panels → engine area ─────────────────────────────────────────────
+  'body':   'engine',
+  'bod2':   'engine',
+  'cowl':   'engine',    // firewall / front cowl
+  'fin':    'engine',    // front panel
+
+  // ── Lights → brake system ─────────────────────────────────────────────────
   'braklght': 'brakes_rear',
-  'hedlght': 'brakes_front',
-  // Generic fallbacks
-  tire: 'tires_front_left',
-  wheel: 'tires_front_left',
-  rim: 'tires_front_left',
-  engine: 'engine',
-  hood: 'engine',
-  bonnet: 'engine',
-  brake: 'brakes_front',
-  disk: 'brakes_front',
-  caliper: 'brakes_front',
-  battery: 'battery',
+  'hedlght':  'brakes_front',
+  'hlght_tr': 'brakes_rear',
+  'revlght':  'brakes_rear',
+  'foglight': 'brakes_front',
+
+  // ── Misc panels / trim → suspension (floor/underbody) ────────────────────
+  'under':    'suspension',
+  'whlwells': 'suspension',
+  'rbbrtrim': 'suspension',
+  'rbbrtrm2': 'suspension',
+
+  // ── Chrome / badge → battery (bonnet area) ───────────────────────────────
+  'chrome':   'battery',
+  'badge':    'battery',
+  'badge2':   'battery',
+  'badge_fa': 'battery',
+
+  // ── Generic fallbacks (any model) ────────────────────────────────────────
+  tire:       'tires_front_left',
+  wheel:      'tires_front_left',
+  rim:        'tires_front_left',
+  engine:     'engine',
+  hood:       'engine',
+  bonnet:     'engine',
+  brake:      'brakes_front',
+  disk:       'brakes_front',
+  caliper:    'brakes_front',
+  battery:    'battery',
   suspension: 'suspension',
 };
 
@@ -70,12 +103,38 @@ const guessPartFromMesh = (name: string): string | null => {
 interface GLTFCarProps {
   url: string;
   onPartClick: (info: PartClickInfo) => void;
+  onError?: (url: string, err: unknown) => void;
 }
 
-const GLTFCar = ({ url, onPartClick }: GLTFCarProps) => {
+// GLTFCarSafe: wraps GLTFCar + catches load errors, falls back to procedural
+const GLTFCarSafe = ({ url, onPartClick, onError }: GLTFCarProps) => {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return <ProceduralCar onPartClick={onPartClick} />;
+
+  return (
+    <GLTFCar
+      url={url}
+      onPartClick={onPartClick}
+      onError={(u, err) => { setFailed(true); onError?.(u, err); }}
+    />
+  );
+};
+
+const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
+  // useGLTF will throw/suspend on network error — caught by Suspense or ErrorBoundary.
+  // We also add a runtime guard via useEffect.
   const { scene } = useGLTF(url);
   const [hovered, setHovered] = useState<string | null>(null);
   const cloned = useRef<THREE.Group>(scene.clone(true));
+
+  useEffect(() => {
+    if (!scene) {
+      const err = new Error(`Scene is null after loading "${url}"`);
+      console.error('[CarViewer]', err);
+      onError?.(url, err);
+    }
+  }, [scene, url, onError]);
 
   useEffect(() => {
     document.body.style.cursor = hovered ? 'pointer' : 'auto';
@@ -204,6 +263,10 @@ const CarLoader = () => (
   </Html>
 );
 
+// ─── Error boundary wrapper for GLTF ─────────────────────────────────────────
+// useGLTF throws on 404/parse error, caught by Suspense error boundary.
+// We implement a simple error fallback via state hoisted to CarViewer.
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 interface CarViewerProps {
   onPartClick?: (partKey: string) => void;
@@ -213,12 +276,20 @@ interface CarViewerProps {
 
 export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarViewerProps) => {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
+  const [loadError, setLoadError]       = useState(false);
   const controlsRef = useRef<{ autoRotate: boolean }>(null);
 
   const handlePartClick = (info: PartClickInfo) => {
     setSelectedPart(info.partKey);
     onPartClick?.(info.partKey);
   };
+
+  const handleGLTFError = (url: string, err: unknown) => {
+    console.error(`[CarViewer] Failed to load model "${url}":`, err);
+    setLoadError(true);
+  };
+
+  const useGLTF3D = modelUrl && !loadError;
 
   return (
     <div className="w-full h-full relative">
@@ -235,8 +306,12 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
         <pointLight position={[0, 6, 0]} intensity={0.4} />
 
         <Suspense fallback={<CarLoader />}>
-          {modelUrl ? (
-            <GLTFCar url={modelUrl} onPartClick={handlePartClick} />
+          {useGLTF3D ? (
+            <GLTFCarSafe
+              url={modelUrl}
+              onPartClick={handlePartClick}
+              onError={handleGLTFError}
+            />
           ) : (
             <ProceduralCar onPartClick={handlePartClick} />
           )}
@@ -257,8 +332,15 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
       </Canvas>
 
       {selectedPart && (
-        <div className="absolute top-4 left-4 bg-gray-900/80 text-blue-400 text-sm px-3 py-1.5 rounded-lg border border-blue-500/30">
+        <div className="absolute top-4 left-4 bg-surface/80 text-brand-400 text-xs font-mono px-3 py-1.5 rounded-lg border border-brand-500/30">
           {CAR_PARTS[selectedPart]?.label ?? selectedPart}
+        </div>
+      )}
+
+      {loadError && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-warn-500/15 border border-warn-500/40 text-warn-300 px-4 py-2 rounded-lg text-xs font-mono">
+          <span className="h-1.5 w-1.5 rounded-full bg-warn-400" />
+          Usando modelo procedural — GLTF no disponible
         </div>
       )}
     </div>
