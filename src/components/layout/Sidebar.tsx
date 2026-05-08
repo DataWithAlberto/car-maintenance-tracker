@@ -1,17 +1,18 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Car, Wrench, Receipt, FileText, Settings, Share2 } from 'lucide-react';
+import { LayoutDashboard, Car, Wrench, Receipt, FileText, Settings, Share2, Route } from 'lucide-react';
 import { useVehicleStore } from '../../store/vehicleStore';
 import { cn } from '../../utils/cn';
 import { formatKm } from '../../utils/formatters';
 
 const links = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard',     code: '01' },
+  { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard',     code: '01' },
   { to: '/car',        icon: Car,             label: 'Mi coche',      code: '02' },
   { to: '/maintenance',icon: Wrench,          label: 'Mantenimiento', code: '03' },
-  { to: '/expenses',   icon: Receipt,         label: 'Gastos',        code: '04' },
-  { to: '/documents',  icon: FileText,        label: 'Documentos',    code: '05' },
-  { to: '/sharing',    icon: Share2,          label: 'Compartir',     code: '06' },
-  { to: '/settings',   icon: Settings,        label: 'Ajustes',       code: '07' },
+  { to: '/trips',      icon: Route,           label: 'Viajes',        code: '04' },
+  { to: '/expenses',   icon: Receipt,         label: 'Gastos',        code: '05' },
+  { to: '/documents',  icon: FileText,        label: 'Documentos',    code: '06' },
+  { to: '/sharing',    icon: Share2,          label: 'Compartir',     code: '07' },
+  { to: '/settings',   icon: Settings,        label: 'Ajustes',       code: '08' },
 ];
 
 export const Sidebar = () => {

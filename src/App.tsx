@@ -12,6 +12,7 @@ import { ExpensesPage } from './pages/ExpensesPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { SharingPage } from './pages/SharingPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TripsPage } from './pages/TripsPage';
 import { InvitePage } from './pages/InvitePage';
 import { authService } from './services/auth.service';
 import { useAuthStore } from './store/authStore';
@@ -38,7 +39,7 @@ function App() {
       <Toaster
         position="top-right"
         toastOptions={{
-          style: { background: '#1f2937', color: '#f9fafb', border: '1px solid #374151' },
+          style: { background: '#ffffff', color: '#000000', border: '1px solid rgba(129,174,217,0.4)', boxShadow: '4px -4px 0px 0px rgb(51,51,51)', borderRadius: '20px' },
         }}
       />
       <Routes>
@@ -59,6 +60,7 @@ function App() {
           <Route path="maintenance" element={<MaintenancePage />} />
           <Route path="expenses" element={<ExpensesPage />} />
           <Route path="documents" element={<DocumentsPage />} />
+          <Route path="trips" element={<TripsPage />} />
           <Route path="sharing" element={<SharingPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>

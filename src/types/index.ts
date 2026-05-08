@@ -100,3 +100,73 @@ export interface VehicleWithAccess extends Vehicle {
   role: UserRole;
   shared_access?: SharedAccess[];
 }
+
+// ─── Trips ────────────────────────────────────────────────────────────────────
+
+export interface TripWaypoint {
+  id: string;
+  trip_id: string;
+  lat: number;
+  lng: number;
+  name?: string;
+  description?: string;
+  photo_url?: string;
+  order_index: number;
+  created_at: string;
+}
+
+export interface Trip {
+  id: string;
+  vehicle_id: string;
+  created_by: string;
+  title?: string;
+  start_location: string;
+  end_location: string;
+  start_lat?: number;
+  start_lng?: number;
+  end_lat?: number;
+  end_lng?: number;
+  start_datetime: string;
+  end_datetime?: string;
+  start_km: number;
+  end_km?: number;
+  total_km?: number;
+  fuel_consumed?: number;
+  avg_speed?: number;
+  max_altitude?: number;
+  driving_time_minutes?: number;
+  notes?: string;
+  weather_condition?: string;
+  weather_temp?: number;
+  weather_humidity?: number;
+  weather_wind_speed?: number;
+  spotify_playlist_url?: string;
+  share_token?: string;
+  created_at: string;
+  updated_at: string;
+  waypoints?: TripWaypoint[];
+}
+
+export interface CreateTripInput {
+  title?: string;
+  start_location: string;
+  end_location: string;
+  start_lat?: number;
+  start_lng?: number;
+  end_lat?: number;
+  end_lng?: number;
+  start_datetime: string;
+  end_datetime?: string;
+  start_km: number;
+  end_km?: number;
+  fuel_consumed?: number;
+  avg_speed?: number;
+  max_altitude?: number;
+  driving_time_minutes?: number;
+  notes?: string;
+  weather_condition?: string;
+  weather_temp?: number;
+  weather_humidity?: number;
+  weather_wind_speed?: number;
+  spotify_playlist_url?: string;
+}

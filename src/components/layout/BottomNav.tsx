@@ -1,18 +1,19 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Car, Wrench, Receipt, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Car, Wrench, Route, MoreHorizontal } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 const tabs = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
-  { to: '/car', icon: Car, label: 'Coche' },
-  { to: '/maintenance', icon: Wrench, label: 'Servicio' },
-  { to: '/expenses', icon: Receipt, label: 'Gastos' },
-  { to: '/settings', icon: MoreHorizontal, label: 'Más' },
+  { to: '/dashboard',  icon: LayoutDashboard, label: 'Inicio'   },
+  { to: '/car',        icon: Car,             label: 'Coche'    },
+  { to: '/maintenance',icon: Wrench,          label: 'Servicio' },
+  { to: '/trips',      icon: Route,           label: 'Viajes'   },
+  { to: '/settings',   icon: MoreHorizontal,  label: 'Más'      },
 ];
 
 export const BottomNav = () => (
   <nav
-    className="md:hidden fixed bottom-0 inset-x-0 z-40 glass-strong border-t border-border pb-safe"
+    className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-canvas-white/95 border-t border-sky-blueprint/20 pb-safe"
+    style={{ backdropFilter: 'blur(12px)' }}
     aria-label="Navegación móvil"
   >
     <ul className="grid grid-cols-5 px-1">
@@ -32,7 +33,7 @@ export const BottomNav = () => (
                 <span
                   className={cn(
                     'relative h-9 w-9 flex items-center justify-center rounded-xl transition-all',
-                    isActive && 'bg-brand-500/15 ring-1 ring-brand-500/30',
+                    isActive && 'bg-sky-blueprint/15 ring-1 ring-sky-blueprint/30',
                   )}
                 >
                   <Icon className="h-5 w-5" strokeWidth={isActive ? 2.2 : 1.8} />
