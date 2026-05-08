@@ -101,17 +101,23 @@ export const DashboardPage = () => {
       {/* Hero */}
       <header className="flex items-end justify-between mb-8 gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="h-4 w-4 text-accent-400" />
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold">Tu garaje</p>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="tele-dot" />
+            <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-gray-500">Sistema activo</p>
+            <span className="text-gray-700">·</span>
+            <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-gray-500">Tu garaje</p>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-            Bienvenido de vuelta
+          <h1
+            className="text-4xl sm:text-5xl font-black text-white uppercase tracking-wide leading-none"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            Bienvenido
+            <span className="text-accent-500"> de vuelta</span>
           </h1>
-          <p className="text-gray-400 text-sm mt-1.5">
+          <p className="text-gray-500 text-sm mt-2 font-mono">
             {vehicles.length === 0
-              ? 'Añade tu primer vehículo para empezar'
-              : `${vehicles.length} ${vehicles.length === 1 ? 'vehículo' : 'vehículos'} en seguimiento`}
+              ? '→ Añade tu primer vehículo para empezar'
+              : `${vehicles.length} ${vehicles.length === 1 ? 'vehículo registrado' : 'vehículos registrados'} · FocusHub v2`}
           </p>
         </div>
         <Button onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" />}>
@@ -156,8 +162,10 @@ export const DashboardPage = () => {
       {aggregate.totalAlerts > 0 && (
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="h-4 w-4 text-warn-400" />
-            <h2 className="text-sm font-semibold text-white tracking-tight">Alertas más recientes</h2>
+            <span className="h-px flex-1 bg-border/60 max-w-[2rem]" />
+            <AlertTriangle className="h-3.5 w-3.5 text-warn-400" />
+            <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400">Alertas activas</h2>
+            <span className="h-px flex-1 bg-border/60" />
           </div>
           <div className="space-y-2">
             {Object.values(stats)
@@ -170,8 +178,10 @@ export const DashboardPage = () => {
 
       {/* Vehicle grid */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-white tracking-tight uppercase">Tus vehículos</h2>
+        <div className="flex items-center gap-3 mb-4">
+          <span className="h-px flex-1 bg-border/60 max-w-[2rem]" />
+          <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400">Flota registrada</h2>
+          <span className="h-px flex-1 bg-border/60" />
         </div>
 
         {loading ? (
@@ -241,58 +251,94 @@ const VehicleCard = ({ vehicle, stats, onSelect }: VehicleCardProps) => {
   return (
     <button
       onClick={onSelect}
-      className="group relative overflow-hidden text-left bg-surface border border-border/60 hover:border-brand-400/60 rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-brand-500/10 focus-ring"
+      className="group relative overflow-hidden text-left bg-surface border border-border/70 hover:border-brand-500/50 rounded-xl transition-all duration-250 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-500/8 focus-ring stripe-top stripe-top-brand"
     >
-      {/* Decorative gradient blob */}
-      <div className="absolute -right-20 -top-20 h-40 w-40 bg-brand-500/10 rounded-full blur-3xl group-hover:bg-brand-400/20 transition-colors" />
-      <div className="absolute -right-10 -bottom-10 h-24 w-24 bg-accent-500/10 rounded-full blur-2xl" />
+      {/* Header band */}
+      <div className="relative px-5 pt-5 pb-4">
+        {/* Corner accent line */}
+        <div className="absolute top-0 right-0 w-16 h-px bg-gradient-to-l from-border to-transparent" />
+        <div className="absolute top-0 right-0 h-16 w-px bg-gradient-to-b from-border to-transparent" />
 
-      <div className="relative">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <RoleBadge role={vehicle.role} />
-            <h3 className="text-white font-semibold text-xl tracking-tight mt-2 truncate">
+            <h3
+              className="text-white font-black text-2xl leading-tight mt-2 truncate uppercase tracking-wide"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
               {vehicle.brand} {vehicle.model}
             </h3>
-            <p className="text-gray-400 text-sm">
-              {vehicle.year}
-              {vehicle.color && <span className="text-gray-500"> · {vehicle.color}</span>}
-              {vehicle.fuel_type && <span className="text-gray-500"> · {vehicle.fuel_type}</span>}
-            </p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-[11px] font-mono text-gray-500 tracking-widest">
+                {vehicle.year}
+              </span>
+              {vehicle.fuel_type && (
+                <>
+                  <span className="text-gray-700">·</span>
+                  <span className="text-[11px] font-mono text-gray-500 uppercase tracking-wider">{vehicle.fuel_type}</span>
+                </>
+              )}
+              {vehicle.color && (
+                <>
+                  <span className="text-gray-700">·</span>
+                  <span className="text-[11px] font-mono text-gray-500 capitalize">{vehicle.color}</span>
+                </>
+              )}
+            </div>
           </div>
-          {alertsCount > 0 && (
-            <div className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-danger-500/15 border border-danger-500/30">
+          {alertsCount > 0 ? (
+            <div className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-danger-500/12 border border-danger-500/30">
               <AlertTriangle className="h-3 w-3 text-danger-400" />
-              <span className="text-danger-400 text-xs font-semibold">{alertsCount}</span>
+              <span className="text-danger-400 text-xs font-bold font-mono">{alertsCount}</span>
+            </div>
+          ) : (
+            <div className="shrink-0 h-6 w-6 rounded-full bg-success-500/12 border border-success-500/25 flex items-center justify-center">
+              <span className="h-1.5 w-1.5 rounded-full bg-success-500" />
             </div>
           )}
         </div>
+      </div>
 
-        {/* Mini stats */}
-        <div className="grid grid-cols-3 gap-3 pt-3 border-t border-border/50">
-          <Stat label="Km" value={formatKm(vehicle.current_km)} icon={Gauge} />
-          <Stat label="Servicios" value={String(recordsCount)} icon={Wrench} />
-          <Stat
-            label="Último"
-            value={lastRecord ? new Date(lastRecord.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '—'}
-            icon={Calendar}
-          />
-        </div>
+      {/* Divider with trace line */}
+      <div className="mx-5 h-px bg-border/60" />
 
-        <div className="mt-4 flex items-center text-brand-300 text-sm font-medium opacity-0 group-hover:opacity-100 translate-x-0 group-hover:translate-x-1 transition-all">
-          Abrir vehículo <ArrowRight className="h-4 w-4 ml-1" />
-        </div>
+      {/* Telemetry stats row */}
+      <div className="grid grid-cols-3 px-5 py-4">
+        <TeleStat label="ODM" value={formatKm(vehicle.current_km)} icon={Gauge} />
+        <TeleStat label="SVC" value={String(recordsCount)} icon={Wrench} />
+        <TeleStat
+          label="LAST"
+          value={lastRecord
+            ? new Date(lastRecord.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).toUpperCase()
+            : '—'}
+          icon={Calendar}
+        />
+      </div>
+
+      {/* Footer CTA strip */}
+      <div className="flex items-center justify-between px-5 py-3 border-t border-border/40 bg-surface-2/40">
+        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-gray-600">
+          ID·{vehicle.id.slice(0, 8)}
+        </span>
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-brand-400 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all duration-200">
+          Abrir <ArrowRight className="h-3.5 w-3.5" />
+        </span>
       </div>
     </button>
   );
 };
 
-const Stat = ({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Gauge }) => (
-  <div>
-    <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-gray-500 mb-0.5">
-      <Icon className="h-3 w-3" />
-      {label}
+const TeleStat = ({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Gauge }) => (
+  <div className="flex flex-col gap-1">
+    <div className="flex items-center gap-1">
+      <Icon className="h-3 w-3 text-gray-600" strokeWidth={1.5} />
+      <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-600">{label}</span>
     </div>
-    <p className="text-white text-sm font-semibold tabular-nums truncate">{value}</p>
+    <p
+      className="text-white text-base font-bold tabular-nums truncate leading-none"
+      style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', letterSpacing: '0.02em' }}
+    >
+      {value}
+    </p>
   </div>
 );

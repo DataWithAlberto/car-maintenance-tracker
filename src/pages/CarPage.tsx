@@ -98,25 +98,29 @@ export const CarPage = () => {
     <div className={cn('flex flex-col', immersive ? 'h-[100vh] fixed inset-0 z-50 bg-bg' : 'h-[calc(100vh-4rem)]')}>
       {/* Header */}
       {!immersive && (
-        <div className="glass border-b border-border/60 px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div className="bg-bg/95 border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between gap-3" style={{ backdropFilter: 'blur(12px)' }}>
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-500/20 to-accent-500/10 border border-brand-400/30 flex items-center justify-center shrink-0">
-              <Sparkles className="h-5 w-5 text-brand-300" />
+            {/* Status indicator */}
+            <div className="shrink-0 h-9 w-9 rounded-lg bg-surface border border-border/80 flex items-center justify-center">
+              <span className="tele-dot" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-white font-semibold tracking-tight truncate">
+              <h1
+                className="text-white font-black uppercase tracking-wide leading-none truncate"
+                style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem' }}
+              >
                 {selectedVehicle.brand} {selectedVehicle.model}
-                <span className="text-gray-500 font-normal"> · {selectedVehicle.year}</span>
+                <span className="text-gray-600 font-normal"> /{selectedVehicle.year}</span>
               </h1>
-              <p className="text-gray-400 text-xs flex items-center gap-1.5">
+              <p className="text-gray-500 text-[11px] font-mono flex items-center gap-1.5 mt-0.5">
                 <Gauge className="h-3 w-3" />
                 {formatKm(selectedVehicle.current_km)}
                 {alerts.length > 0 && (
                   <>
-                    <span className="opacity-50">·</span>
+                    <span className="text-gray-700">·</span>
                     <span className="text-warn-400 inline-flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
-                      {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'}
+                      {alerts.length} {alerts.length === 1 ? 'ALERTA' : 'ALERTAS'}
                     </span>
                   </>
                 )}
@@ -127,21 +131,21 @@ export const CarPage = () => {
             <button
               onClick={() => setAutoRotate((s) => !s)}
               className={cn(
-                'h-9 w-9 inline-flex items-center justify-center rounded-lg border transition-all',
+                'h-8 w-8 inline-flex items-center justify-center rounded-lg border transition-all',
                 autoRotate
-                  ? 'bg-brand-500/20 border-brand-400/50 text-brand-300'
-                  : 'border-border text-gray-400 hover:text-white hover:bg-surface-2',
+                  ? 'bg-accent-500/15 border-accent-500/40 text-accent-400'
+                  : 'border-border text-gray-500 hover:text-white hover:bg-surface',
               )}
               title="Auto-rotar"
             >
-              <RotateCcw className={cn('h-4 w-4', autoRotate && 'animate-spin')} style={{ animationDuration: '4s' }} />
+              <RotateCcw className={cn('h-3.5 w-3.5', autoRotate && 'animate-spin')} style={{ animationDuration: '4s' }} />
             </button>
             <button
               onClick={() => setImmersive(true)}
-              className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-border text-gray-400 hover:text-white hover:bg-surface-2 transition-all"
+              className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border text-gray-500 hover:text-white hover:bg-surface transition-all"
               title="Modo inmersivo"
             >
-              <Maximize2 className="h-4 w-4" />
+              <Maximize2 className="h-3.5 w-3.5" />
             </button>
             <Button
               size="sm"
