@@ -61,18 +61,18 @@ export const ExpensesPage = () => {
     <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-4xl mx-auto">
       <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-ink-charcoal font-semibold mb-1">
+          <p className="font-manrope text-caption text-sky-dark/80 tracking-wide mb-1">
             {selectedVehicle.brand} {selectedVehicle.model}
           </p>
           <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">Gastos</h1>
-          <p className="text-ink-charcoal text-sm mt-1.5">
+          <p className="font-manrope text-caption text-ink-charcoal/70 mt-1.5">
             <span className="font-semibold text-ink-black tabular-nums">{expenses.length}</span> registros ·{' '}
-            <span className="text-accent-400 font-semibold tabular-nums">{formatCurrency(total)}</span> total ·{' '}
+            <span className="text-sunset-orange font-semibold tabular-nums">{formatCurrency(total)}</span> total ·{' '}
             <span className="text-sky-dark font-semibold tabular-nums">{formatCurrency(monthTotal)}</span> este mes
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex bg-canvas-50 border border-sky-blueprint/25 rounded-xl p-1">
+          <div className="flex bg-canvas-50 border border-sky-blueprint/25 rounded-button p-1">
             <button
               onClick={() => setView('list')}
               className={cn(
@@ -124,15 +124,15 @@ export const ExpensesPage = () => {
           {expenses.map((e) => (
             <li
               key={e.id}
-              className="group bg-cloud-white border border-sky-blueprint/20 hover:border-accent-500/40 rounded-card p-4 flex items-center gap-4 transition-all hover:-translate-y-0.5"
+              className="group bg-cloud-white border border-sky-blueprint/20 hover:border-sunset-orange/40 rounded-card p-4 flex items-center gap-4 transition-all hover:shadow-subtle"
             >
-              <div className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-accent-500/20 to-accent-500/5 border border-accent-500/30 flex items-center justify-center">
-                <Receipt className="h-5 w-5 text-accent-400" />
+              <div className="shrink-0 h-11 w-11 rounded-input bg-gradient-to-br from-sunset-orange/20 to-sunset-orange/5 border border-sunset-orange/30 flex items-center justify-center">
+                <Receipt className="h-5 w-5 text-sunset-orange" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-ink-black font-medium truncate tracking-tight">{e.category}</span>
-                  <span className="text-accent-400 font-semibold tabular-nums shrink-0">{formatCurrency(e.amount)}</span>
+                  <span className="text-sunset-orange font-semibold tabular-nums shrink-0">{formatCurrency(e.amount)}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1 text-xs text-ink-charcoal">
                   <span className="inline-flex items-center gap-1">

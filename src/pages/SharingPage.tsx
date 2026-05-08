@@ -68,11 +68,11 @@ export const SharingPage = () => {
     <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-3xl mx-auto">
       <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-ink-charcoal font-semibold mb-1">
+          <p className="font-manrope text-caption text-sky-dark/80 tracking-wide mb-1">
             {selectedVehicle.brand} {selectedVehicle.model}
           </p>
           <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">Compartir acceso</h1>
-          <p className="text-ink-charcoal text-sm mt-1.5">
+          <p className="font-manrope text-caption text-ink-charcoal/70 mt-1.5">
             Invita a tu pareja, familia o mecánico al control de este vehículo.
           </p>
         </div>
@@ -85,7 +85,7 @@ export const SharingPage = () => {
 
       {pendingInvites.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-[10px] uppercase tracking-wider text-ink-charcoal font-semibold mb-3 flex items-center gap-1.5">
+          <h2 className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold mb-3 flex items-center gap-1.5">
             <Mail className="h-3 w-3" />
             Invitaciones pendientes para ti
           </h2>
@@ -93,9 +93,9 @@ export const SharingPage = () => {
             {pendingInvites.map((inv) => (
               <div
                 key={inv.id}
-                className="bg-gradient-to-r from-brand-500/10 to-transparent border border-sky-blueprint/30 rounded-card p-4 flex items-center justify-between gap-3"
+                className="bg-gradient-to-r from-sky-blueprint/10 to-transparent border border-sky-blueprint/30 rounded-card p-4 flex items-center justify-between gap-3"
               >
-                <p className="text-ink-black text-sm">
+                <p className="font-manrope text-body text-ink-black">
                   Invitación a vehículo como <span className="text-sky-dark font-semibold capitalize">{inv.role}</span>
                 </p>
                 <div className="flex gap-1.5">
@@ -121,7 +121,7 @@ export const SharingPage = () => {
       )}
 
       <section>
-        <h2 className="text-[10px] uppercase tracking-wider text-ink-charcoal font-semibold mb-3">Accesos del vehículo</h2>
+        <h2 className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold mb-3">Accesos del vehículo</h2>
         {loading ? (
           <div className="space-y-2">
             <SkeletonRow />
@@ -153,11 +153,11 @@ export const SharingPage = () => {
                   key={acc.id}
                   className="bg-cloud-white border border-sky-blueprint/20 rounded-card p-4 flex items-center gap-4"
                 >
-                  <div className="shrink-0 h-11 w-11 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-cloud-white text-base font-semibold flex items-center justify-center">
+                  <div className="shrink-0 h-11 w-11 rounded-full bg-gradient-to-br from-sky-blueprint to-vivid-blue text-cloud-white text-base font-semibold flex items-center justify-center">
                     {initial}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-ink-black text-sm font-medium truncate">{acc.user?.email ?? 'Usuario'}</p>
+                    <p className="font-manrope text-body text-ink-black font-medium truncate">{acc.user?.email ?? 'Usuario'}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={cn('inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border', cfg.cls)}>
                         <RoleIcon className="h-3 w-3" />

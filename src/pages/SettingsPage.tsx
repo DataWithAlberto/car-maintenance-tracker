@@ -56,7 +56,7 @@ export const SettingsPage = () => {
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-2xl mx-auto space-y-6">
       <header>
-        <p className="text-xs uppercase tracking-[0.2em] text-ink-charcoal font-semibold mb-1">
+        <p className="font-manrope text-caption text-sky-dark/80 tracking-wide mb-1">
           {selectedVehicle.brand} {selectedVehicle.model}
         </p>
         <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight flex items-center gap-2">
@@ -67,14 +67,14 @@ export const SettingsPage = () => {
 
       {/* Account section */}
       <section className="bg-cloud-white border border-sky-blueprint/25 rounded-card shadow-card p-20">
-        <h2 className="text-[10px] uppercase tracking-wider text-ink-charcoal font-semibold mb-3">Tu cuenta</h2>
+        <h2 className="font-manrope text-caption text-ink-charcoal/70 tracking-wide mb-3 font-semibold">Tu cuenta</h2>
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-cloud-white text-lg font-semibold flex items-center justify-center">
+          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-sky-blueprint to-vivid-blue text-cloud-white text-lg font-semibold flex items-center justify-center">
             {(user?.email?.[0] ?? 'U').toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-ink-black text-sm font-medium truncate">{user?.email}</p>
-            <p className="text-ink-charcoal text-xs">Sesión iniciada</p>
+            <p className="font-manrope text-body text-ink-black font-medium truncate">{user?.email}</p>
+            <p className="font-manrope text-caption text-ink-charcoal/70">Sesión iniciada</p>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout} iconLeft={<LogOut className="h-4 w-4" />}>
             Salir
@@ -86,8 +86,8 @@ export const SettingsPage = () => {
       <section className="bg-cloud-white border border-sky-blueprint/25 rounded-card shadow-card p-20">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[10px] uppercase tracking-wider text-ink-charcoal font-semibold">Datos del vehículo</h2>
-            <p className="text-ink-black text-xl font-semibold tracking-tight mt-1">
+            <h2 className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold">Datos del vehículo</h2>
+            <p className="font-simeiz text-heading font-light text-ink-black tracking-tight mt-1">
               {selectedVehicle.brand} {selectedVehicle.model}
               <span className="text-ink-charcoal font-normal"> · {selectedVehicle.year}</span>
             </p>
@@ -108,9 +108,9 @@ export const SettingsPage = () => {
             ['Transmisión', selectedVehicle.transmission ?? '—'],
             ['VIN', selectedVehicle.vin ?? '—'],
           ].map(([label, value]) => (
-            <div key={label} className="bg-canvas-50/60 border border-sky-blueprint/15 rounded-xl px-3 py-2.5">
-              <p className="text-[10px] uppercase tracking-wider text-ink-charcoal font-medium">{label}</p>
-              <p className="text-ink-black text-sm font-medium tabular-nums truncate">{value}</p>
+            <div key={label} className="bg-canvas-50/60 border border-sky-blueprint/15 rounded-input px-3 py-2.5">
+              <p className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-medium">{label}</p>
+              <p className="font-manrope text-body text-ink-black font-medium tabular-nums truncate">{value}</p>
             </div>
           ))}
         </div>

@@ -45,13 +45,13 @@ export const MaintenancePage = () => {
     <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-4xl mx-auto">
       <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-ink-charcoal font-semibold mb-1">
+          <p className="font-manrope text-caption text-sky-dark/80 tracking-wide mb-1">
             {selectedVehicle.brand} {selectedVehicle.model}
           </p>
           <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">Mantenimiento</h1>
-          <p className="text-ink-charcoal text-sm mt-1.5">
+          <p className="font-manrope text-caption text-ink-charcoal/70 mt-1.5">
             <span className="font-semibold text-ink-black tabular-nums">{records.length}</span> registros · total{' '}
-            <span className="font-semibold text-accent-400 tabular-nums">{formatCurrency(totalCost)}</span>
+            <span className="font-semibold text-sunset-orange tabular-nums">{formatCurrency(totalCost)}</span>
           </p>
         </div>
         <Button onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" />}>
