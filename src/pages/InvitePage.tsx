@@ -13,9 +13,9 @@ import toast from 'react-hot-toast';
 type Step = 'loading' | 'confirm' | 'auth' | 'done' | 'error';
 
 const roleConfig = {
-  owner: { Icon: Crown, label: 'Propietario', cls: 'bg-brand-500/15 text-sky-dark border-sky-blueprint/30' },
+  owner: { Icon: Crown, label: 'Propietario', cls: 'bg-sky-blueprint/15 text-sky-dark border-sky-blueprint/30' },
   editor: { Icon: Pencil, label: 'Editor', cls: 'bg-success-500/15 text-success-400 border-success-500/30' },
-  viewer: { Icon: Eye, label: 'Visor', cls: 'bg-gray-700/40 text-ink-charcoal border-gray-700' },
+  viewer: { Icon: Eye, label: 'Visor', cls: 'bg-canvas-50/80 text-ink-charcoal border-sky-blueprint/20' },
 } as const;
 
 export const InvitePage = () => {

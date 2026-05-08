@@ -23,7 +23,7 @@ const toneMap = {
 export const KpiCard = ({ icon: Icon, label, value, hint, trend, tone = 'brand', className = '' }: KpiCardProps) => {
   const t = toneMap[tone];
   const trendChar = trend === 'up' ? '▲' : trend === 'down' ? '▼' : null;
-  const trendColor = trend === 'up' ? 'text-success-400' : trend === 'down' ? 'text-danger-400' : 'text-gray-500';
+  const trendColor = trend === 'up' ? 'text-success-400' : trend === 'down' ? 'text-danger-400' : 'text-ink-charcoal/70';
 
   return (
     <div
@@ -67,7 +67,7 @@ export const KpiCard = ({ icon: Icon, label, value, hint, trend, tone = 'brand',
           {hint && (
             <p className={cn('text-[11px] font-medium flex items-center gap-1', trendColor)}>
               {trendChar && <span className="text-[9px]">{trendChar}</span>}
-              <span className="text-gray-500">{hint}</span>
+              <span className="text-ink-charcoal/70">{hint}</span>
             </p>
           )}
         </div>
