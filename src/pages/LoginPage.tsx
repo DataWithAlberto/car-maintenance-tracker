@@ -69,23 +69,20 @@ export const LoginPage = () => {
                 <circle cx="12" cy="16" r="1" />
               </svg>
             </div>
-            <span
-              className="text-ink-black font-black uppercase tracking-widest text-sm"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
+            <span className="font-simeiz text-ink-black text-body-lg font-light italic tracking-tight">
               FocusHub
             </span>
           </div>
 
           {/* Big headline */}
           <h2
-            className="text-ink-black leading-none mb-4"
-            style={{ fontFamily: 'var(--font-display)', fontSize: '3.5rem', fontWeight: 900, letterSpacing: '0.02em' }}
+            className="font-simeiz text-ink-black leading-none mb-4"
+            style={{ fontSize: '3.5rem', fontWeight: 300, letterSpacing: '-0.01em' }}
           >
-            TU GARAJE<br />
-            <span className="text-accent-500">DIGITAL.</span>
+            Tu garaje<br />
+            <span className="text-sunset-orange italic">digital.</span>
           </h2>
-          <p className="text-ink-charcoal text-sm font-mono leading-relaxed max-w-xs">
+          <p className="font-manrope text-body text-ink-charcoal/75 leading-relaxed max-w-xs">
             Control total sobre el mantenimiento, gastos y documentación de tu vehículo.
           </p>
         </div>
@@ -99,15 +96,15 @@ export const LoginPage = () => {
             { code: '04', label: 'Historial de gastos' },
           ].map(({ code, label }) => (
             <div key={code} className="flex items-center gap-3">
-              <span className="text-[10px] font-mono text-accent-500/60 w-5 shrink-0">{code}</span>
-              <div className="h-px w-4 bg-border" />
-              <span className="text-[11px] font-mono text-ink-charcoal uppercase tracking-wider">{label}</span>
+              <span className="font-manrope text-caption text-sunset-orange/70 w-5 shrink-0">{code}</span>
+              <div className="h-px w-4 bg-sky-blueprint/30" />
+              <span className="font-manrope text-caption text-ink-charcoal/80">{label}</span>
             </div>
           ))}
         </div>
 
         {/* Bottom note */}
-        <p className="text-[10px] font-mono text-ink-charcoal/65 uppercase tracking-widest relative">
+        <p className="font-manrope text-caption text-ink-charcoal/45 relative">
           Sistema v0.2 · 2026
         </p>
       </div>
@@ -128,21 +125,21 @@ export const LoginPage = () => {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <span className="tele-dot" />
-              <span className="text-[10px] font-mono text-ink-charcoal/80 uppercase tracking-[0.2em]">Autenticación</span>
+              <span className="font-manrope text-caption text-sky-dark tracking-wider">Autenticación</span>
             </div>
             <h1
-              className="text-ink-black leading-none mb-2"
-              style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', fontWeight: 900, letterSpacing: '0.03em' }}
+              className="font-simeiz text-ink-black leading-none mb-2"
+              style={{ fontSize: '2.5rem', fontWeight: 300, letterSpacing: '-0.01em' }}
             >
-              ACCESO AL<br />SISTEMA
+              Acceso al<br />sistema
             </h1>
-            <p className="text-ink-charcoal/80 text-xs font-mono">
+            <p className="font-manrope text-body text-ink-charcoal/70">
               Introduce tus credenciales para continuar
             </p>
           </div>
 
           {/* Form card */}
-          <div className="bg-cloud-white border border-sky-blueprint/25 rounded-xl p-6">
+          <div className="bg-cloud-white border border-sky-blueprint/25 rounded-card shadow-card p-6">
             {/* Top stripe */}
             <div className="h-px w-full bg-gradient-to-r from-transparent via-accent-500/40 to-transparent -mt-6 mb-6 mx-[-24px] w-[calc(100%+48px)]" />
 
@@ -169,10 +166,10 @@ export const LoginPage = () => {
             </form>
 
             <div className="mt-5 pt-4 border-t border-sky-blueprint/20 flex items-center justify-between">
-              <span className="text-[10px] font-mono text-ink-charcoal/65 uppercase tracking-wider">¿Sin cuenta?</span>
+              <span className="font-manrope text-caption text-ink-charcoal/65">¿Sin cuenta?</span>
               <Link
                 to="/register"
-                className="text-[11px] font-mono text-accent-400 hover:text-accent-300 transition-colors uppercase tracking-wider"
+                className="font-manrope text-caption text-sunset-orange hover:opacity-70 transition-opacity"
               >
                 Registrarse →
               </Link>
@@ -180,7 +177,7 @@ export const LoginPage = () => {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-[10px] font-mono text-ink-charcoal/65 uppercase tracking-widest mt-6">
+          <p className="font-manrope text-center text-caption text-ink-charcoal/45 mt-6">
             FocusHub · Sistema de gestión vehicular
           </p>
         </div>

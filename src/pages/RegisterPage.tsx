@@ -54,7 +54,7 @@ export const RegisterPage = () => {
           <p className="text-ink-charcoal mt-1.5 text-sm">Empieza tu garaje digital</p>
         </div>
 
-        <div className="glass-strong border border-sky-blueprint/25 rounded-card p-8 shadow-2xl shadow-brand-500/10">
+        <div className="bg-cloud-white border border-sky-blueprint/25 rounded-card shadow-card p-8">
           <h2 className="text-xl font-semibold text-ink-black tracking-tight mb-1">Crear cuenta</h2>
           <p className="text-ink-charcoal text-sm mb-6">Es gratis y tarda 30 segundos</p>
 
@@ -92,7 +92,7 @@ export const RegisterPage = () => {
 
           <p className="text-center text-ink-charcoal text-sm mt-6">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-sky-dark hover:text-brand-200 font-medium transition-colors">
+            <Link to="/login" className="text-sunset-orange hover:opacity-70 font-medium transition-opacity">
               Inicia sesión
             </Link>
           </p>

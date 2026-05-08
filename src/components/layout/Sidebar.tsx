@@ -18,72 +18,64 @@ export const Sidebar = () => {
   const { selectedVehicle } = useVehicleStore();
 
   return (
-    <aside className="hidden md:flex w-56 lg:w-60 bg-surface border-r border-border flex-col shrink-0 sticky top-14 self-start h-[calc(100vh-3.5rem)]">
+    <aside className="hidden md:flex w-56 lg:w-60 bg-canvas-white border-r border-sky-blueprint/20 flex-col shrink-0 sticky top-14 self-start h-[calc(100vh-3.5rem)]">
 
-      {/* Active vehicle telemetry panel */}
+      {/* Active vehicle panel */}
       {selectedVehicle ? (
-        <div className="m-3 rounded-lg border border-border/80 bg-surface-2 overflow-hidden">
-          {/* Top strip */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-accent-500/50 to-transparent" />
+        <div className="m-3 rounded-card border border-sky-blueprint/25 bg-cloud-white shadow-subtle overflow-hidden">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-sky-blueprint/40 to-transparent" />
           <div className="px-3 py-2.5">
             <div className="flex items-center gap-1.5 mb-1.5">
               <span className="tele-dot" />
-              <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-ink-charcoal/80">Vehículo activo</p>
+              <p className="font-manrope text-caption text-sky-dark/80 tracking-wide">Vehículo activo</p>
             </div>
             <p
-              className="text-ink-black font-black uppercase leading-tight truncate"
-              style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', letterSpacing: '0.04em' }}
+              className="font-simeiz text-ink-black leading-tight truncate"
+              style={{ fontSize: '1rem', fontWeight: 300, letterSpacing: '-0.01em' }}
             >
               {selectedVehicle.brand} {selectedVehicle.model}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] font-mono text-ink-charcoal/80">{selectedVehicle.year}</span>
-              <span className="text-ink-charcoal/65">·</span>
-              <span className="text-[10px] font-mono text-accent-400 font-semibold">
+              <span className="font-manrope text-caption text-ink-charcoal/65">{selectedVehicle.year}</span>
+              <span className="text-ink-charcoal/35">·</span>
+              <span className="font-manrope text-caption text-sky-dark font-medium">
                 {formatKm(selectedVehicle.current_km)}
               </span>
             </div>
           </div>
         </div>
       ) : (
-        <div className="m-3 rounded-lg border border-dashed border-border/50 px-3 py-2.5">
-          <p className="text-[10px] font-mono text-ink-charcoal/80 uppercase tracking-wider">Sin vehículo</p>
+        <div className="m-3 rounded-card border border-dashed border-sky-blueprint/30 px-3 py-2.5">
+          <p className="font-manrope text-caption text-ink-charcoal/60">Sin vehículo seleccionado</p>
         </div>
       )}
 
-      {/* Divider with label */}
-      <div className="flex items-center gap-2 px-4 mb-1">
-        <span className="h-px flex-1 bg-border/60" />
-        <span className="text-[9px] font-mono text-ink-charcoal/65 uppercase tracking-widest">Nav</span>
-        <span className="h-px flex-1 bg-border/60" />
-      </div>
-
       {/* Nav links */}
-      <nav className="flex-1 px-2 space-y-px">
+      <nav className="flex-1 px-2 space-y-px mt-1">
         {links.map(({ to, icon: Icon, label, code }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
               cn(
-                'group relative flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-all duration-150',
+                'group relative flex items-center gap-2.5 px-3 py-2 text-body rounded-card transition-all duration-150',
                 isActive
-                  ? 'text-ink-black bg-surface-2 border border-border/80'
-                  : 'text-ink-charcoal hover:text-ink-black hover:bg-surface-2/60',
+                  ? 'text-ink-black bg-cloud-white border border-sky-blueprint/25 shadow-subtle'
+                  : 'text-ink-charcoal hover:text-ink-black hover:bg-cloud-white/70',
               )
             }
           >
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-accent-500" />
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-sunset-orange" />
                 )}
                 <Icon
-                  className={cn('h-4 w-4 shrink-0', isActive ? 'text-accent-400' : 'text-ink-charcoal/80 group-hover:text-ink-charcoal')}
+                  className={cn('h-4 w-4 shrink-0', isActive ? 'text-sky-dark' : 'text-ink-charcoal/65 group-hover:text-ink-charcoal')}
                   strokeWidth={isActive ? 2 : 1.7}
                 />
-                <span className={cn('flex-1 font-medium', isActive ? '' : 'font-normal')}>{label}</span>
-                <span className={cn('text-[9px] font-mono tabular-nums', isActive ? 'text-accent-500/60' : 'text-ink-charcoal/65 group-hover:text-ink-charcoal/80')}>
+                <span className={cn('flex-1 font-manrope', isActive ? 'font-medium' : 'font-normal')}>{label}</span>
+                <span className={cn('font-manrope text-caption tabular-nums', isActive ? 'text-sky-dark/60' : 'text-ink-charcoal/40 group-hover:text-ink-charcoal/60')}>
                   {code}
                 </span>
               </>
@@ -93,10 +85,10 @@ export const Sidebar = () => {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-border/50">
-        <p className="text-[9px] font-mono text-ink-charcoal/65 uppercase tracking-widest leading-relaxed">
+      <div className="px-4 py-3 border-t border-sky-blueprint/15">
+        <p className="font-manrope text-caption text-ink-charcoal/40 leading-relaxed">
           FocusHub · v0.2<br />
-          <span className="text-ink-charcoal/45">Sistema de gestión vehicular</span>
+          <span className="text-ink-charcoal/30">Sistema de gestión vehicular</span>
         </p>
       </div>
     </aside>
