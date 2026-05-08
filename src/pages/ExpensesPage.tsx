@@ -61,23 +61,23 @@ export const ExpensesPage = () => {
     <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-4xl mx-auto">
       <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-1">
+          <p className="text-xs uppercase tracking-[0.2em] text-ink-charcoal font-semibold mb-1">
             {selectedVehicle.brand} {selectedVehicle.model}
           </p>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Gastos</h1>
-          <p className="text-gray-400 text-sm mt-1.5">
-            <span className="font-semibold text-white tabular-nums">{expenses.length}</span> registros ·{' '}
+          <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">Gastos</h1>
+          <p className="text-ink-charcoal text-sm mt-1.5">
+            <span className="font-semibold text-ink-black tabular-nums">{expenses.length}</span> registros ·{' '}
             <span className="text-accent-400 font-semibold tabular-nums">{formatCurrency(total)}</span> total ·{' '}
-            <span className="text-brand-300 font-semibold tabular-nums">{formatCurrency(monthTotal)}</span> este mes
+            <span className="text-sky-dark font-semibold tabular-nums">{formatCurrency(monthTotal)}</span> este mes
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex bg-surface-2 border border-border rounded-xl p-1">
+          <div className="flex bg-canvas-50 border border-sky-blueprint/25 rounded-xl p-1">
             <button
               onClick={() => setView('list')}
               className={cn(
                 'p-1.5 rounded-lg transition-colors',
-                view === 'list' ? 'bg-brand-500/20 text-brand-300' : 'text-gray-400 hover:text-white',
+                view === 'list' ? 'bg-sky-blueprint/15 text-sky-dark' : 'text-ink-charcoal hover:text-ink-black',
               )}
               aria-label="Vista lista"
             >
@@ -87,7 +87,7 @@ export const ExpensesPage = () => {
               onClick={() => setView('chart')}
               className={cn(
                 'p-1.5 rounded-lg transition-colors',
-                view === 'chart' ? 'bg-brand-500/20 text-brand-300' : 'text-gray-400 hover:text-white',
+                view === 'chart' ? 'bg-sky-blueprint/15 text-sky-dark' : 'text-ink-charcoal hover:text-ink-black',
               )}
               aria-label="Vista gráfica"
             >
@@ -105,7 +105,7 @@ export const ExpensesPage = () => {
           {[0, 1, 2].map((i) => <SkeletonRow key={i} />)}
         </div>
       ) : view === 'chart' ? (
-        <div className="bg-surface border border-border/60 rounded-2xl p-5 sm:p-6">
+        <div className="bg-cloud-white border border-sky-blueprint/25 rounded-card shadow-card p-20 sm:p-6">
           <ExpenseChart expenses={expenses} />
         </div>
       ) : expenses.length === 0 ? (
@@ -124,24 +124,24 @@ export const ExpensesPage = () => {
           {expenses.map((e) => (
             <li
               key={e.id}
-              className="group bg-surface border border-border/60 hover:border-accent-500/40 rounded-2xl p-4 flex items-center gap-4 transition-all hover:-translate-y-0.5"
+              className="group bg-cloud-white border border-sky-blueprint/20 hover:border-accent-500/40 rounded-card p-4 flex items-center gap-4 transition-all hover:-translate-y-0.5"
             >
               <div className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-accent-500/20 to-accent-500/5 border border-accent-500/30 flex items-center justify-center">
                 <Receipt className="h-5 w-5 text-accent-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-white font-medium truncate tracking-tight">{e.category}</span>
+                  <span className="text-ink-black font-medium truncate tracking-tight">{e.category}</span>
                   <span className="text-accent-400 font-semibold tabular-nums shrink-0">{formatCurrency(e.amount)}</span>
                 </div>
-                <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                <div className="flex items-center gap-2 mt-1 text-xs text-ink-charcoal">
                   <span className="inline-flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     {formatDate(e.date)}
                   </span>
                   {e.description && (
                     <>
-                      <span className="text-gray-600">·</span>
+                      <span className="text-ink-charcoal/80">·</span>
                       <span className="truncate">{e.description}</span>
                     </>
                   )}
@@ -149,7 +149,7 @@ export const ExpensesPage = () => {
               </div>
               <button
                 onClick={() => handleDelete(e.id)}
-                className="text-gray-600 hover:text-danger-400 hover:bg-danger-500/10 p-1.5 rounded-md transition-colors"
+                className="text-ink-charcoal/80 hover:text-danger-400 hover:bg-danger-500/10 p-1.5 rounded-md transition-colors"
                 aria-label="Eliminar gasto"
               >
                 <Trash2 className="h-4 w-4" />

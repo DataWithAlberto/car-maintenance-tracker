@@ -1,55 +1,114 @@
+/* ═══ Google Fonts — Dyotanya stack ═══════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Playfair+Display:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
-/* ─── Design tokens (Tailwind v4 @theme) ──────────────────────────────────── */
+/* ─── Design tokens — Dyotanya (Tailwind v4 @theme) ──────────────────────── */
 @theme {
-  /* Fonts — Barlow Condensed (display/racing) + DM Sans (body) + JetBrains Mono (data) */
-  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: 'Barlow Condensed', 'DM Sans', ui-sans-serif, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  /* Fonts */
+  --font-sans:    'Manrope', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Playfair Display', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-simeiz:  'Playfair Display', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-manrope: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-times:   'Times', ui-serif, Georgia, serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* Base palette — carbon black */
-  --color-bg: #070809;
-  --color-surface: #0f1013;
-  --color-surface-2: #161719;
-  --color-border: #242629;
+  /* ─── Dyotanya palette ──────────────────────────────────────────────── */
+  --color-canvas-white: #f5f5f3;
+  --color-canvas-50:    #fafaf9;
+  --color-canvas-100:   #f5f5f3;
+  --color-ink-black:    #000000;
+  --color-ink-charcoal: #333333;
+  --color-cloud-white:  #ffffff;
+  --color-sky-blueprint: #81aed9;
+  --color-sky-light:     #a8c9e8;
+  --color-sky-dark:      #5a8ab3;
+  --color-sunset-orange: #ff8562;
+  --color-sunset-light:  #ffb3a0;
+  --color-vivid-blue:    #55a1ea;
 
-  /* Brand — technical deep blue (data/info layer) */
-  --color-brand-50:  #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-300: #93c5fd;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
+  /* ─── Legacy aliases — remap CMT tokens to Dyotanya so existing
+         components inherit the new look without per-file edits ─────── */
+  --color-bg:        #f5f5f3;
+  --color-surface:   #ffffff;
+  --color-surface-2: #fafaf9;
+  --color-border:    #e3e8ee;
 
-  /* Accent — racing orange (action layer) */
-  --color-accent-300: #ffb380;
-  --color-accent-400: #ff7240;
-  --color-accent-500: #e8440a;
-  --color-accent-600: #c73500;
+  /* Brand → sky-blueprint scale */
+  --color-brand-50:  #eef5fb;
+  --color-brand-100: #dde9f4;
+  --color-brand-200: #c2d8ec;
+  --color-brand-300: #a8c9e8;
+  --color-brand-400: #94bce0;
+  --color-brand-500: #81aed9;
+  --color-brand-600: #5a8ab3;
+  --color-brand-700: #436a8c;
 
-  /* Semantic */
-  --color-danger-400: #f87171;
-  --color-danger-500: #ef4444;
-  --color-warn-400:   #fbbf24;
-  --color-warn-500:   #f59e0b;
-  --color-success-400: #34d399;
-  --color-success-500: #10b981;
+  /* Accent → sunset-orange scale */
+  --color-accent-300: #ffd1c2;
+  --color-accent-400: #ffb3a0;
+  --color-accent-500: #ff8562;
+  --color-accent-600: #e55c3a;
 
-  /* Animation curves */
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Semantic — calibrated for light theme */
+  --color-danger-400: #ff8562;
+  --color-danger-500: #e55c3a;
+  --color-warn-400:   #f0b54a;
+  --color-warn-500:   #d99520;
+  --color-success-400: #6db58a;
+  --color-success-500: #3f8a5e;
+
+  /* ─── Type scale (Dyotanya) ─────────────────────────────────────────── */
+  --text-caption:    12px;
+  --text-caption--line-height: 1.4;
+  --text-body:       14px;
+  --text-body--line-height: 1.4;
+  --text-body-lg:    16px;
+  --text-body-lg--line-height: 1.2;
+  --text-subheading: 18px;
+  --text-subheading--line-height: 1.35;
+  --text-heading:    24px;
+  --text-heading--line-height: 1.33;
+  --text-heading-lg: 30px;
+  --text-heading-lg--line-height: 1.54;
+  --text-display:    80px;
+  --text-display--line-height: 1;
+
+  /* ─── Spacing extras ────────────────────────────────────────────────── */
+  --spacing-5:   5px;
+  --spacing-10:  10px;
+  --spacing-12:  12px;
+  --spacing-15:  15px;
+  --spacing-20:  20px;
+  --spacing-22:  22px;
+  --spacing-48:  48px;
+
+  /* ─── Border radii (Dyotanya) ───────────────────────────────────────── */
+  --radius-card:   20px;
+  --radius-input:  30px;
+  --radius-button: 50px;
+  --radius-91:     91px;
+  --radius-100:    100px;
+  --radius-120:    120px;
+
+  /* ─── Shadows — Dyotanya offset ─────────────────────────────────────── */
+  --shadow-card:    5px -5px 0px 0px rgb(51, 51, 51);
+  --shadow-subtle:  4px -4px 0px 0px rgb(51, 51, 51);
+  --shadow-card-hover: 7px -7px 0px 0px rgb(51, 51, 51);
+
+  /* ─── Letter spacing ────────────────────────────────────────────────── */
+  --tracking-dyotanya: -0.0360em;
+
+  /* ─── Animation curves ──────────────────────────────────────────────── */
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
-  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-bounce:    cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-  /* Animation tokens */
   --animate-shimmer:        shimmer 2s linear infinite;
   --animate-fade-in:        fade-in 0.35s var(--ease-out-expo);
   --animate-slide-up:       slide-up 0.4s var(--ease-out-expo);
   --animate-slide-in-right: slide-in-right 0.38s var(--ease-out-expo);
   --animate-pulse-ring:     pulse-ring 2.4s ease-out infinite;
   --animate-float:          float 6s ease-in-out infinite;
-  --animate-scan:           scan 3s linear infinite;
   --animate-data-blink:     data-blink 1.8s ease-in-out infinite;
 }
 
@@ -77,150 +136,130 @@
 }
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-6px); }
-}
-@keyframes scan {
-  0%   { transform: translateY(-100%); opacity: 0; }
-  10%  { opacity: 0.6; }
-  90%  { opacity: 0.6; }
-  100% { transform: translateY(100vh); opacity: 0; }
+  50%      { transform: translateY(-6px); }
 }
 @keyframes data-blink {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+  50%      { opacity: 0.3; }
 }
 @keyframes counter-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes stripe-slide {
-  from { background-position: 0 0; }
-  to   { background-position: 28px 0; }
-}
 
-/* ─── Globals ─────────────────────────────────────────────────────────────── */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+/* ─── Globals — Dyotanya light canvas ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body {
   margin: 0;
   padding: 0;
-  font-family: var(--font-sans);
-  background-color: var(--color-bg);
-  color: #d4d4d8;
+  font-family: var(--font-manrope);
+  background-color: var(--color-canvas-white);
+  color: var(--color-ink-black);
+  letter-spacing: var(--tracking-dyotanya);
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-/* Carbon-grid body background */
 body {
-  background-color: var(--color-bg);
-  background-image:
-    /* Subtle dot grid */
-    radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px),
-    /* Corner glows */
-    radial-gradient(ellipse 70% 50% at 5% 0%,  rgba(59, 130, 246, 0.10), transparent 60%),
-    radial-gradient(ellipse 60% 40% at 95% 100%, rgba(232, 68, 10, 0.06), transparent 60%);
-  background-size: 24px 24px, 100% 100%, 100% 100%;
   min-height: 100vh;
+  background-color: var(--color-canvas-white);
 }
 
-#root {
-  min-height: 100vh;
+#root { min-height: 100vh; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-simeiz);
+  font-weight: 400;
+  color: var(--color-ink-black);
+  letter-spacing: -0.01em;
 }
 
-/* Font helpers */
+a {
+  color: var(--color-sunset-orange);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+a:hover { opacity: 0.8; }
+
 .font-display { font-family: var(--font-display); }
 .font-mono    { font-family: var(--font-mono); }
+.font-simeiz  { font-family: var(--font-simeiz); }
+.font-manrope { font-family: var(--font-manrope); }
 
-/* Selection */
 ::selection {
-  background: var(--color-accent-500);
-  color: white;
+  background: var(--color-sunset-orange);
+  color: var(--color-cloud-white);
 }
 
-/* ─── Scrollbar ───────────────────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  {
-  background: var(--color-border);
+/* ─── Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-sky-blueprint);
   border-radius: 3px;
+  opacity: 0.5;
 }
-::-webkit-scrollbar-thumb:hover { background: #3f4246; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-sky-dark); }
 
-.scrollbar-none {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
-/* ─── Glass utilities ─────────────────────────────────────────────────────── */
+/* ─── Glass — adapted to light theme (back-compat) ────────────────────── */
 .glass {
-  background-color: rgba(10, 11, 13, 0.72);
+  background-color: rgba(255, 255, 255, 0.78);
   backdrop-filter: saturate(160%) blur(16px);
   -webkit-backdrop-filter: saturate(160%) blur(16px);
+  border: 1px solid rgba(129, 174, 217, 0.25);
 }
-
 .glass-strong {
-  background-color: rgba(7, 8, 9, 0.88);
+  background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: saturate(160%) blur(24px);
   -webkit-backdrop-filter: saturate(160%) blur(24px);
 }
 
-/* ─── Panel — solid industrial card (no blur) ────────────────────────────── */
+/* ─── Panel — Dyotanya card with offset shadow ───────────────────────── */
 .panel {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background-color: var(--color-cloud-white);
+  border: 1px solid rgba(129, 174, 217, 0.25);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
-
 .panel-raised {
-  background-color: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset;
+  background-color: var(--color-cloud-white);
+  border: 1px solid rgba(129, 174, 217, 0.3);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
-/* ─── Racing stripe decoration ───────────────────────────────────────────── */
-.stripe-top {
-  position: relative;
-}
+/* ─── Stripe (sunset-orange flavor) ──────────────────────────────────── */
+.stripe-top { position: relative; }
 .stripe-top::before {
   content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
+  position: absolute; top: 0; left: 0; right: 0;
   height: 2px;
   background: linear-gradient(90deg,
     transparent 0%,
-    var(--color-accent-500) 20%,
-    var(--color-accent-400) 50%,
-    var(--color-accent-500) 80%,
-    transparent 100%
-  );
+    var(--color-sunset-orange) 20%,
+    var(--color-sunset-light) 50%,
+    var(--color-sunset-orange) 80%,
+    transparent 100%);
   opacity: 0;
   transition: opacity 0.2s ease;
   border-radius: 9999px 9999px 0 0;
 }
-.stripe-top:hover::before,
-.stripe-top.active::before {
-  opacity: 1;
-}
-
-/* Brand stripe (blue) */
+.stripe-top:hover::before, .stripe-top.active::before { opacity: 1; }
 .stripe-top-brand::before {
   background: linear-gradient(90deg,
     transparent 0%,
-    var(--color-brand-500) 20%,
-    var(--color-brand-400) 50%,
-    var(--color-brand-500) 80%,
-    transparent 100%
-  );
+    var(--color-sky-blueprint) 20%,
+    var(--color-vivid-blue) 50%,
+    var(--color-sky-blueprint) 80%,
+    transparent 100%);
 }
 
-/* ─── Telemetry indicator dot ─────────────────────────────────────────────── */
 .tele-dot {
   display: inline-block;
   width: 5px; height: 5px;
@@ -229,45 +268,28 @@ body {
   animation: var(--animate-data-blink);
 }
 
-/* ─── Skeleton ────────────────────────────────────────────────────────────── */
 .skeleton {
   position: relative;
   overflow: hidden;
   background: linear-gradient(90deg,
-    var(--color-surface) 0%,
-    var(--color-surface-2) 50%,
-    var(--color-surface) 100%
-  );
+    var(--color-canvas-white) 0%,
+    rgba(129, 174, 217, 0.15) 50%,
+    var(--color-canvas-white) 100%);
   background-size: 800px 100%;
   animation: var(--animate-shimmer);
 }
 
-/* ─── Focus ring ──────────────────────────────────────────────────────────── */
 .focus-ring {
   outline: none;
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 .focus-ring:focus-visible {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-  border-color: var(--color-brand-400);
+  box-shadow: 0 0 0 2px rgba(85, 161, 234, 0.45);
+  border-color: var(--color-vivid-blue);
 }
 
-/* ─── Page transition ─────────────────────────────────────────────────────── */
-.page-enter {
-  animation: var(--animate-fade-in), var(--animate-slide-up);
-}
+.page-enter { animation: var(--animate-fade-in), var(--animate-slide-up); }
+.pb-safe    { padding-bottom: env(safe-area-inset-bottom); }
+.animate-counter-in { animation: counter-in 0.5s var(--ease-out-expo) both; }
 
-/* ─── iOS safe-area ───────────────────────────────────────────────────────── */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* ─── Counter animation for numbers ──────────────────────────────────────── */
-.animate-counter-in {
-  animation: counter-in 0.5s var(--ease-out-expo) both;
-}
-
-/* ─── Data table row glow on hover ───────────────────────────────────────── */
-.data-row:hover {
-  background: rgba(59, 130, 246, 0.04);
-}
+.data-row:hover { background: rgba(129, 174, 217, 0.08); }

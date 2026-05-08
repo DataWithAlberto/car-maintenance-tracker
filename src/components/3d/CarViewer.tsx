@@ -229,7 +229,7 @@ const ProceduralCar = ({ onPartClick }: { onPartClick: (info: PartClickInfo) => 
         >
           <boxGeometry args={size} />
           <meshStandardMaterial
-            color={hovered === key ? '#60a5fa' : color}
+            color={hovered === key ? '#55a1ea' : color}
             transparent opacity={hovered === key ? 0.85 : 0.7}
             metalness={0.3} roughness={0.6}
           />
@@ -256,8 +256,8 @@ const CarLoader = () => (
         <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-lime-300/70 animate-spin" style={{ animationDuration: '1.4s', animationDirection: 'reverse' }} />
       </div>
       <div className="text-center">
-        <p className="text-gray-200 text-sm font-medium">Cargando modelo 3D</p>
-        <p className="text-gray-500 text-xs mt-1">Preparando tu Ford Focus...</p>
+        <p className="text-ink-black text-sm font-medium">Cargando modelo 3D</p>
+        <p className="text-ink-charcoal text-xs mt-1">Preparando tu Ford Focus...</p>
       </div>
     </div>
   </Html>
@@ -332,7 +332,7 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
       </Canvas>
 
       {selectedPart && (
-        <div className="absolute top-4 left-4 bg-surface/80 text-brand-400 text-xs font-mono px-3 py-1.5 rounded-lg border border-brand-500/30">
+        <div className="absolute top-4 left-4 bg-cloud-white/80 text-brand-400 text-xs font-mono px-3 py-1.5 rounded-lg border border-brand-500/30">
           {CAR_PARTS[selectedPart]?.label ?? selectedPart}
         </div>
       )}

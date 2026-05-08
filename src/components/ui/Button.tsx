@@ -15,21 +15,21 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<Variant, string> = {
   primary:
-    'bg-brand-500 hover:bg-brand-400 text-white shadow-md shadow-brand-500/20 hover:shadow-brand-500/35 hover:-translate-y-px active:translate-y-0 border border-brand-400/30',
+    'bg-sky-blueprint text-cloud-white border border-sky-dark/30 hover:bg-sky-dark hover:text-cloud-white',
   accent:
-    'bg-accent-500 hover:bg-accent-400 text-white shadow-md shadow-accent-500/25 hover:shadow-accent-500/40 hover:-translate-y-px active:translate-y-0 border border-accent-400/30',
+    'bg-sunset-orange text-cloud-white border border-sunset-orange/40 hover:bg-[color:var(--color-accent-600)]',
   secondary:
-    'bg-surface border border-border hover:border-brand-400/50 hover:bg-surface-2 text-white',
+    'bg-cloud-white text-ink-black border border-sky-blueprint/40 hover:border-sky-blueprint hover:bg-canvas-50',
   ghost:
-    'text-gray-500 hover:text-white hover:bg-surface',
+    'bg-transparent text-ink-charcoal border border-transparent hover:bg-canvas-50 hover:text-ink-black',
   danger:
-    'bg-danger-500/12 border border-danger-500/40 hover:bg-danger-500/20 text-danger-400',
+    'bg-sunset-orange/15 text-sunset-orange border border-sunset-orange/40 hover:bg-sunset-orange hover:text-cloud-white',
 };
 
 const sizeStyles: Record<Size, string> = {
-  sm: 'h-8 px-3 text-xs gap-1.5 rounded-lg',
-  md: 'h-10 px-4 text-sm gap-2 rounded-xl',
-  lg: 'h-12 px-5 text-base gap-2 rounded-xl',
+  sm: 'h-9 px-4 text-caption gap-2 rounded-button',
+  md: 'h-11 px-5 text-body gap-2 rounded-button',
+  lg: 'h-14 px-8 text-body-lg gap-2 rounded-button',
 };
 
 export const Button = ({
@@ -48,7 +48,9 @@ export const Button = ({
     {...rest}
     disabled={disabled || loading}
     className={cn(
-      'inline-flex items-center justify-center font-medium transition-all duration-150 ease-out focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
+      'inline-flex items-center justify-center font-manrope font-medium tracking-tight',
+      'transition-all duration-150 ease-out focus-ring',
+      'disabled:opacity-50 disabled:cursor-not-allowed',
       variantStyles[variant],
       sizeStyles[size],
       fullWidth && 'w-full',

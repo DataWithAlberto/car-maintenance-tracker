@@ -26,15 +26,15 @@ export const MaintenanceList = ({ records, onDelete, onSelect }: Props) => {
         <li
           key={record.id}
           onClick={() => onSelect?.(record)}
-          className="group bg-surface border border-border/60 hover:border-brand-400/40 rounded-2xl p-4 flex items-center gap-4 transition-all hover:-translate-y-0.5 cursor-pointer"
+          className="group bg-cloud-white border border-sky-blueprint/20 hover:border-brand-400/40 rounded-card p-4 flex items-center gap-4 transition-all hover:-translate-y-0.5 cursor-pointer"
         >
-          <div className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-brand-500/20 to-brand-500/5 border border-brand-500/30 flex items-center justify-center">
-            <Wrench className="h-5 w-5 text-brand-300" />
+          <div className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-brand-500/20 to-brand-500/5 border border-sky-blueprint/30 flex items-center justify-center">
+            <Wrench className="h-5 w-5 text-sky-dark" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-white font-medium truncate tracking-tight">{record.type}</p>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-400">
+            <p className="text-ink-black font-medium truncate tracking-tight">{record.type}</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-ink-charcoal">
               <span className="inline-flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 {formatDate(record.date)}
@@ -51,7 +51,7 @@ export const MaintenanceList = ({ records, onDelete, onSelect }: Props) => {
               ) : null}
             </div>
             {record.description && (
-              <p className="text-gray-500 text-xs mt-1.5 line-clamp-1">{record.description}</p>
+              <p className="text-ink-charcoal text-xs mt-1.5 line-clamp-1">{record.description}</p>
             )}
           </div>
 
@@ -62,11 +62,11 @@ export const MaintenanceList = ({ records, onDelete, onSelect }: Props) => {
                 <p className="text-xs text-warn-400 tabular-nums font-semibold">{formatKm(record.next_service_km)}</p>
               </div>
             )}
-            <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-brand-300 group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="h-4 w-4 text-ink-charcoal/80 group-hover:text-sky-dark group-hover:translate-x-0.5 transition-all" />
             {onDelete && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(record.id); }}
-                className="text-gray-600 hover:text-danger-400 hover:bg-danger-500/10 rounded-md p-1.5 -mr-1 transition-colors"
+                className="text-ink-charcoal/80 hover:text-danger-400 hover:bg-danger-500/10 rounded-md p-1.5 -mr-1 transition-colors"
                 aria-label="Eliminar registro"
               >
                 <Trash2 className="h-4 w-4" />

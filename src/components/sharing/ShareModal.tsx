@@ -75,7 +75,7 @@ export const ShareModal = ({ vehicleId, onClose }: Props) => {
 
       {inviteLink && (
         <div
-          className="mt-5 bg-gradient-to-br from-success-500/10 to-transparent border border-success-500/30 rounded-2xl p-4 space-y-3"
+          className="mt-5 bg-gradient-to-br from-success-500/10 to-transparent border border-success-500/30 rounded-card p-4 space-y-3"
           style={{ animation: 'slide-up 0.3s var(--ease-out-expo)' }}
         >
           <div className="flex items-center gap-2 text-success-400 text-sm font-medium">
@@ -86,7 +86,7 @@ export const ShareModal = ({ vehicleId, onClose }: Props) => {
             <input
               readOnly
               value={inviteLink}
-              className="flex-1 bg-surface-2 border border-border rounded-lg px-3 py-2 text-gray-300 text-xs truncate focus:outline-none focus:border-brand-400"
+              className="flex-1 bg-canvas-50 border border-sky-blueprint/25 rounded-lg px-3 py-2 text-ink-black text-xs truncate focus:outline-none focus:border-brand-400"
             />
             <button
               onClick={handleCopy}
@@ -96,7 +96,7 @@ export const ShareModal = ({ vehicleId, onClose }: Props) => {
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </button>
           </div>
-          <p className="text-gray-500 text-xs leading-relaxed">
+          <p className="text-ink-charcoal text-xs leading-relaxed">
             Envía este link. Si el invitado no tiene cuenta podrá registrarse y el acceso se activará automáticamente.
           </p>
         </div>

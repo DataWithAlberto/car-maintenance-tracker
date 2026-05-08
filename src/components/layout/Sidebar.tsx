@@ -28,17 +28,17 @@ export const Sidebar = () => {
           <div className="px-3 py-2.5">
             <div className="flex items-center gap-1.5 mb-1.5">
               <span className="tele-dot" />
-              <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-600">Vehículo activo</p>
+              <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-ink-charcoal/80">Vehículo activo</p>
             </div>
             <p
-              className="text-white font-black uppercase leading-tight truncate"
+              className="text-ink-black font-black uppercase leading-tight truncate"
               style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', letterSpacing: '0.04em' }}
             >
               {selectedVehicle.brand} {selectedVehicle.model}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] font-mono text-gray-600">{selectedVehicle.year}</span>
-              <span className="text-gray-700">·</span>
+              <span className="text-[10px] font-mono text-ink-charcoal/80">{selectedVehicle.year}</span>
+              <span className="text-ink-charcoal/65">·</span>
               <span className="text-[10px] font-mono text-accent-400 font-semibold">
                 {formatKm(selectedVehicle.current_km)}
               </span>
@@ -47,14 +47,14 @@ export const Sidebar = () => {
         </div>
       ) : (
         <div className="m-3 rounded-lg border border-dashed border-border/50 px-3 py-2.5">
-          <p className="text-[10px] font-mono text-gray-600 uppercase tracking-wider">Sin vehículo</p>
+          <p className="text-[10px] font-mono text-ink-charcoal/80 uppercase tracking-wider">Sin vehículo</p>
         </div>
       )}
 
       {/* Divider with label */}
       <div className="flex items-center gap-2 px-4 mb-1">
         <span className="h-px flex-1 bg-border/60" />
-        <span className="text-[9px] font-mono text-gray-700 uppercase tracking-widest">Nav</span>
+        <span className="text-[9px] font-mono text-ink-charcoal/65 uppercase tracking-widest">Nav</span>
         <span className="h-px flex-1 bg-border/60" />
       </div>
 
@@ -68,8 +68,8 @@ export const Sidebar = () => {
               cn(
                 'group relative flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-all duration-150',
                 isActive
-                  ? 'text-white bg-surface-2 border border-border/80'
-                  : 'text-gray-500 hover:text-gray-200 hover:bg-surface-2/60',
+                  ? 'text-ink-black bg-surface-2 border border-border/80'
+                  : 'text-ink-charcoal hover:text-ink-black hover:bg-surface-2/60',
               )
             }
           >
@@ -79,11 +79,11 @@ export const Sidebar = () => {
                   <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-accent-500" />
                 )}
                 <Icon
-                  className={cn('h-4 w-4 shrink-0', isActive ? 'text-accent-400' : 'text-gray-600 group-hover:text-gray-400')}
+                  className={cn('h-4 w-4 shrink-0', isActive ? 'text-accent-400' : 'text-ink-charcoal/80 group-hover:text-ink-charcoal')}
                   strokeWidth={isActive ? 2 : 1.7}
                 />
                 <span className={cn('flex-1 font-medium', isActive ? '' : 'font-normal')}>{label}</span>
-                <span className={cn('text-[9px] font-mono tabular-nums', isActive ? 'text-accent-500/60' : 'text-gray-700 group-hover:text-gray-600')}>
+                <span className={cn('text-[9px] font-mono tabular-nums', isActive ? 'text-accent-500/60' : 'text-ink-charcoal/65 group-hover:text-ink-charcoal/80')}>
                   {code}
                 </span>
               </>
@@ -94,9 +94,9 @@ export const Sidebar = () => {
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-border/50">
-        <p className="text-[9px] font-mono text-gray-700 uppercase tracking-widest leading-relaxed">
+        <p className="text-[9px] font-mono text-ink-charcoal/65 uppercase tracking-widest leading-relaxed">
           FocusHub · v0.2<br />
-          <span className="text-gray-800">Sistema de gestión vehicular</span>
+          <span className="text-ink-charcoal/45">Sistema de gestión vehicular</span>
         </p>
       </div>
     </aside>

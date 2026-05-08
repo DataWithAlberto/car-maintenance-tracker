@@ -13,9 +13,9 @@ import toast from 'react-hot-toast';
 type Step = 'loading' | 'confirm' | 'auth' | 'done' | 'error';
 
 const roleConfig = {
-  owner: { Icon: Crown, label: 'Propietario', cls: 'bg-brand-500/15 text-brand-300 border-brand-500/30' },
+  owner: { Icon: Crown, label: 'Propietario', cls: 'bg-brand-500/15 text-sky-dark border-sky-blueprint/30' },
   editor: { Icon: Pencil, label: 'Editor', cls: 'bg-success-500/15 text-success-400 border-success-500/30' },
-  viewer: { Icon: Eye, label: 'Visor', cls: 'bg-gray-700/40 text-gray-400 border-gray-700' },
+  viewer: { Icon: Eye, label: 'Visor', cls: 'bg-gray-700/40 text-ink-charcoal border-gray-700' },
 } as const;
 
 export const InvitePage = () => {
@@ -97,29 +97,29 @@ export const InvitePage = () => {
           <div className="flex justify-center mb-4">
             <Logo size={48} withText={false} />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
+          <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">
             Focus<span className="bg-gradient-to-br from-brand-300 via-brand-500 to-accent-500 bg-clip-text text-transparent">Hub</span>
           </h1>
         </div>
 
-        <div className="glass-strong border border-border rounded-3xl p-8 shadow-2xl shadow-brand-500/10">
+        <div className="glass-strong border border-sky-blueprint/25 rounded-card p-8 shadow-2xl shadow-brand-500/10">
           {step === 'loading' && (
             <div className="flex flex-col items-center py-8">
               <div className="relative h-12 w-12">
                 <div className="absolute inset-0 rounded-full border-2 border-brand-500/20" />
                 <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-brand-400 animate-spin" />
               </div>
-              <p className="text-gray-400 text-sm mt-4">Cargando invitación...</p>
+              <p className="text-ink-charcoal text-sm mt-4">Cargando invitación...</p>
             </div>
           )}
 
           {step === 'error' && (
             <div className="text-center py-4">
-              <div className="h-16 w-16 mx-auto rounded-2xl bg-danger-500/15 border border-danger-500/30 flex items-center justify-center mb-4">
+              <div className="h-16 w-16 mx-auto rounded-card bg-danger-500/15 border border-danger-500/30 flex items-center justify-center mb-4">
                 <XCircle className="h-8 w-8 text-danger-400" />
               </div>
-              <h2 className="text-white font-semibold text-lg tracking-tight">Link inválido o expirado</h2>
-              <p className="text-gray-400 text-sm mt-2 leading-relaxed">
+              <h2 className="text-ink-black font-semibold text-lg tracking-tight">Link inválido o expirado</h2>
+              <p className="text-ink-charcoal text-sm mt-2 leading-relaxed">
                 Pide al propietario que genere un link nuevo para volver a invitarte.
               </p>
               <Link to="/login" className="inline-block mt-6">
@@ -130,14 +130,14 @@ export const InvitePage = () => {
 
           {step === 'confirm' && vehicle && cfg && RoleIcon && (
             <div className="text-center">
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-2">Te han invitado</p>
-              <h2 className="text-white font-semibold text-2xl tracking-tight">Acceso a vehículo</h2>
+              <p className="text-xs uppercase tracking-[0.2em] text-ink-charcoal font-semibold mb-2">Te han invitado</p>
+              <h2 className="text-ink-black font-semibold text-2xl tracking-tight">Acceso a vehículo</h2>
 
-              <div className="mt-5 bg-gradient-to-br from-brand-500/10 via-surface-2 to-accent-500/5 border border-border/60 rounded-2xl p-5">
-                <p className="text-white font-bold text-xl tracking-tight">
+              <div className="mt-5 bg-gradient-to-br from-brand-500/10 via-canvas-50 to-accent-500/5 border border-sky-blueprint/20 rounded-card p-5">
+                <p className="text-ink-black font-bold text-xl tracking-tight">
                   {vehicle.brand} {vehicle.model}
                 </p>
-                <p className="text-gray-400 text-sm mt-0.5">{vehicle.year}</p>
+                <p className="text-ink-charcoal text-sm mt-0.5">{vehicle.year}</p>
                 <span className={cn('inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border mt-3', cfg.cls)}>
                   <RoleIcon className="h-3 w-3" />
                   {cfg.label}
@@ -158,17 +158,17 @@ export const InvitePage = () => {
 
           {step === 'auth' && vehicle && cfg && RoleIcon && (
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-2 text-center">Te han invitado</p>
-              <h2 className="text-white font-semibold text-xl tracking-tight text-center mb-3">Acceso a vehículo</h2>
-              <div className="bg-gradient-to-br from-brand-500/10 via-surface-2 to-accent-500/5 border border-border/60 rounded-2xl p-4 mb-5 text-center">
-                <p className="text-white font-semibold">{vehicle.brand} {vehicle.model} {vehicle.year}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-ink-charcoal font-semibold mb-2 text-center">Te han invitado</p>
+              <h2 className="text-ink-black font-semibold text-xl tracking-tight text-center mb-3">Acceso a vehículo</h2>
+              <div className="bg-gradient-to-br from-brand-500/10 via-canvas-50 to-accent-500/5 border border-sky-blueprint/20 rounded-card p-4 mb-5 text-center">
+                <p className="text-ink-black font-semibold">{vehicle.brand} {vehicle.model} {vehicle.year}</p>
                 <span className={cn('inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border mt-2', cfg.cls)}>
                   <RoleIcon className="h-3 w-3" />
                   {cfg.label}
                 </span>
               </div>
 
-              <p className="text-gray-400 text-sm text-center mb-4">
+              <p className="text-ink-charcoal text-sm text-center mb-4">
                 {authMode === 'login' ? 'Inicia sesión para aceptar' : 'Crea una cuenta para aceptar'}
               </p>
 
@@ -199,7 +199,7 @@ export const InvitePage = () => {
 
               <button
                 onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-                className="w-full text-center text-gray-400 text-sm mt-4 hover:text-white transition-colors"
+                className="w-full text-center text-ink-charcoal text-sm mt-4 hover:text-ink-black transition-colors"
               >
                 {authMode === 'login' ? '¿Sin cuenta? Regístrate' : '¿Ya tienes cuenta? Entra'}
               </button>
@@ -208,11 +208,11 @@ export const InvitePage = () => {
 
           {step === 'done' && (
             <div className="text-center py-4">
-              <div className="h-16 w-16 mx-auto rounded-2xl bg-success-500/15 border border-success-500/30 flex items-center justify-center mb-4">
+              <div className="h-16 w-16 mx-auto rounded-card bg-success-500/15 border border-success-500/30 flex items-center justify-center mb-4">
                 <CheckCircle className="h-8 w-8 text-success-400" />
               </div>
-              <h2 className="text-white font-semibold text-lg tracking-tight">¡Acceso activado!</h2>
-              <p className="text-gray-400 text-sm mt-2">Redirigiendo al dashboard...</p>
+              <h2 className="text-ink-black font-semibold text-lg tracking-tight">¡Acceso activado!</h2>
+              <p className="text-ink-charcoal text-sm mt-2">Redirigiendo al dashboard...</p>
             </div>
           )}
         </div>

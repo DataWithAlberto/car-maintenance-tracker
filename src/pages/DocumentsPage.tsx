@@ -47,12 +47,12 @@ export const DocumentsPage = () => {
     <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-4xl mx-auto">
       <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-1">
+          <p className="text-xs uppercase tracking-[0.2em] text-ink-charcoal font-semibold mb-1">
             {selectedVehicle.brand} {selectedVehicle.model}
           </p>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Documentos</h1>
-          <p className="text-gray-400 text-sm mt-1.5">
-            <span className="font-semibold text-white tabular-nums">{docs.length}</span> archivos
+          <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">Documentos</h1>
+          <p className="text-ink-charcoal text-sm mt-1.5">
+            <span className="font-semibold text-ink-black tabular-nums">{docs.length}</span> archivos
           </p>
         </div>
         <Button onClick={() => setShowUpload(true)} iconLeft={<Plus className="h-4 w-4" />}>
@@ -84,12 +84,12 @@ export const DocumentsPage = () => {
               <li
                 key={doc.id}
                 className={cn(
-                  'group bg-surface border rounded-2xl p-4 flex items-center gap-4 transition-all hover:-translate-y-0.5',
+                  'group bg-cloud-white border rounded-card p-4 flex items-center gap-4 transition-all hover:-translate-y-0.5',
                   expired
                     ? 'border-danger-500/40 hover:border-danger-500/60'
                     : soon
                     ? 'border-warn-500/40 hover:border-warn-500/60'
-                    : 'border-border/60 hover:border-brand-400/40',
+                    : 'border-sky-blueprint/20 hover:border-brand-400/40',
                 )}
               >
                 <div className={cn(
@@ -98,13 +98,13 @@ export const DocumentsPage = () => {
                     ? 'bg-danger-500/10 border-danger-500/30 text-danger-400'
                     : soon
                     ? 'bg-warn-500/10 border-warn-500/30 text-warn-400'
-                    : 'bg-surface-2 border-border text-gray-400',
+                    : 'bg-canvas-50 border-sky-blueprint/25 text-ink-charcoal',
                 )}>
                   <FileText className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-white font-medium tracking-tight">{doc.doc_type}</p>
+                    <p className="text-ink-black font-medium tracking-tight">{doc.doc_type}</p>
                     {doc.is_important && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-accent-500/15 text-accent-400 border border-accent-500/30 px-1.5 py-0.5 rounded-full">
                         <Star className="h-2.5 w-2.5 fill-current" />
@@ -123,11 +123,11 @@ export const DocumentsPage = () => {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                  <div className="flex items-center gap-2 mt-1 text-xs text-ink-charcoal">
                     {doc.file_name && <span className="truncate">{doc.file_name}</span>}
                     {doc.expiry_date && (
                       <>
-                        <span className="text-gray-600">·</span>
+                        <span className="text-ink-charcoal/80">·</span>
                         <span>Vence {formatDate(doc.expiry_date)}</span>
                       </>
                     )}
@@ -138,14 +138,14 @@ export const DocumentsPage = () => {
                     href={doc.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 rounded-lg text-gray-400 hover:text-brand-300 hover:bg-brand-500/10 transition-colors"
+                    className="p-2 rounded-lg text-ink-charcoal hover:text-sky-dark hover:bg-brand-500/10 transition-colors"
                     aria-label="Abrir documento"
                   >
                     <ExternalLink className="h-4 w-4" />
                   </a>
                   <button
                     onClick={() => handleDelete(doc.id)}
-                    className="p-2 rounded-lg text-gray-600 hover:text-danger-400 hover:bg-danger-500/10 transition-colors"
+                    className="p-2 rounded-lg text-ink-charcoal/80 hover:text-danger-400 hover:bg-danger-500/10 transition-colors"
                     aria-label="Eliminar"
                   >
                     <Trash2 className="h-4 w-4" />

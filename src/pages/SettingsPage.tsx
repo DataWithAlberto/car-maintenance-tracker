@@ -56,25 +56,25 @@ export const SettingsPage = () => {
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-2xl mx-auto space-y-6">
       <header>
-        <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold mb-1">
+        <p className="text-xs uppercase tracking-[0.2em] text-ink-charcoal font-semibold mb-1">
           {selectedVehicle.brand} {selectedVehicle.model}
         </p>
-        <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-          <SettingsIcon className="h-7 w-7 text-brand-300" />
+        <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight flex items-center gap-2">
+          <SettingsIcon className="h-7 w-7 text-sky-dark" />
           Ajustes
         </h1>
       </header>
 
       {/* Account section */}
-      <section className="bg-surface border border-border/60 rounded-2xl p-5">
-        <h2 className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-3">Tu cuenta</h2>
+      <section className="bg-cloud-white border border-sky-blueprint/25 rounded-card shadow-card p-20">
+        <h2 className="text-[10px] uppercase tracking-wider text-ink-charcoal font-semibold mb-3">Tu cuenta</h2>
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white text-lg font-semibold flex items-center justify-center">
+          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-cloud-white text-lg font-semibold flex items-center justify-center">
             {(user?.email?.[0] ?? 'U').toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">{user?.email}</p>
-            <p className="text-gray-500 text-xs">Sesión iniciada</p>
+            <p className="text-ink-black text-sm font-medium truncate">{user?.email}</p>
+            <p className="text-ink-charcoal text-xs">Sesión iniciada</p>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout} iconLeft={<LogOut className="h-4 w-4" />}>
             Salir
@@ -83,13 +83,13 @@ export const SettingsPage = () => {
       </section>
 
       {/* Vehicle data */}
-      <section className="bg-surface border border-border/60 rounded-2xl p-5">
+      <section className="bg-cloud-white border border-sky-blueprint/25 rounded-card shadow-card p-20">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Datos del vehículo</h2>
-            <p className="text-white text-xl font-semibold tracking-tight mt-1">
+            <h2 className="text-[10px] uppercase tracking-wider text-ink-charcoal font-semibold">Datos del vehículo</h2>
+            <p className="text-ink-black text-xl font-semibold tracking-tight mt-1">
               {selectedVehicle.brand} {selectedVehicle.model}
-              <span className="text-gray-500 font-normal"> · {selectedVehicle.year}</span>
+              <span className="text-ink-charcoal font-normal"> · {selectedVehicle.year}</span>
             </p>
           </div>
           {selectedVehicle.role === 'owner' && (
@@ -108,9 +108,9 @@ export const SettingsPage = () => {
             ['Transmisión', selectedVehicle.transmission ?? '—'],
             ['VIN', selectedVehicle.vin ?? '—'],
           ].map(([label, value]) => (
-            <div key={label} className="bg-surface-2/60 border border-border/40 rounded-xl px-3 py-2.5">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{label}</p>
-              <p className="text-white text-sm font-medium tabular-nums truncate">{value}</p>
+            <div key={label} className="bg-canvas-50/60 border border-sky-blueprint/15 rounded-xl px-3 py-2.5">
+              <p className="text-[10px] uppercase tracking-wider text-ink-charcoal font-medium">{label}</p>
+              <p className="text-ink-black text-sm font-medium tabular-nums truncate">{value}</p>
             </div>
           ))}
         </div>
@@ -118,14 +118,14 @@ export const SettingsPage = () => {
 
       {/* Danger zone */}
       {selectedVehicle.role === 'owner' && (
-        <section className="bg-gradient-to-br from-danger-500/10 to-transparent border border-danger-500/30 rounded-2xl p-5">
+        <section className="bg-gradient-to-br from-danger-500/10 to-transparent border border-danger-500/30 rounded-card p-5">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-xl bg-danger-500/15 border border-danger-500/30 flex items-center justify-center shrink-0">
               <AlertTriangle className="h-5 w-5 text-danger-400" />
             </div>
             <div className="flex-1">
-              <h3 className="text-white font-semibold tracking-tight">Zona peligrosa</h3>
-              <p className="text-gray-400 text-sm mt-1 mb-4 leading-relaxed">
+              <h3 className="text-ink-black font-semibold tracking-tight">Zona peligrosa</h3>
+              <p className="text-ink-charcoal text-sm mt-1 mb-4 leading-relaxed">
                 Eliminar el vehículo borrará permanentemente todos sus registros, gastos, documentos y accesos compartidos.
               </p>
               <Button variant="danger" size="sm" onClick={handleDelete} iconLeft={<Trash2 className="h-4 w-4" />}>

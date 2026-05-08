@@ -95,29 +95,29 @@ export const CarPage = () => {
   const interactiveParts = Object.entries(CAR_PARTS);
 
   return (
-    <div className={cn('flex flex-col', immersive ? 'h-[100vh] fixed inset-0 z-50 bg-bg' : 'h-[calc(100vh-4rem)]')}>
+    <div className={cn('flex flex-col', immersive ? 'h-[100vh] fixed inset-0 z-50 bg-canvas-white' : 'h-[calc(100vh-4rem)]')}>
       {/* Header */}
       {!immersive && (
-        <div className="bg-bg/95 border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between gap-3" style={{ backdropFilter: 'blur(12px)' }}>
+        <div className="bg-canvas-white/95 border-b border-sky-blueprint/25 px-4 sm:px-6 py-3 flex items-center justify-between gap-3" style={{ backdropFilter: 'blur(12px)' }}>
           <div className="flex items-center gap-3 min-w-0">
             {/* Status indicator */}
-            <div className="shrink-0 h-9 w-9 rounded-lg bg-surface border border-border/80 flex items-center justify-center">
+            <div className="shrink-0 h-9 w-9 rounded-lg bg-cloud-white border border-sky-blueprint/35 flex items-center justify-center">
               <span className="tele-dot" />
             </div>
             <div className="min-w-0">
               <h1
-                className="text-white font-black uppercase tracking-wide leading-none truncate"
+                className="text-ink-black font-black uppercase tracking-wide leading-none truncate"
                 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem' }}
               >
                 {selectedVehicle.brand} {selectedVehicle.model}
-                <span className="text-gray-600 font-normal"> /{selectedVehicle.year}</span>
+                <span className="text-ink-charcoal/80 font-normal"> /{selectedVehicle.year}</span>
               </h1>
-              <p className="text-gray-500 text-[11px] font-mono flex items-center gap-1.5 mt-0.5">
+              <p className="text-ink-charcoal text-[11px] font-mono flex items-center gap-1.5 mt-0.5">
                 <Gauge className="h-3 w-3" />
                 {formatKm(selectedVehicle.current_km)}
                 {alerts.length > 0 && (
                   <>
-                    <span className="text-gray-700">·</span>
+                    <span className="text-ink-charcoal/65">·</span>
                     <span className="text-warn-400 inline-flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
                       {alerts.length} {alerts.length === 1 ? 'ALERTA' : 'ALERTAS'}
@@ -134,7 +134,7 @@ export const CarPage = () => {
                 'h-8 w-8 inline-flex items-center justify-center rounded-lg border transition-all',
                 autoRotate
                   ? 'bg-accent-500/15 border-accent-500/40 text-accent-400'
-                  : 'border-border text-gray-500 hover:text-white hover:bg-surface',
+                  : 'border-sky-blueprint/25 text-ink-charcoal hover:text-ink-black hover:bg-cloud-white',
               )}
               title="Auto-rotar"
             >
@@ -142,7 +142,7 @@ export const CarPage = () => {
             </button>
             <button
               onClick={() => setImmersive(true)}
-              className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-border text-gray-500 hover:text-white hover:bg-surface transition-all"
+              className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-sky-blueprint/25 text-ink-charcoal hover:text-ink-black hover:bg-cloud-white transition-all"
               title="Modo inmersivo"
             >
               <Maximize2 className="h-3.5 w-3.5" />
@@ -162,7 +162,7 @@ export const CarPage = () => {
       {immersive && (
         <button
           onClick={() => setImmersive(false)}
-          className="absolute top-4 right-4 z-50 h-9 w-9 inline-flex items-center justify-center rounded-lg glass-strong border border-border text-gray-300 hover:text-white"
+          className="absolute top-4 right-4 z-50 h-9 w-9 inline-flex items-center justify-center rounded-lg glass-strong border border-sky-blueprint/25 text-ink-black hover:text-ink-black"
           title="Salir de inmersivo"
         >
           <Minimize2 className="h-4 w-4" />
@@ -171,7 +171,7 @@ export const CarPage = () => {
 
       {/* Alerts strip */}
       {!immersive && alerts.length > 0 && (
-        <div className="border-b border-border/60 px-4 sm:px-6 py-2.5 flex gap-2 overflow-x-auto scrollbar-none">
+        <div className="border-b border-sky-blueprint/20 px-4 sm:px-6 py-2.5 flex gap-2 overflow-x-auto scrollbar-none">
           {alerts.map((a) => (
             <div key={a.id} className="shrink-0 max-w-xs">
               <AlertCard alert={a} onDismiss={(id) => setDismissedAlerts((s) => new Set([...s, id]))} />
@@ -198,7 +198,7 @@ export const CarPage = () => {
                 <div className="absolute inset-0 rounded-full border-2 border-brand-500/20" />
                 <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-brand-400 border-r-brand-400 animate-spin" />
               </div>
-              <p className="text-gray-400 text-sm">Cargando modelo 3D...</p>
+              <p className="text-ink-charcoal text-sm">Cargando modelo 3D...</p>
             </div>
           </div>
         }>
@@ -212,7 +212,7 @@ export const CarPage = () => {
         {/* Hotspot legend (collapsed) */}
         {!selectedPart && Object.keys(partSeverityMap).length > 0 && (
           <div className="hidden md:flex absolute top-4 left-4 max-w-xs flex-col gap-1.5">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold flex items-center gap-1.5">
+            <p className="text-[10px] uppercase tracking-wider text-ink-charcoal font-semibold flex items-center gap-1.5">
               <AlertTriangle className="h-3 w-3 text-warn-400" />
               Atención requerida
             </p>
@@ -237,7 +237,7 @@ export const CarPage = () => {
 
         {/* Bottom hint */}
         {!selectedPart && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 glass border border-border text-gray-300 text-xs px-4 py-2 rounded-full flex items-center gap-2 pointer-events-none">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 glass border border-sky-blueprint/25 text-ink-black text-xs px-4 py-2 rounded-full flex items-center gap-2 pointer-events-none">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" style={{ animation: 'pulse-ring 2.4s ease-out infinite' }} />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-400" />
@@ -261,7 +261,7 @@ export const CarPage = () => {
                       ? 'bg-danger-500/15 border-danger-500/40 text-danger-400'
                       : sev === 'medium'
                       ? 'bg-warn-500/15 border-warn-500/40 text-warn-400'
-                      : 'bg-surface/70 border-border text-gray-300',
+                      : 'bg-cloud-white/70 border-sky-blueprint/25 text-ink-black',
                   )}
                 >
                   <Wrench className="h-3 w-3" />

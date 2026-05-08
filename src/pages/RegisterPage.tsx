@@ -48,15 +48,15 @@ export const RegisterPage = () => {
           <div className="flex justify-center mb-4">
             <Logo size={48} withText={false} />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
+          <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">
             Focus<span className="bg-gradient-to-br from-brand-300 via-brand-500 to-accent-500 bg-clip-text text-transparent">Hub</span>
           </h1>
-          <p className="text-gray-400 mt-1.5 text-sm">Empieza tu garaje digital</p>
+          <p className="text-ink-charcoal mt-1.5 text-sm">Empieza tu garaje digital</p>
         </div>
 
-        <div className="glass-strong border border-border rounded-3xl p-8 shadow-2xl shadow-brand-500/10">
-          <h2 className="text-xl font-semibold text-white tracking-tight mb-1">Crear cuenta</h2>
-          <p className="text-gray-400 text-sm mb-6">Es gratis y tarda 30 segundos</p>
+        <div className="glass-strong border border-sky-blueprint/25 rounded-card p-8 shadow-2xl shadow-brand-500/10">
+          <h2 className="text-xl font-semibold text-ink-black tracking-tight mb-1">Crear cuenta</h2>
+          <p className="text-ink-charcoal text-sm mb-6">Es gratis y tarda 30 segundos</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <FloatingInput
@@ -90,9 +90,9 @@ export const RegisterPage = () => {
             </Button>
           </form>
 
-          <p className="text-center text-gray-400 text-sm mt-6">
+          <p className="text-center text-ink-charcoal text-sm mt-6">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-brand-300 hover:text-brand-200 font-medium transition-colors">
+            <Link to="/login" className="text-sky-dark hover:text-brand-200 font-medium transition-colors">
               Inicia sesión
             </Link>
           </p>

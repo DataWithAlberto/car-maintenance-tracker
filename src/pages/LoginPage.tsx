@@ -37,7 +37,7 @@ export const LoginPage = () => {
   return (
     <div className="min-h-screen flex relative overflow-hidden">
       {/* ── Left panel — decorative ── */}
-      <div className="hidden lg:flex flex-col justify-between w-[42%] bg-surface border-r border-border p-10 relative overflow-hidden">
+      <div className="hidden lg:flex flex-col justify-between w-[42%] bg-cloud-white border-r border-sky-blueprint/25 p-10 relative overflow-hidden">
         {/* Diagonal grid overlay */}
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.035]"
@@ -70,7 +70,7 @@ export const LoginPage = () => {
               </svg>
             </div>
             <span
-              className="text-white font-black uppercase tracking-widest text-sm"
+              className="text-ink-black font-black uppercase tracking-widest text-sm"
               style={{ fontFamily: 'var(--font-display)' }}
             >
               FocusHub
@@ -79,13 +79,13 @@ export const LoginPage = () => {
 
           {/* Big headline */}
           <h2
-            className="text-white leading-none mb-4"
+            className="text-ink-black leading-none mb-4"
             style={{ fontFamily: 'var(--font-display)', fontSize: '3.5rem', fontWeight: 900, letterSpacing: '0.02em' }}
           >
             TU GARAJE<br />
             <span className="text-accent-500">DIGITAL.</span>
           </h2>
-          <p className="text-gray-500 text-sm font-mono leading-relaxed max-w-xs">
+          <p className="text-ink-charcoal text-sm font-mono leading-relaxed max-w-xs">
             Control total sobre el mantenimiento, gastos y documentación de tu vehículo.
           </p>
         </div>
@@ -101,13 +101,13 @@ export const LoginPage = () => {
             <div key={code} className="flex items-center gap-3">
               <span className="text-[10px] font-mono text-accent-500/60 w-5 shrink-0">{code}</span>
               <div className="h-px w-4 bg-border" />
-              <span className="text-[11px] font-mono text-gray-500 uppercase tracking-wider">{label}</span>
+              <span className="text-[11px] font-mono text-ink-charcoal uppercase tracking-wider">{label}</span>
             </div>
           ))}
         </div>
 
         {/* Bottom note */}
-        <p className="text-[10px] font-mono text-gray-700 uppercase tracking-widest relative">
+        <p className="text-[10px] font-mono text-ink-charcoal/65 uppercase tracking-widest relative">
           Sistema v0.2 · 2026
         </p>
       </div>
@@ -128,21 +128,21 @@ export const LoginPage = () => {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <span className="tele-dot" />
-              <span className="text-[10px] font-mono text-gray-600 uppercase tracking-[0.2em]">Autenticación</span>
+              <span className="text-[10px] font-mono text-ink-charcoal/80 uppercase tracking-[0.2em]">Autenticación</span>
             </div>
             <h1
-              className="text-white leading-none mb-2"
+              className="text-ink-black leading-none mb-2"
               style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', fontWeight: 900, letterSpacing: '0.03em' }}
             >
               ACCESO AL<br />SISTEMA
             </h1>
-            <p className="text-gray-600 text-xs font-mono">
+            <p className="text-ink-charcoal/80 text-xs font-mono">
               Introduce tus credenciales para continuar
             </p>
           </div>
 
           {/* Form card */}
-          <div className="bg-surface border border-border rounded-xl p-6">
+          <div className="bg-cloud-white border border-sky-blueprint/25 rounded-xl p-6">
             {/* Top stripe */}
             <div className="h-px w-full bg-gradient-to-r from-transparent via-accent-500/40 to-transparent -mt-6 mb-6 mx-[-24px] w-[calc(100%+48px)]" />
 
@@ -168,8 +168,8 @@ export const LoginPage = () => {
               </Button>
             </form>
 
-            <div className="mt-5 pt-4 border-t border-border/60 flex items-center justify-between">
-              <span className="text-[10px] font-mono text-gray-700 uppercase tracking-wider">¿Sin cuenta?</span>
+            <div className="mt-5 pt-4 border-t border-sky-blueprint/20 flex items-center justify-between">
+              <span className="text-[10px] font-mono text-ink-charcoal/65 uppercase tracking-wider">¿Sin cuenta?</span>
               <Link
                 to="/register"
                 className="text-[11px] font-mono text-accent-400 hover:text-accent-300 transition-colors uppercase tracking-wider"
@@ -180,7 +180,7 @@ export const LoginPage = () => {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-[10px] font-mono text-gray-700 uppercase tracking-widest mt-6">
+          <p className="text-center text-[10px] font-mono text-ink-charcoal/65 uppercase tracking-widest mt-6">
             FocusHub · Sistema de gestión vehicular
           </p>
         </div>

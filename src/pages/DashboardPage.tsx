@@ -103,18 +103,18 @@ export const DashboardPage = () => {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className="tele-dot" />
-            <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-gray-500">Sistema activo</p>
-            <span className="text-gray-700">·</span>
-            <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-gray-500">Tu garaje</p>
+            <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-ink-charcoal">Sistema activo</p>
+            <span className="text-ink-charcoal/65">·</span>
+            <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-ink-charcoal">Tu garaje</p>
           </div>
           <h1
-            className="text-4xl sm:text-5xl font-black text-white uppercase tracking-wide leading-none"
+            className="text-4xl sm:text-5xl font-black text-ink-black uppercase tracking-wide leading-none"
             style={{ fontFamily: 'var(--font-display)' }}
           >
             Bienvenido
             <span className="text-accent-500"> de vuelta</span>
           </h1>
-          <p className="text-gray-500 text-sm mt-2 font-mono">
+          <p className="text-ink-charcoal text-sm mt-2 font-mono">
             {vehicles.length === 0
               ? '→ Añade tu primer vehículo para empezar'
               : `${vehicles.length} ${vehicles.length === 1 ? 'vehículo registrado' : 'vehículos registrados'} · FocusHub v2`}
@@ -164,7 +164,7 @@ export const DashboardPage = () => {
           <div className="flex items-center gap-2 mb-3">
             <span className="h-px flex-1 bg-border/60 max-w-[2rem]" />
             <AlertTriangle className="h-3.5 w-3.5 text-warn-400" />
-            <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400">Alertas activas</h2>
+            <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-ink-charcoal">Alertas activas</h2>
             <span className="h-px flex-1 bg-border/60" />
           </div>
           <div className="space-y-2">
@@ -180,7 +180,7 @@ export const DashboardPage = () => {
       <section>
         <div className="flex items-center gap-3 mb-4">
           <span className="h-px flex-1 bg-border/60 max-w-[2rem]" />
-          <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400">Flota registrada</h2>
+          <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-ink-charcoal">Flota registrada</h2>
           <span className="h-px flex-1 bg-border/60" />
         </div>
 
@@ -230,9 +230,9 @@ interface VehicleCardProps {
 
 const RoleBadge = ({ role }: { role: 'owner' | 'editor' | 'viewer' }) => {
   const map = {
-    owner: { Icon: Crown, label: 'Propietario', cls: 'bg-brand-500/15 text-brand-300 border-brand-500/30' },
+    owner: { Icon: Crown, label: 'Propietario', cls: 'bg-brand-500/15 text-sky-dark border-sky-blueprint/30' },
     editor: { Icon: Pencil, label: 'Editor', cls: 'bg-success-500/15 text-success-400 border-success-500/30' },
-    viewer: { Icon: Eye, label: 'Visor', cls: 'bg-gray-700/40 text-gray-400 border-gray-700' },
+    viewer: { Icon: Eye, label: 'Visor', cls: 'bg-gray-700/40 text-ink-charcoal border-gray-700' },
   } as const;
   const { Icon, label, cls } = map[role];
   return (
@@ -251,37 +251,37 @@ const VehicleCard = ({ vehicle, stats, onSelect }: VehicleCardProps) => {
   return (
     <button
       onClick={onSelect}
-      className="group relative overflow-hidden text-left bg-surface border border-border/70 hover:border-brand-500/50 rounded-xl transition-all duration-250 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-500/8 focus-ring stripe-top stripe-top-brand"
+      className="group relative overflow-hidden text-left bg-cloud-white border border-sky-blueprint/30 hover:border-sky-blueprint/50 rounded-xl transition-all duration-250 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-card focus-ring stripe-top stripe-top-brand"
     >
       {/* Header band */}
       <div className="relative px-5 pt-5 pb-4">
         {/* Corner accent line */}
-        <div className="absolute top-0 right-0 w-16 h-px bg-gradient-to-l from-border to-transparent" />
-        <div className="absolute top-0 right-0 h-16 w-px bg-gradient-to-b from-border to-transparent" />
+        <div className="absolute top-0 right-0 w-16 h-px bg-gradient-to-l from-sky-blueprint/40 to-transparent" />
+        <div className="absolute top-0 right-0 h-16 w-px bg-gradient-to-b from-sky-blueprint/40 to-transparent" />
 
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <RoleBadge role={vehicle.role} />
             <h3
-              className="text-white font-black text-2xl leading-tight mt-2 truncate uppercase tracking-wide"
+              className="text-ink-black font-black text-2xl leading-tight mt-2 truncate uppercase tracking-wide"
               style={{ fontFamily: 'var(--font-display)' }}
             >
               {vehicle.brand} {vehicle.model}
             </h3>
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[11px] font-mono text-gray-500 tracking-widest">
+              <span className="text-[11px] font-mono text-ink-charcoal tracking-widest">
                 {vehicle.year}
               </span>
               {vehicle.fuel_type && (
                 <>
-                  <span className="text-gray-700">·</span>
-                  <span className="text-[11px] font-mono text-gray-500 uppercase tracking-wider">{vehicle.fuel_type}</span>
+                  <span className="text-ink-charcoal/65">·</span>
+                  <span className="text-[11px] font-mono text-ink-charcoal uppercase tracking-wider">{vehicle.fuel_type}</span>
                 </>
               )}
               {vehicle.color && (
                 <>
-                  <span className="text-gray-700">·</span>
-                  <span className="text-[11px] font-mono text-gray-500 capitalize">{vehicle.color}</span>
+                  <span className="text-ink-charcoal/65">·</span>
+                  <span className="text-[11px] font-mono text-ink-charcoal capitalize">{vehicle.color}</span>
                 </>
               )}
             </div>
@@ -316,8 +316,8 @@ const VehicleCard = ({ vehicle, stats, onSelect }: VehicleCardProps) => {
       </div>
 
       {/* Footer CTA strip */}
-      <div className="flex items-center justify-between px-5 py-3 border-t border-border/40 bg-surface-2/40">
-        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-gray-600">
+      <div className="flex items-center justify-between px-5 py-3 border-t border-sky-blueprint/15 bg-canvas-50/40">
+        <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-ink-charcoal/80">
           ID·{vehicle.id.slice(0, 8)}
         </span>
         <span className="flex items-center gap-1 text-[11px] font-semibold text-brand-400 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all duration-200">
@@ -331,11 +331,11 @@ const VehicleCard = ({ vehicle, stats, onSelect }: VehicleCardProps) => {
 const TeleStat = ({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Gauge }) => (
   <div className="flex flex-col gap-1">
     <div className="flex items-center gap-1">
-      <Icon className="h-3 w-3 text-gray-600" strokeWidth={1.5} />
-      <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-600">{label}</span>
+      <Icon className="h-3 w-3 text-ink-charcoal/80" strokeWidth={1.5} />
+      <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-ink-charcoal/80">{label}</span>
     </div>
     <p
-      className="text-white text-base font-bold tabular-nums truncate leading-none"
+      className="text-ink-black text-base font-bold tabular-nums truncate leading-none"
       style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', letterSpacing: '0.02em' }}
     >
       {value}

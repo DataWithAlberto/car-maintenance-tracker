@@ -28,8 +28,7 @@ export const KpiCard = ({ icon: Icon, label, value, hint, trend, tone = 'brand',
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-xl border border-border/70 bg-surface transition-all duration-200',
-        'hover:-translate-y-px hover:border-border',
+        'relative overflow-hidden rounded-card border border-sky-blueprint/25 bg-cloud-white shadow-card transition-all duration-200',
         'stripe-top stripe-top-brand',
         className,
       )}
@@ -57,8 +56,8 @@ export const KpiCard = ({ icon: Icon, label, value, hint, trend, tone = 'brand',
 
         {/* Value — display font, condensed */}
         <p
-          className="text-3xl font-black text-white tabular-nums leading-none truncate"
-          style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}
+          className="text-heading-lg font-light text-ink-black tabular-nums leading-none truncate"
+          style={{ fontFamily: 'var(--font-simeiz)', letterSpacing: '-0.02em' }}
         >
           {value}
         </p>
