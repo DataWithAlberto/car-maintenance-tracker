@@ -2,9 +2,36 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { loginSchema } from '../utils/validators';
-import { FloatingInput } from '../components/ui/FloatingInput';
-import { Button } from '../components/ui/Button';
 import toast from 'react-hot-toast';
+
+const GRADIENT_INDIGO =
+  'linear-gradient(184deg, rgb(29,29,31) 18%, rgb(168,211,251) 45%, rgb(0,18,249) 78%, rgb(37,53,224) 98%)';
+
+const SWATCHES = [
+  { color: '#596680', label: 'Indigo',  selected: true  },
+  { color: '#dddc8c', label: 'Citrus',  selected: false },
+  { color: '#e8d0d0', label: 'Blush',   selected: false },
+  { color: '#e3e4e5', label: 'Silver',  selected: false },
+];
+
+function Mark({ size = 18, color = '#ffffff' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="10.25" stroke={color} strokeWidth="1.5" />
+      <circle cx="12" cy="12" r="2.4" fill={color} />
+      <path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function KeyIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="8" cy="12" r="3.5" />
+      <path d="M11.5 12H21M17 12v3.5M20 12v2.5" />
+    </svg>
+  );
+}
 
 export const LoginPage = () => {
   const { login } = useAuth();
@@ -12,6 +39,7 @@ export const LoginPage = () => {
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +47,7 @@ export const LoginPage = () => {
     const result = loginSchema.safeParse(form);
     if (!result.success) {
       const errs: Record<string, string> = {};
-      result.error.issues.forEach((e) => { errs[e.path[0] as string] = e.message; });
+      result.error.issues.forEach((issue) => { errs[issue.path[0] as string] = issue.message; });
       setErrors(errs);
       return;
     }
@@ -34,154 +62,385 @@ export const LoginPage = () => {
     }
   };
 
+  const inputBase: React.CSSProperties = {
+    width: '100%',
+    background: '#ffffff',
+    border: '1px solid #e8e8ed',
+    borderRadius: 12,
+    padding: '14px 16px',
+    fontSize: 17,
+    fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif',
+    color: '#1d1d1f',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
+  const labelBase: React.CSSProperties = {
+    display: 'block',
+    fontSize: 12,
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    color: '#1d1d1f',
+    marginBottom: 8,
+    fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif',
+  };
+
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
-      {/* ── Left panel — decorative ── */}
-      <div className="hidden lg:flex flex-col justify-between w-[42%] bg-cloud-white border-r border-sky-blueprint/25 p-10 relative overflow-hidden">
-        {/* Diagonal grid overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.035]"
-          style={{
-            backgroundImage: 'repeating-linear-gradient(45deg, #fff 0px, #fff 1px, transparent 1px, transparent 40px)',
-          }}
-        />
-        {/* Corner accent */}
-        <div
-          className="absolute bottom-0 right-0 w-64 h-64 pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle at 100% 100%, rgba(232,68,10,0.15), transparent 70%)',
-          }}
-        />
-        <div
-          className="absolute top-0 left-0 w-48 h-48 pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle at 0% 0%, rgba(59,130,246,0.10), transparent 70%)',
-          }}
-        />
+    <div
+      className="min-h-screen relative overflow-hidden"
+      style={{ background: GRADIENT_INDIGO, fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif' }}
+    >
+      {/* ── Top nav ── */}
+      <nav
+        className="absolute inset-x-0 top-0 z-10 flex items-center justify-between"
+        style={{
+          height: 44,
+          padding: '0 40px',
+          background: 'rgba(0,0,0,.18)',
+          backdropFilter: 'saturate(180%) blur(16px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(16px)',
+          borderBottom: '1px solid rgba(255,255,255,.08)',
+        }}
+      >
+        <div className="flex items-center gap-2.5">
+          <Mark size={18} />
+          <span style={{ font: '600 13px/1 inherit', color: 'rgba(255,255,255,.92)', letterSpacing: '-0.06px' }}>
+            FocusHub
+          </span>
+        </div>
+        <div className="hidden md:flex gap-7">
+          {['Vista general', 'Mantenimiento', 'Gastos', 'Modelo 3D', 'Soporte'].map((t) => (
+            <span key={t} style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', letterSpacing: '-0.04px' }}>{t}</span>
+          ))}
+        </div>
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.6)' }}>ES</span>
+      </nav>
 
-        {/* Logo area */}
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="h-8 w-8 rounded-lg bg-accent-500 flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v3" />
-                <rect x="9" y="11" width="14" height="10" rx="2" />
-                <circle cx="12" cy="16" r="1" />
-              </svg>
-            </div>
-            <span className="font-simeiz text-ink-black text-body-lg font-light italic tracking-tight">
-              FocusHub
-            </span>
-          </div>
-
-          {/* Big headline */}
-          <h2
-            className="font-display text-ink leading-none mb-4"
-            style={{ fontSize: '3.5rem', fontWeight: 700, letterSpacing: '-0.9px' }}
+      {/* ── Mobile / tablet stacked layout ── */}
+      <div className="lg:hidden flex flex-col items-center justify-center min-h-screen px-6 pt-24 pb-16 gap-10">
+        <div className="text-center">
+          <h1
+            style={{
+              fontSize: 56,
+              fontWeight: 700,
+              lineHeight: 1.02,
+              letterSpacing: '-0.9px',
+              color: '#ffffff',
+              margin: '0 0 12px',
+            }}
           >
-            Tu garaje<br />
-            <span className="text-azure">digital.</span>
-          </h2>
-          <p className="font-manrope text-body text-ink-charcoal/75 leading-relaxed max-w-xs">
-            Control total sobre el mantenimiento, gastos y documentación de tu vehículo.
+            Toma el<br />volante.
+          </h1>
+          <p style={{ fontSize: 18, fontWeight: 400, color: 'rgba(255,255,255,.82)', lineHeight: 1.4 }}>
+            Control total sobre tu vehículo.
+          </p>
+        </div>
+        <AuthCard
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          loading={loading}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          handleSubmit={handleSubmit}
+          inputBase={inputBase}
+          labelBase={labelBase}
+          style={{ width: '100%', maxWidth: 420, padding: 24 }}
+        />
+      </div>
+
+      {/* ── Desktop absolute layout ── */}
+      <div className="hidden lg:block">
+        {/* Left column */}
+        <div className="absolute" style={{ left: 80, top: 130, maxWidth: 620 }}>
+          <span
+            style={{
+              display: 'block',
+              fontSize: 14,
+              fontWeight: 600,
+              letterSpacing: '.12em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,.7)',
+              marginBottom: 20,
+            }}
+          >
+            FocusHub · 2026
+          </span>
+          <h1
+            style={{
+              fontSize: 96,
+              fontWeight: 700,
+              lineHeight: 1.02,
+              letterSpacing: '-2.11px',
+              color: '#ffffff',
+              margin: '0 0 20px',
+            }}
+          >
+            Toma el<br />volante.
+          </h1>
+          <p
+            style={{
+              fontSize: 22,
+              fontWeight: 300,
+              lineHeight: 1.4,
+              letterSpacing: '-0.2px',
+              color: 'rgba(255,255,255,.82)',
+              maxWidth: 480,
+              margin: 0,
+            }}
+          >
+            Control total sobre el mantenimiento, gastos y documentación de tu vehículo —
+            desde una sola interfaz.
           </p>
         </div>
 
-        {/* Feature list */}
-        <div className="relative space-y-3">
-          {[
-            { code: '01', label: 'Registro de mantenimiento' },
-            { code: '02', label: 'Alertas inteligentes por km' },
-            { code: '03', label: 'Modelo 3D interactivo' },
-            { code: '04', label: 'Historial de gastos' },
-          ].map(({ code, label }) => (
-            <div key={code} className="flex items-center gap-3">
-              <span className="font-manrope text-caption text-sunset-orange/70 w-5 shrink-0">{code}</span>
-              <div className="h-px w-4 bg-sky-blueprint/30" />
-              <span className="font-manrope text-caption text-ink-charcoal/80">{label}</span>
-            </div>
+        {/* Finish swatches */}
+        <div className="absolute flex items-center gap-3.5" style={{ left: 80, bottom: 120 }}>
+          <span
+            style={{
+              fontSize: 12,
+              letterSpacing: '.06em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,.7)',
+              marginRight: 6,
+            }}
+          >
+            Tema
+          </span>
+          {SWATCHES.map((s) => (
+            <span
+              key={s.label}
+              title={s.label}
+              style={{
+                display: 'block',
+                width: 24,
+                height: 24,
+                borderRadius: 999,
+                background: s.color,
+                outline: s.selected ? '2px solid #fff' : '1px solid rgba(255,255,255,.4)',
+                outlineOffset: s.selected ? 3 : 0,
+                cursor: 'default',
+              }}
+            />
           ))}
         </div>
 
-        {/* Bottom note */}
-        <p className="font-manrope text-caption text-ink-charcoal/45 relative">
-          Sistema v0.2 · 2026
-        </p>
-      </div>
-
-      {/* ── Right panel — auth form ── */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 relative">
-        {/* Subtle dot grid */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.025]"
+        {/* Auth card */}
+        <AuthCard
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          loading={loading}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          handleSubmit={handleSubmit}
+          inputBase={inputBase}
+          labelBase={labelBase}
           style={{
-            backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
-            backgroundSize: '20px 20px',
+            position: 'absolute',
+            right: 80,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 420,
+            padding: 36,
           }}
         />
 
-        <div className="w-full max-w-sm relative page-enter">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="tele-dot" />
-              <span className="font-sans text-caption text-graphite tracking-wider">Autenticación</span>
-            </div>
-            <h1
-              className="font-display text-ink leading-none mb-2"
-              style={{ fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.6px' }}
-            >
-              Acceso al<br />sistema
-            </h1>
-            <p className="font-manrope text-body text-ink-charcoal/70">
-              Introduce tus credenciales para continuar
-            </p>
-          </div>
-
-          {/* Form card */}
-          <div className="bg-cloud-white border border-sky-blueprint/25 rounded-card shadow-card p-6">
-            {/* Top stripe */}
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-accent-500/40 to-transparent -mt-6 mb-6 mx-[-24px] w-[calc(100%+48px)]" />
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <FloatingInput
-                type="email"
-                label="Email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                error={errors.email}
-                autoComplete="email"
-              />
-              <FloatingInput
-                type="password"
-                label="Contraseña"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                error={errors.password}
-                autoComplete="current-password"
-              />
-              <Button type="submit" loading={loading} fullWidth size="lg" className="mt-2">
-                {loading ? 'Verificando...' : 'Entrar'}
-              </Button>
-            </form>
-
-            <div className="mt-5 pt-4 border-t border-sky-blueprint/20 flex items-center justify-between">
-              <span className="font-manrope text-caption text-ink-charcoal/65">¿Sin cuenta?</span>
-              <Link
-                to="/register"
-                className="font-manrope text-caption text-sunset-orange hover:opacity-70 transition-opacity"
-              >
-                Registrarse →
-              </Link>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <p className="font-manrope text-center text-caption text-ink-charcoal/45 mt-6">
-            FocusHub · Sistema de gestión vehicular
-          </p>
+        {/* Bottom plate */}
+        <div
+          className="absolute inset-x-0 bottom-0 flex items-center justify-between"
+          style={{ height: 48, padding: '0 40px', fontSize: 12, color: 'rgba(255,255,255,.7)' }}
+        >
+          <span>Acabado mostrado · Indigo</span>
+          <span>Conexión cifrada · TLS 1.3</span>
         </div>
       </div>
     </div>
   );
 };
+
+/* ── Auth card extracted as a sub-component ── */
+interface AuthCardProps {
+  form: { email: string; password: string };
+  setForm: React.Dispatch<React.SetStateAction<{ email: string; password: string }>>;
+  errors: Record<string, string>;
+  loading: boolean;
+  showPassword: boolean;
+  setShowPassword: React.Dispatch<React.SetStateAction<boolean>>;
+  handleSubmit: (e: React.FormEvent) => void;
+  inputBase: React.CSSProperties;
+  labelBase: React.CSSProperties;
+  style?: React.CSSProperties;
+}
+
+function AuthCard({
+  form, setForm, errors, loading,
+  showPassword, setShowPassword,
+  handleSubmit, inputBase, labelBase, style,
+}: AuthCardProps) {
+  return (
+    <div
+      style={{
+        background: 'rgba(255,255,255,.78)',
+        backdropFilter: 'saturate(180%) blur(28px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(28px)',
+        borderRadius: 28,
+        border: '1px solid rgba(255,255,255,.5)',
+        color: '#1d1d1f',
+        ...style,
+      }}
+    >
+      {/* Eyebrow */}
+      <div className="flex items-center gap-2 mb-3.5">
+        <span
+          style={{
+            width: 8, height: 8, borderRadius: 999,
+            background: '#1cb05c',
+            boxShadow: '0 0 6px rgba(28,176,92,.6)',
+            display: 'inline-block',
+            flexShrink: 0,
+          }}
+        />
+        <span style={{ fontSize: 12, fontWeight: 500, color: '#474747', letterSpacing: '-0.04px' }}>
+          Acceso seguro
+        </span>
+      </div>
+
+      <h2 style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.6px', margin: '0 0 6px' }}>
+        Iniciar sesión
+      </h2>
+      <p style={{ fontSize: 15, lineHeight: 1.43, color: '#474747', margin: '0 0 22px' }}>
+        Tu sesión expiró por inactividad. Vuelve a entrar para continuar donde lo dejaste.
+      </p>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Email */}
+        <div>
+          <label style={labelBase}>Email</label>
+          <input
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            placeholder="nombre@dominio.com"
+            style={{
+              ...inputBase,
+              borderColor: errors.email ? '#d70015' : '#e8e8ed',
+            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#1d1d1f'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = errors.email ? '#d70015' : '#e8e8ed'; }}
+          />
+          {errors.email && (
+            <p style={{ fontSize: 12, color: '#d70015', marginTop: 6, marginLeft: 2 }}>{errors.email}</p>
+          )}
+        </div>
+
+        {/* Password */}
+        <div>
+          <label style={labelBase}>Contraseña</label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              placeholder="••••••••"
+              style={{
+                ...inputBase,
+                paddingRight: 90,
+                borderColor: errors.password ? '#d70015' : '#e8e8ed',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#1d1d1f'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = errors.password ? '#d70015' : '#e8e8ed'; }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              style={{
+                position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                background: 'transparent', border: 0,
+                color: '#0066cc', fontSize: 13, cursor: 'pointer', padding: '8px 10px',
+                fontFamily: 'inherit',
+              }}
+            >
+              {showPassword ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
+          {errors.password && (
+            <p style={{ fontSize: 12, color: '#d70015', marginTop: 6, marginLeft: 2 }}>{errors.password}</p>
+          )}
+        </div>
+
+        {/* Primary CTA — dark pill (gradient backdrop rule) */}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            marginTop: 14,
+            width: '100%',
+            padding: '14px 22px',
+            fontSize: 17,
+            fontWeight: 400,
+            fontFamily: 'inherit',
+            background: loading ? '#333' : '#000000',
+            color: '#ffffff',
+            border: 0,
+            borderRadius: 999,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.6 : 1,
+            transition: 'opacity 0.1s ease',
+          }}
+        >
+          {loading ? 'Verificando...' : 'Entrar'}
+        </button>
+
+        {/* Divider */}
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            margin: '12px 0 6px',
+            fontSize: 12, color: '#707070',
+          }}
+        >
+          <span style={{ flex: 1, height: 1, background: '#e8e8ed' }} />
+          o
+          <span style={{ flex: 1, height: 1, background: '#e8e8ed' }} />
+        </div>
+
+        {/* Ghost passkey button */}
+        <button
+          type="button"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '12px 16px',
+            background: 'transparent',
+            border: '1px solid #e8e8ed',
+            borderRadius: 999,
+            fontSize: 14, fontFamily: 'inherit', color: '#1d1d1f',
+            cursor: 'pointer',
+            transition: 'border-color 0.1s ease',
+          }}
+        >
+          <KeyIcon /> Continuar con passkey
+        </button>
+
+        {/* Footer links */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+          <a
+            href="#"
+            style={{ fontSize: 14, color: '#0066cc', textDecoration: 'none' }}
+          >
+            Recuperar acceso
+          </a>
+          <Link
+            to="/register"
+            style={{ fontSize: 14, color: '#0066cc', textDecoration: 'none', fontWeight: 500 }}
+          >
+            Crear cuenta →
+          </Link>
+        </div>
+      </form>
+    </div>
+  );
+}
