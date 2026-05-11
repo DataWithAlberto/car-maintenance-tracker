@@ -109,11 +109,7 @@ export const LoginPage = () => {
             FocusHub
           </span>
         </div>
-        <div className="hidden md:flex gap-7">
-          {['Vista general', 'Mantenimiento', 'Gastos', 'Modelo 3D', 'Soporte'].map((t) => (
-            <span key={t} style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', letterSpacing: '-0.04px' }}>{t}</span>
-          ))}
-        </div>
+        <div />
         <span style={{ fontSize: 12, color: 'rgba(255,255,255,.6)' }}>ES</span>
       </nav>
 
@@ -195,36 +191,6 @@ export const LoginPage = () => {
           </p>
         </div>
 
-        {/* Finish swatches */}
-        <div className="absolute flex items-center gap-3.5" style={{ left: 80, bottom: 120 }}>
-          <span
-            style={{
-              fontSize: 12,
-              letterSpacing: '.06em',
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,.7)',
-              marginRight: 6,
-            }}
-          >
-            Tema
-          </span>
-          {SWATCHES.map((s) => (
-            <span
-              key={s.label}
-              title={s.label}
-              style={{
-                display: 'block',
-                width: 24,
-                height: 24,
-                borderRadius: 999,
-                background: s.color,
-                outline: s.selected ? '2px solid #fff' : '1px solid rgba(255,255,255,.4)',
-                outlineOffset: s.selected ? 3 : 0,
-                cursor: 'default',
-              }}
-            />
-          ))}
-        </div>
 
         {/* Auth card */}
         <AuthCard
@@ -393,36 +359,6 @@ function AuthCard({
           }}
         >
           {loading ? 'Verificando...' : 'Entrar'}
-        </button>
-
-        {/* Divider */}
-        <div
-          style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            margin: '12px 0 6px',
-            fontSize: 12, color: '#707070',
-          }}
-        >
-          <span style={{ flex: 1, height: 1, background: '#e8e8ed' }} />
-          o
-          <span style={{ flex: 1, height: 1, background: '#e8e8ed' }} />
-        </div>
-
-        {/* Ghost passkey button */}
-        <button
-          type="button"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: '12px 16px',
-            background: 'transparent',
-            border: '1px solid #e8e8ed',
-            borderRadius: 999,
-            fontSize: 14, fontFamily: 'inherit', color: '#1d1d1f',
-            cursor: 'pointer',
-            transition: 'border-color 0.1s ease',
-          }}
-        >
-          <KeyIcon /> Continuar con passkey
         </button>
 
         {/* Footer links */}
