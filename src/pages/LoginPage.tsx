@@ -76,11 +76,11 @@ export const LoginPage = () => {
 
           {/* Big headline */}
           <h2
-            className="font-simeiz text-ink-black leading-none mb-4"
-            style={{ fontSize: '3.5rem', fontWeight: 300, letterSpacing: '-0.01em' }}
+            className="font-display text-ink leading-none mb-4"
+            style={{ fontSize: '3.5rem', fontWeight: 700, letterSpacing: '-0.9px' }}
           >
             Tu garaje<br />
-            <span className="text-sunset-orange italic">digital.</span>
+            <span className="text-azure">digital.</span>
           </h2>
           <p className="font-manrope text-body text-ink-charcoal/75 leading-relaxed max-w-xs">
             Control total sobre el mantenimiento, gastos y documentación de tu vehículo.
@@ -125,11 +125,11 @@ export const LoginPage = () => {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <span className="tele-dot" />
-              <span className="font-manrope text-caption text-sky-dark tracking-wider">Autenticación</span>
+              <span className="font-sans text-caption text-graphite tracking-wider">Autenticación</span>
             </div>
             <h1
-              className="font-simeiz text-ink-black leading-none mb-2"
-              style={{ fontSize: '2.5rem', fontWeight: 300, letterSpacing: '-0.01em' }}
+              className="font-display text-ink leading-none mb-2"
+              style={{ fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.6px' }}
             >
               Acceso al<br />sistema
             </h1>

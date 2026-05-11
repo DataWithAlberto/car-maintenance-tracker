@@ -2,18 +2,18 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recha
 import type { Expense } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 
-// Dyotanya palette — sky/sunset/vivid + tonal variations
+// Apple palette — azure/ink/graphite tonal scale
 const COLORS = [
-  '#81aed9', // sky-blueprint
-  '#ff8562', // sunset-orange
-  '#55a1ea', // vivid-blue
-  '#ffb3a0', // sunset-light
-  '#5a8ab3', // sky-dark
-  '#a8c9e8', // sky-light
-  '#e55c3a', // sunset-deep
-  '#436a8c', // sky-deeper
-  '#ffd1c2', // sunset-pale
-  '#333333', // ink-charcoal
+  '#0071e3', // azure
+  '#1d1d1f', // ink
+  '#707070', // graphite
+  '#0066cc', // cobalt-link
+  '#474747', // slate
+  '#333333', // ash
+  '#a8d3fb', // azure-light
+  '#e8e8ed', // silver-mist
+  '#3a3a3c', // ink-mid
+  '#6e6e73', // graphite-light
 ];
 
 interface Props {
@@ -57,15 +57,15 @@ export const ExpenseChart = ({ expenses }: Props) => {
             formatter={(val) => formatCurrency(Number(val))}
             contentStyle={{
               background: '#ffffff',
-              border: '1px solid rgba(129, 174, 217, 0.4)',
-              borderRadius: '20px',
-              boxShadow: '5px -5px 0px 0px rgb(51, 51, 51)',
-              fontFamily: 'Manrope, sans-serif',
+              border: '1px solid #e8e8ed',
+              borderRadius: '28px',
+              boxShadow: 'none',
+              fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif',
             }}
-            labelStyle={{ color: '#000000', fontWeight: 500 }}
-            itemStyle={{ color: '#333333' }}
+            labelStyle={{ color: '#1d1d1f', fontWeight: 500 }}
+            itemStyle={{ color: '#707070' }}
           />
-          <Legend wrapperStyle={{ color: '#333333', fontSize: '12px', fontFamily: 'Manrope, sans-serif' }} />
+          <Legend wrapperStyle={{ color: '#707070', fontSize: '12px', fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif' }} />
         </PieChart>
       </ResponsiveContainer>
     </div>

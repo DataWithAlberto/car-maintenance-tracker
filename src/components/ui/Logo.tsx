@@ -9,9 +9,8 @@ export const Logo = ({ size = 28, withText = true, className = '' }: LogoProps) 
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden>
       <defs>
         <linearGradient id="logo-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#81aed9" />
-          <stop offset="0.55" stopColor="#55a1ea" />
-          <stop offset="1" stopColor="#ff8562" />
+          <stop offset="0" stopColor="#0071e3" />
+          <stop offset="1" stopColor="#0066cc" />
         </linearGradient>
       </defs>
       <rect x="2" y="2" width="60" height="60" rx="14" fill="#ffffff" stroke="url(#logo-grad)" strokeWidth="2" />
@@ -20,8 +19,8 @@ export const Logo = ({ size = 28, withText = true, className = '' }: LogoProps) 
       <path d="M32 22 L32 32 M22 32 L32 32 M32 32 L42 32" stroke="url(#logo-grad)" strokeWidth="3" strokeLinecap="round" />
     </svg>
     {withText && (
-      <span className="font-simeiz tracking-tight text-ink-black text-body-lg font-light">
-        Focus<span className="bg-gradient-to-br from-sky-blueprint via-vivid-blue to-sunset-orange bg-clip-text text-transparent font-medium">Hub</span>
+      <span className="font-display tracking-tight text-ink text-body-lg font-semibold">
+        Focus<span className="bg-gradient-to-br from-azure to-cobalt-link bg-clip-text text-transparent">Hub</span>
       </span>
     )}
   </div>

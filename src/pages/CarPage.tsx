@@ -106,8 +106,8 @@ export const CarPage = () => {
             </div>
             <div className="min-w-0">
               <h1
-                className="font-simeiz text-ink-black leading-none truncate"
-                style={{ fontSize: '1.2rem', fontWeight: 300, letterSpacing: '-0.01em' }}
+                className="font-display text-ink leading-none truncate"
+                style={{ fontSize: '1.2rem', fontWeight: 600, letterSpacing: '-0.1px' }}
               >
                 {selectedVehicle.brand} {selectedVehicle.model}
                 <span className="font-manrope text-body text-ink-charcoal/60 font-normal"> / {selectedVehicle.year}</span>

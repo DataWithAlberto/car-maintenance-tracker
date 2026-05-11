@@ -229,7 +229,7 @@ const ProceduralCar = ({ onPartClick }: { onPartClick: (info: PartClickInfo) => 
         >
           <boxGeometry args={size} />
           <meshStandardMaterial
-            color={hovered === key ? '#55a1ea' : color}
+            color={hovered === key ? '#0071e3' : color}
             transparent opacity={hovered === key ? 0.85 : 0.7}
             metalness={0.3} roughness={0.6}
           />

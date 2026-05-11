@@ -31,8 +31,8 @@ export const Sidebar = () => {
               <p className="font-manrope text-caption text-sky-dark/80 tracking-wide">Vehículo activo</p>
             </div>
             <p
-              className="font-simeiz text-ink-black leading-tight truncate"
-              style={{ fontSize: '1rem', fontWeight: 300, letterSpacing: '-0.01em' }}
+              className="font-display text-ink leading-tight truncate"
+              style={{ fontSize: '1rem', fontWeight: 600, letterSpacing: '-0.1px' }}
             >
               {selectedVehicle.brand} {selectedVehicle.model}
             </p>

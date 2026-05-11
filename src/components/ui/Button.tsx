@@ -15,15 +15,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<Variant, string> = {
   primary:
-    'bg-sky-blueprint text-cloud-white border border-sky-dark/30 hover:bg-sky-dark hover:text-cloud-white',
+    'bg-azure text-snow border-0 hover:opacity-85',
   accent:
-    'bg-sunset-orange text-cloud-white border border-sunset-orange/40 hover:bg-[color:var(--color-accent-600)]',
+    'bg-obsidian text-snow border-0 hover:opacity-80',
   secondary:
-    'bg-cloud-white text-ink-black border border-sky-blueprint/40 hover:border-sky-blueprint hover:bg-canvas-50',
+    'bg-snow text-ink border border-silver-mist hover:border-graphite hover:bg-fog',
   ghost:
-    'bg-transparent text-ink-charcoal border border-transparent hover:bg-canvas-50 hover:text-ink-black',
+    'bg-transparent text-ink border-0 hover:opacity-70',
   danger:
-    'bg-sunset-orange/15 text-sunset-orange border border-sunset-orange/40 hover:bg-sunset-orange hover:text-cloud-white',
+    'bg-danger-500/10 text-danger-500 border border-danger-500/30 hover:bg-danger-500 hover:text-snow',
 };
 
 const sizeStyles: Record<Size, string> = {

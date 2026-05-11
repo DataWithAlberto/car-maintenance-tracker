@@ -108,11 +108,11 @@ export const DashboardPage = () => {
             <p className="font-manrope text-caption text-ink-charcoal/70">Tu garaje</p>
           </div>
           <h1
-            className="font-simeiz text-ink-black leading-tight mt-1"
-            style={{ fontSize: '3rem', fontWeight: 300, letterSpacing: '-0.02em' }}
+            className="font-display text-ink leading-tight mt-1"
+            style={{ fontSize: '3rem', fontWeight: 700, letterSpacing: '-0.9px' }}
           >
             Bienvenido
-            <span className="text-sunset-orange italic"> de vuelta</span>
+            <span className="text-azure"> de vuelta</span>
           </h1>
           <p className="font-manrope text-body text-ink-charcoal/70 mt-2">
             {vehicles.length === 0
@@ -263,8 +263,8 @@ const VehicleCard = ({ vehicle, stats, onSelect }: VehicleCardProps) => {
           <div className="min-w-0 flex-1">
             <RoleBadge role={vehicle.role} />
             <h3
-              className="font-simeiz text-ink-black leading-tight mt-2 truncate"
-              style={{ fontSize: '1.5rem', fontWeight: 300, letterSpacing: '-0.01em' }}
+              className="font-display text-ink leading-tight mt-2 truncate"
+              style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.36px' }}
             >
               {vehicle.brand} {vehicle.model}
             </h3>
@@ -333,8 +333,8 @@ const TeleStat = ({ label, value, icon: Icon }: { label: string; value: string; 
       <span className="font-manrope text-caption text-ink-charcoal/60 tracking-wide">{label}</span>
     </div>
     <p
-      className="font-simeiz text-ink-black tabular-nums truncate leading-none"
-      style={{ fontSize: '1.1rem', fontWeight: 300, letterSpacing: '-0.01em' }}
+      className="font-display text-ink tabular-nums truncate leading-none"
+      style={{ fontSize: '1.1rem', fontWeight: 600, letterSpacing: '-0.1px' }}
     >
       {value}
     </p>

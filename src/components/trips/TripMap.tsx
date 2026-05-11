@@ -61,19 +61,19 @@ export const TripMap = ({ trips, selectedTripId, onTripClick, className = '', st
       const bounds: [number, number][] = [];
 
       const startIcon = L.divIcon({
-        html: `<div style="width:12px;height:12px;border-radius:50%;background:#81aed9;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>`,
+        html: `<div style="width:12px;height:12px;border-radius:50%;background:#0071e3;border:2px solid white;"></div>`,
         className: '',
         iconSize: [12, 12],
         iconAnchor: [6, 6],
       });
       const endIcon = L.divIcon({
-        html: `<div style="width:12px;height:12px;border-radius:50%;background:#ff8562;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>`,
+        html: `<div style="width:12px;height:12px;border-radius:50%;background:#1d1d1f;border:2px solid white;"></div>`,
         className: '',
         iconSize: [12, 12],
         iconAnchor: [6, 6],
       });
       const waypointIcon = L.divIcon({
-        html: `<div style="width:10px;height:10px;border-radius:50%;background:#55a1ea;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.25)"></div>`,
+        html: `<div style="width:10px;height:10px;border-radius:50%;background:#0066cc;border:2px solid white;"></div>`,
         className: '',
         iconSize: [10, 10],
         iconAnchor: [5, 5],
@@ -81,7 +81,7 @@ export const TripMap = ({ trips, selectedTripId, onTripClick, className = '', st
 
       for (const trip of trips) {
         const isSelected = trip.id === selectedTripId;
-        const color = isSelected ? '#ff8562' : '#81aed9';
+        const color = isSelected ? '#0071e3' : '#1d1d1f';
 
         const pts: [number, number][] = [];
 
