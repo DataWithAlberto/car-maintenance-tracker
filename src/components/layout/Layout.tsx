@@ -1,22 +1,14 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import {
   LayoutGrid, Wrench, Receipt, FileText, Route, Share2, Settings,
 } from 'lucide-react';
-import { Navbar } from './Navbar';
-import { Sidebar } from './Sidebar';
-import { BottomNav } from './BottomNav';
 import { FloatingDock, type FloatingDockItem } from './FloatingDock';
 import { PageTransition } from '../ui/PageTransition';
 import { useVehicleStore } from '../../store/vehicleStore';
 import { useAuthStore } from '../../store/authStore';
-
-/* Vehicle-scoped route prefixes — when active, render FloatingDock. */
-const VEHICLE_ROUTES = [
-  '/car', '/maintenance', '/expenses',
-  '/documents', '/trips', '/sharing', '/settings',
-];
+import { useVehicle } from '../../hooks/useVehicle';
 
 const TOASTER = (
   <Toaster
@@ -40,14 +32,17 @@ const TOASTER = (
 
 export const Layout = () => {
   const location = useLocation();
-  const { selectedVehicle } = useVehicleStore();
+  const { selectedVehicle, vehicles } = useVehicleStore();
   const { user } = useAuthStore();
+  const { fetchVehicles } = useVehicle();
 
-  const isVehicleRoute = VEHICLE_ROUTES.some(
-    (r) => location.pathname === r || location.pathname.startsWith(`${r}/`),
-  );
+  /* Make sure the vehicle list is populated regardless of which page the user
+     lands on first. The hook short-circuits when called twice. */
+  useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
 
-  // ─── Build dock data only when we'll render it ──────────────────────────
+  /* Vehicle context for the dock: selected → first available. */
+  const activeVehicle = selectedVehicle ?? vehicles[0] ?? null;
+
   const dockItems = useMemo<FloatingDockItem[]>(() => ([
     { id: 'overview',    label: 'Vista general', icon: LayoutGrid, href: '/car' },
     { id: 'maintenance', label: 'Mantenimiento', icon: Wrench,     href: '/maintenance' },
@@ -84,27 +79,11 @@ export const Layout = () => {
     };
   }, [user]);
 
-  // Fall back to the standard layout if we're on a vehicle route but no vehicle
-  // has been selected yet — keeps the sidebar/navbar visible so the user can go
-  // back to the dashboard.
-  if (isVehicleRoute && selectedVehicle) {
-    const vehicleMeta = {
-      brand: selectedVehicle.brand,
-      model: selectedVehicle.model,
-      plate: selectedVehicle.license_plate ?? '—',
-    };
+  /* No vehicles yet — minimal shell (login/empty-garage state lives in pages). */
+  if (!activeVehicle) {
     return (
       <div className="min-h-screen" style={{ background: '#f5f5f7' }}>
-        <FloatingDock
-          items={dockItems}
-          activeId={activeId}
-          vehicle={vehicleMeta}
-          user={userMeta}
-          backHref="/dashboard"
-        />
-        {/* Reserve 100px on the left so children don't sit under the dock.
-            (60px dock + 20px offset + 20px breathing room.) */}
-        <main className="pl-[100px] overflow-x-hidden">
+        <main className="overflow-x-hidden">
           <PageTransition>
             <Outlet />
           </PageTransition>
@@ -114,19 +93,28 @@ export const Layout = () => {
     );
   }
 
-  // ─── Default (dashboard / no selected vehicle) ──────────────────────────
+  const vehicleMeta = {
+    brand: activeVehicle.brand,
+    model: activeVehicle.model,
+    plate: activeVehicle.license_plate ?? '—',
+  };
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 overflow-x-hidden pb-24 md:pb-0">
-          <PageTransition>
-            <Outlet />
-          </PageTransition>
-        </main>
-      </div>
-      <BottomNav />
+    <div className="min-h-screen" style={{ background: '#f5f5f7' }}>
+      <FloatingDock
+        items={dockItems}
+        activeId={activeId}
+        vehicle={vehicleMeta}
+        user={userMeta}
+        backHref="/dashboard"
+      />
+      {/* Reserve 100px on the left so children don't sit under the dock.
+          (60px dock + 20px offset + 20px breathing room.) */}
+      <main className="pl-[100px] overflow-x-hidden">
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
+      </main>
       {TOASTER}
     </div>
   );

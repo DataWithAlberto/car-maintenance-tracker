@@ -443,16 +443,32 @@ export const DashboardPage = () => {
             <VehicleRender />
 
             {primary && (
-              <div style={{
-                background: 'rgba(255,255,255,0.10)',
-                border: '1px solid rgba(255,255,255,0.22)',
-                borderRadius: 16,
-                padding: '14px 18px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                gap: 12,
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-              }}>
+              <button
+                type="button"
+                onClick={openPrimary}
+                aria-label={`Abrir ${primary.brand} ${primary.model}`}
+                style={{
+                  all: 'unset',
+                  cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.10)',
+                  border: '1px solid rgba(255,255,255,0.22)',
+                  borderRadius: 16,
+                  padding: '14px 18px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  gap: 12,
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  transition: 'background 180ms ease, border-color 180ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.34)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.22)';
+                }}
+              >
                 <div>
                   <div style={{
                     fontFamily: 'Inter, var(--font-sf-pro-display)',
@@ -469,20 +485,26 @@ export const DashboardPage = () => {
                     {` · ${primary.role === 'owner' ? 'PROPIETARIO' : primary.role.toUpperCase()}`}
                   </div>
                 </div>
-                {primaryStats && primaryStats.alerts.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {primaryStats && primaryStats.alerts.length > 0 && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '6px 12px', borderRadius: 999,
+                      background: 'rgba(255,255,255,0.18)',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      fontFamily: 'Inter, var(--font-sf-pro-text)',
+                      fontWeight: 600, fontSize: 12, color: '#fff',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      ⚠ {primaryStats.alerts.length} alerta{primaryStats.alerts.length === 1 ? '' : 's'}
+                    </span>
+                  )}
                   <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    padding: '6px 12px', borderRadius: 999,
-                    background: 'rgba(255,255,255,0.18)',
-                    border: '1px solid rgba(255,255,255,0.3)',
                     fontFamily: 'Inter, var(--font-sf-pro-text)',
-                    fontWeight: 600, fontSize: 12, color: '#fff',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    ⚠ {primaryStats.alerts.length} alerta{primaryStats.alerts.length === 1 ? '' : 's'}
-                  </span>
-                )}
-              </div>
+                    fontSize: 18, color: '#fff', lineHeight: 1,
+                  }}>→</span>
+                </div>
+              </button>
             )}
           </div>
       </section>
@@ -744,29 +766,34 @@ export const DashboardPage = () => {
             </section>
 
             {/* ── Flota registrada ──────────────────────────────────────── */}
-            {vehicles.length > 1 && (
-              <section style={{ borderTop: '1px solid #e8e8ed', paddingTop: 36 }}>
-                <span className="eyebrow">Flota registrada · {vehicles.length} vehículos</span>
-                <div style={{
-                  marginTop: 24,
-                  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                  gap: 16,
-                }}>
-                  {vehicles.map((v) => (
-                    <VehicleGridCard
-                      key={v.id}
-                      vehicle={v}
-                      stats={stats[v.id]}
-                      isPrimary={v.id === primary?.id}
-                      onSelect={() => {
-                        storeSet(v);
-                        navigate('/car');
-                      }}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+            <section style={{ borderTop: '1px solid #e8e8ed', paddingTop: 36 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16 }}>
+                <span className="eyebrow">
+                  Flota registrada · {vehicles.length} vehículo{vehicles.length === 1 ? '' : 's'}
+                </span>
+                <span className="mono" style={{ fontSize: 11, color: '#a1a1a6' }}>
+                  CLIC PARA SELECCIONAR
+                </span>
+              </div>
+              <div style={{
+                marginTop: 24,
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: 16,
+              }}>
+                {vehicles.map((v) => (
+                  <VehicleGridCard
+                    key={v.id}
+                    vehicle={v}
+                    stats={stats[v.id]}
+                    isPrimary={v.id === primary?.id}
+                    onSelect={() => {
+                      storeSet(v);
+                      navigate('/car');
+                    }}
+                  />
+                ))}
+              </div>
+            </section>
           </>
         )}
       </div>
