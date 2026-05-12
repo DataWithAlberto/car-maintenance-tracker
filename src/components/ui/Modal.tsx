@@ -12,13 +12,25 @@ interface ModalProps {
   footer?: ReactNode;
 }
 
+/* ─── Apple-style modal ───────────────────────────────────────────────────────
+ *
+ * - Surface: #ffffff card on #1d1d1f/40 backdrop with backdrop-blur.
+ * - Radius: 28px (card token).
+ * - Zero box-shadow — elevation comes from the dark backdrop alone.
+ * - Title: SF Pro Display 600 24/-0.36px (heading-sm).
+ * - Description: SF Pro Text 17/400 #707070.
+ * - Hairline divider 1px #e8e8ed between header / body / footer.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
 const sizeMap = {
   sm: 'max-w-sm',
   md: 'max-w-md',
   lg: 'max-w-2xl',
 };
 
-export const Modal = ({ open, onClose, title, description, children, size = 'md', footer }: ModalProps) => {
+export const Modal = ({
+  open, onClose, title, description, children, size = 'md', footer,
+}: ModalProps) => {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -33,40 +45,83 @@ export const Modal = ({ open, onClose, title, description, children, size = 'md'
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
       style={{ animation: 'fade-in 0.2s ease-out' }}
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
     >
-      <div className="absolute inset-0 bg-ink-black/40 backdrop-blur-sm" />
+      {/* Backdrop — dark ink with subtle blur */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'rgba(29, 29, 31, 0.45)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+        }}
+      />
+
+      {/* Sheet */}
       <div
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'relative w-full bg-cloud-white border border-sky-blueprint/30 rounded-t-card sm:rounded-card shadow-card',
+          'relative w-full bg-snow',
+          'rounded-t-[28px] sm:rounded-[28px]',
           sizeMap[size],
         )}
         style={{ animation: 'slide-up 0.35s var(--ease-out-expo)' }}
       >
-        <div className="flex items-start justify-between p-20 sm:p-48 border-b border-sky-blueprint/20">
-          <div className="min-w-0 pr-4">
-            {title && (
-              <h2 className="font-simeiz text-heading font-light text-ink-black tracking-tight">
-                {title}
-              </h2>
-            )}
-            {description && (
-              <p className="font-manrope text-body text-ink-charcoal mt-2">{description}</p>
-            )}
+        {/* Header */}
+        {(title || description) && (
+          <div className="flex items-start justify-between gap-4 p-7 border-b border-silver-mist">
+            <div className="min-w-0 flex-1">
+              {title && (
+                <h2
+                  className="font-display text-ink"
+                  style={{
+                    fontWeight: 600,
+                    fontSize: 24,
+                    lineHeight: 1.2,
+                    letterSpacing: '-0.36px',
+                  }}
+                >
+                  {title}
+                </h2>
+              )}
+              {description && (
+                <p
+                  className="font-text text-graphite mt-2"
+                  style={{
+                    fontWeight: 400,
+                    fontSize: 17,
+                    lineHeight: 1.4,
+                    letterSpacing: '-0.1px',
+                  }}
+                >
+                  {description}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className={cn(
+                'shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-full',
+                'text-ink hover:bg-fog transition-colors duration-150',
+              )}
+              aria-label="Cerrar"
+            >
+              <X className="h-5 w-5" strokeWidth={1.6} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="shrink-0 -mr-1 -mt-1 h-9 w-9 inline-flex items-center justify-center rounded-button text-ink-charcoal hover:text-ink-black hover:bg-canvas-50 transition-colors"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="p-20 sm:p-48 max-h-[70vh] overflow-y-auto">{children}</div>
-        {footer && <div className="p-20 sm:p-48 border-t border-sky-blueprint/20">{footer}</div>}
+        )}
+
+        {/* Body */}
+        <div className="p-7 max-h-[70vh] overflow-y-auto">{children}</div>
+
+        {/* Footer */}
+        {footer && (
+          <div className="p-7 border-t border-silver-mist">{footer}</div>
+        )}
       </div>
     </div>
   );

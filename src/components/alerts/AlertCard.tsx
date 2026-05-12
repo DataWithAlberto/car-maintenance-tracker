@@ -1,35 +1,27 @@
-import { AlertTriangle, Info, AlertCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { Alert } from '../../types';
 import { cn } from '../../utils/cn';
 
+/* ─── Apple-style alert ──────────────────────────────────────────────────────
+ *
+ * Neutral surface across all severities. The only chromatic notes are:
+ *   1) a 3px left bar in the severity color
+ *   2) a 6px dot inline with the mono label
+ *
+ * The rest stays achromatic — Apple uses color sparingly as a semantic
+ * accent, never as a fill that competes with the page content.
+ *
+ * - Surface: #ffffff snow + 1px #e8e8ed silver border, 14px radius.
+ * - Severity bar: 3px, full-height, on the left edge.
+ * - Label: JetBrains Mono 500 11/.14em uppercase, severity-colored.
+ * - Body: SF Pro Text 15/400 #1d1d1f.
+ * - Zero box-shadows.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
 const severityConfig = {
-  high: {
-    icon: AlertCircle,
-    iconCls: 'text-sunset-orange',
-    text: 'text-ink-black',
-    label: 'text-sunset-orange',
-    bg: 'bg-sunset-orange/10 border-sunset-orange/40',
-    bar: 'bg-sunset-orange',
-    code: 'ALT',
-  },
-  medium: {
-    icon: AlertTriangle,
-    iconCls: 'text-warn-500',
-    text: 'text-ink-charcoal',
-    label: 'text-warn-500',
-    bg: 'bg-warn-400/15 border-warn-400/40',
-    bar: 'bg-warn-500',
-    code: 'WARN',
-  },
-  low: {
-    icon: Info,
-    iconCls: 'text-sky-dark',
-    text: 'text-ink-charcoal',
-    label: 'text-sky-dark',
-    bg: 'bg-sky-blueprint/10 border-sky-blueprint/40',
-    bar: 'bg-sky-blueprint',
-    code: 'INFO',
-  },
+  high:   { label: 'CRÍTICO', color: '#b64400' /* ember  */ },
+  medium: { label: 'AVISO',   color: '#c77700' /* warn   */ },
+  low:    { label: 'INFO',    color: '#0066cc' /* cobalt */ },
 };
 
 interface Props {
@@ -38,32 +30,54 @@ interface Props {
 }
 
 export const AlertCard = ({ alert, onDismiss }: Props) => {
-  const config = severityConfig[alert.severity ?? 'low'];
-  const Icon = config.icon;
+  const cfg = severityConfig[alert.severity ?? 'low'];
 
   return (
-    <div className={cn(
-      'relative flex items-start gap-3 pl-4 pr-3 py-3 rounded-lg border overflow-hidden',
-      config.bg,
-    )}>
-      {/* Left severity bar */}
-      <span className={cn('absolute left-0 inset-y-0 w-[3px]', config.bar)} />
-
-      {/* Icon */}
-      <Icon className={cn('h-3.5 w-3.5 mt-0.5 shrink-0', config.iconCls)} strokeWidth={2.2} />
+    <div
+      className={cn(
+        'relative flex items-start gap-3',
+        'pl-4 pr-3 py-3',
+        'bg-snow border border-silver-mist rounded-[14px]',
+        'overflow-hidden',
+      )}
+    >
+      {/* Severity bar */}
+      <span
+        className="absolute left-0 inset-y-0"
+        style={{ width: 3, background: cfg.color }}
+        aria-hidden="true"
+      />
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <span className={cn('font-manrope text-caption font-semibold tracking-wide', config.label)}>
-            {config.code}
-          </span>
-          <span className="text-ink-charcoal/65 text-[9px]">·</span>
-          <span className="font-manrope text-caption text-ink-charcoal/60 truncate">
-            {alert.id.slice(0, 8).toUpperCase()}
+        <div className="flex items-center gap-2 mb-1">
+          <span
+            className="rounded-full inline-block"
+            style={{ width: 6, height: 6, background: cfg.color }}
+            aria-hidden="true"
+          />
+          <span
+            className="font-mono uppercase"
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              letterSpacing: '0.14em',
+              color: cfg.color,
+              lineHeight: 1,
+            }}
+          >
+            {cfg.label}
           </span>
         </div>
-        <p className={cn('font-manrope text-body leading-relaxed', config.text)}>
+        <p
+          className="font-text text-ink"
+          style={{
+            fontSize: 15,
+            fontWeight: 400,
+            lineHeight: 1.45,
+            letterSpacing: '-0.1px',
+          }}
+        >
           {alert.description}
         </p>
       </div>
@@ -72,10 +86,13 @@ export const AlertCard = ({ alert, onDismiss }: Props) => {
       {onDismiss && (
         <button
           onClick={() => onDismiss(alert.id)}
-          className="text-ink-charcoal/80 hover:text-ink-black p-1 -m-1 rounded transition-colors shrink-0"
+          className={cn(
+            'shrink-0 h-7 w-7 inline-flex items-center justify-center rounded-full',
+            'text-graphite hover:text-ink hover:bg-fog transition-colors duration-150',
+          )}
           aria-label="Descartar alerta"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-4 w-4" strokeWidth={1.6} />
         </button>
       )}
     </div>
