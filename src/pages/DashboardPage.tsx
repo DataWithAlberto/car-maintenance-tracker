@@ -697,7 +697,7 @@ export const DashboardPage = () => {
             </section>
 
             {/* ── Section 3 — GASTOS one-liner ──────────────────────────── */}
-            <section className="gastos-row">
+            <section className="gastos-row" style={{ marginBottom: 80 }}>
               <style>{`
                 .gastos-row {
                   display: flex; justify-content: space-between; align-items: flex-end;
@@ -742,6 +742,31 @@ export const DashboardPage = () => {
                 </button>
               </div>
             </section>
+
+            {/* ── Flota registrada ──────────────────────────────────────── */}
+            {vehicles.length > 1 && (
+              <section style={{ borderTop: '1px solid #e8e8ed', paddingTop: 36 }}>
+                <span className="eyebrow">Flota registrada · {vehicles.length} vehículos</span>
+                <div style={{
+                  marginTop: 24,
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                  gap: 16,
+                }}>
+                  {vehicles.map((v) => (
+                    <VehicleGridCard
+                      key={v.id}
+                      vehicle={v}
+                      stats={stats[v.id]}
+                      isPrimary={v.id === primary?.id}
+                      onSelect={() => {
+                        storeSet(v);
+                        navigate('/car');
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>
@@ -823,6 +848,145 @@ const BodySkeleton = () => (
     ))}
   </div>
 );
+
+// ─── Vehicle Grid Card (fleet) ──────────────────────────────────────────────
+interface VehicleGridCardProps {
+  vehicle: VehicleWithAccess;
+  stats?: VehicleStats;
+  isPrimary: boolean;
+  onSelect: () => void;
+}
+
+const VehicleGridCard = ({
+  vehicle, stats, isPrimary, onSelect,
+}: VehicleGridCardProps) => {
+  const alertCount = stats?.alerts.length ?? 0;
+  const recordCount = stats?.records.length ?? 0;
+
+  return (
+    <button
+      onClick={onSelect}
+      style={{
+        all: 'unset',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        textAlign: 'left',
+        background: '#fff',
+        border: isPrimary ? '2px solid #0071e3' : '1px solid #e8e8ed',
+        borderRadius: 20,
+        padding: 20,
+        minHeight: 200,
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        opacity: isPrimary ? 1 : 0.8,
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.borderColor = '#0071e3';
+        (e.currentTarget as HTMLElement).style.opacity = '1';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.borderColor = isPrimary ? '#0071e3' : '#e8e8ed';
+        (e.currentTarget as HTMLElement).style.opacity = isPrimary ? '1' : '0.8';
+      }}
+    >
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 8 }}>
+          <div style={{ flex: 1 }}>
+            <h3 style={{
+              fontFamily: 'Inter, var(--font-sf-pro-display)',
+              fontWeight: 600,
+              fontSize: 18,
+              letterSpacing: '-0.2px',
+              color: '#1d1d1f',
+              margin: '0 0 4px',
+            }}>
+              {vehicle.brand} {vehicle.model}
+            </h3>
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: '#a1a1a6',
+              letterSpacing: '0.08em',
+              marginBottom: 8,
+            }}>
+              {vehicle.year}
+              {vehicle.fuel_type && ` · ${vehicle.fuel_type}`}
+              {vehicle.license_plate && ` · ${vehicle.license_plate}`}
+            </div>
+          </div>
+          {alertCount > 0 ? (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 8px',
+              borderRadius: 999,
+              background: '#b64400',
+              color: '#fff',
+              fontSize: 11,
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+            }}>
+              ⚠ {alertCount}
+            </span>
+          ) : (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 20,
+              height: 20,
+              borderRadius: '50%',
+              background: '#1cb05c',
+              color: '#fff',
+              fontSize: 10,
+            }}>
+              ✓
+            </span>
+          )}
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 12,
+          marginTop: 12,
+        }}>
+          <div>
+            <div style={{ fontSize: 11, color: '#a1a1a6', marginBottom: 4 }}>KM</div>
+            <div style={{
+              fontFamily: 'Inter, var(--font-sf-pro-display)',
+              fontWeight: 600,
+              fontSize: 20,
+              color: '#1d1d1f',
+            }}>
+              {fmtN(vehicle.current_km)}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: '#a1a1a6', marginBottom: 4 }}>SVC</div>
+            <div style={{
+              fontFamily: 'Inter, var(--font-sf-pro-display)',
+              fontWeight: 600,
+              fontSize: 20,
+              color: '#1d1d1f',
+            }}>
+              {recordCount}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        color: '#a1a1a6',
+        marginTop: 12,
+      }}>
+        {isPrimary ? '✓ Vehículo principal' : 'Haz click para seleccionar'}
+      </div>
+    </button>
+  );
+};
 
 const EditorialEmpty = ({ onAdd }: { onAdd: () => void }) => (
   <div style={{
