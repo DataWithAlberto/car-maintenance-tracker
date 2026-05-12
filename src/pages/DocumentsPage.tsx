@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, Trash2, ExternalLink, AlertTriangle, Star } from 'lucide-react';
+import { Plus, FileText, Trash2, ExternalLink, Star } from 'lucide-react';
 import { DocumentUpload } from '../components/documents/DocumentUpload';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -40,22 +40,40 @@ export const DocumentsPage = () => {
     toast.success('Documento eliminado');
   };
 
-  const isExpiringSoon = (expiry?: string) => expiry ? isBefore(parseISO(expiry), addDays(new Date(), 30)) : false;
-  const isExpired = (expiry?: string) => expiry ? isBefore(parseISO(expiry), new Date()) : false;
+  const isExpiringSoon = (expiry?: string) =>
+    expiry ? isBefore(parseISO(expiry), addDays(new Date(), 30)) : false;
+  const isExpired = (expiry?: string) =>
+    expiry ? isBefore(parseISO(expiry), new Date()) : false;
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-4xl mx-auto">
-      <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+    <div className="px-6 sm:px-10 py-10 max-w-5xl mx-auto">
+      <header className="flex items-end justify-between mb-10 gap-6 flex-wrap">
         <div>
-          <p className="font-manrope text-caption text-sky-dark/80 tracking-wide mb-1">
+          <span className="eyebrow">
             {selectedVehicle.brand} {selectedVehicle.model}
-          </p>
-          <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">Documentos</h1>
-          <p className="font-manrope text-caption text-ink-charcoal/70 mt-1.5">
-            <span className="font-semibold text-ink-black tabular-nums">{docs.length}</span> archivos
+            {selectedVehicle.license_plate ? ` · ${selectedVehicle.license_plate}` : ''}
+          </span>
+          <h1
+            className="text-ink"
+            style={{
+              fontFamily: 'Inter, var(--font-sf-pro-display)',
+              fontWeight: 700,
+              fontSize: 'clamp(40px, 6vw, 56px)',
+              lineHeight: 1.07,
+              letterSpacing: '-0.9px',
+              margin: '12px 0 0',
+            }}
+          >
+            Documentos.
+          </h1>
+          <p
+            className="font-text text-graphite mt-3"
+            style={{ fontSize: 17, lineHeight: 1.45, letterSpacing: '-0.1px' }}
+          >
+            <span className="text-ink font-medium tabular-nums">{docs.length}</span> archivos guardados
           </p>
         </div>
-        <Button onClick={() => setShowUpload(true)} iconLeft={<Plus className="h-4 w-4" />}>
+        <Button variant="accent" onClick={() => setShowUpload(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
           Subir documento
         </Button>
       </header>
@@ -70,7 +88,7 @@ export const DocumentsPage = () => {
           title="Sin documentos guardados"
           description="Sube tu seguro, ITV, ficha técnica o cualquier documento importante del vehículo. Te avisaremos antes de que venzan."
           action={
-            <Button onClick={() => setShowUpload(true)} iconLeft={<Plus className="h-4 w-4" />}>
+            <Button variant="accent" onClick={() => setShowUpload(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
               Subir primer documento
             </Button>
           }
@@ -83,51 +101,59 @@ export const DocumentsPage = () => {
             return (
               <li
                 key={doc.id}
-                className={cn(
-                  'group bg-cloud-white border rounded-card p-4 flex items-center gap-4 transition-all hover:shadow-subtle',
-                  expired
-                    ? 'border-danger-500/40 hover:border-danger-500/60'
-                    : soon
-                    ? 'border-warn-500/40 hover:border-warn-500/60'
-                    : 'border-sky-blueprint/20 hover:border-sky-blueprint/40',
-                )}
+                className="group bg-snow border border-silver-mist rounded-[14px] p-4 flex items-center gap-4 transition-colors hover:bg-fog"
               >
-                <div className={cn(
-                  'shrink-0 h-11 w-11 rounded-xl flex items-center justify-center border',
-                  expired
-                    ? 'bg-danger-500/10 border-danger-500/30 text-danger-400'
-                    : soon
-                    ? 'bg-warn-500/10 border-warn-500/30 text-warn-400'
-                    : 'bg-canvas-50 border-sky-blueprint/25 text-ink-charcoal',
-                )}>
-                  <FileText className="h-5 w-5" />
+                <div className="shrink-0 h-11 w-11 rounded-[10px] bg-fog flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-ink" strokeWidth={1.6} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-ink-black font-medium tracking-tight">{doc.doc_type}</p>
+                    <p className="font-text text-ink font-medium" style={{ fontSize: 15 }}>
+                      {doc.doc_type}
+                    </p>
                     {doc.is_important && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-sunset-orange/15 text-sunset-orange border border-sunset-orange/30 px-1.5 py-0.5 rounded-full">
+                      <span
+                        className="inline-flex items-center gap-1 font-mono uppercase"
+                        style={{
+                          fontSize: 10,
+                          letterSpacing: '0.12em',
+                          color: '#b64400',
+                        }}
+                      >
                         <Star className="h-2.5 w-2.5 fill-current" />
                         Importante
                       </span>
                     )}
                     {expired && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-danger-500/15 text-danger-400 border border-danger-500/30 px-1.5 py-0.5 rounded-full">
-                        <AlertTriangle className="h-2.5 w-2.5" />
-                        Vencido
+                      <span
+                        className="font-mono uppercase"
+                        style={{
+                          fontSize: 10,
+                          letterSpacing: '0.12em',
+                          color: '#b64400',
+                        }}
+                      >
+                        ● Vencido
                       </span>
                     )}
                     {soon && !expired && (
-                      <span className="text-[10px] font-semibold bg-warn-500/15 text-warn-400 border border-warn-500/30 px-1.5 py-0.5 rounded-full">
-                        Vence pronto
+                      <span
+                        className="font-mono uppercase"
+                        style={{
+                          fontSize: 10,
+                          letterSpacing: '0.12em',
+                          color: '#c77700',
+                        }}
+                      >
+                        ● Vence pronto
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-ink-charcoal">
+                  <div className="flex items-center gap-2 mt-1 text-graphite font-text" style={{ fontSize: 13 }}>
                     {doc.file_name && <span className="truncate">{doc.file_name}</span>}
                     {doc.expiry_date && (
                       <>
-                        <span className="text-ink-charcoal/80">·</span>
+                        <span className="text-silver-mist">·</span>
                         <span>Vence {formatDate(doc.expiry_date)}</span>
                       </>
                     )}
@@ -138,17 +164,20 @@ export const DocumentsPage = () => {
                     href={doc.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 rounded-lg text-ink-charcoal hover:text-sky-dark hover:bg-sky-blueprint/10 transition-colors"
+                    className={cn(
+                      'h-8 w-8 inline-flex items-center justify-center rounded-full',
+                      'text-graphite hover:text-ink hover:bg-snow transition-colors',
+                    )}
                     aria-label="Abrir documento"
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink className="h-4 w-4" strokeWidth={1.6} />
                   </a>
                   <button
                     onClick={() => handleDelete(doc.id)}
-                    className="p-2 rounded-lg text-ink-charcoal/80 hover:text-danger-400 hover:bg-danger-500/10 transition-colors"
+                    className="h-8 w-8 inline-flex items-center justify-center rounded-full text-graphite hover:text-caution hover:bg-snow transition-colors"
                     aria-label="Eliminar"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" strokeWidth={1.6} />
                   </button>
                 </div>
               </li>

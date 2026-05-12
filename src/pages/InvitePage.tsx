@@ -4,18 +4,16 @@ import { CheckCircle, XCircle, Crown, Pencil, Eye } from 'lucide-react';
 import { sharingService } from '../services/sharing.service';
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/auth.service';
-import { Logo } from '../components/ui/Logo';
 import { Button } from '../components/ui/Button';
 import { FloatingInput } from '../components/ui/FloatingInput';
-import { cn } from '../utils/cn';
 import toast from 'react-hot-toast';
 
 type Step = 'loading' | 'confirm' | 'auth' | 'done' | 'error';
 
 const roleConfig = {
-  owner: { Icon: Crown, label: 'Propietario', cls: 'bg-sky-blueprint/15 text-sky-dark border-sky-blueprint/30' },
-  editor: { Icon: Pencil, label: 'Editor', cls: 'bg-success-500/15 text-success-400 border-success-500/30' },
-  viewer: { Icon: Eye, label: 'Visor', cls: 'bg-canvas-50/80 text-ink-charcoal border-sky-blueprint/20' },
+  owner:  { Icon: Crown,  label: 'Propietario' },
+  editor: { Icon: Pencil, label: 'Editor' },
+  viewer: { Icon: Eye,    label: 'Visor' },
 } as const;
 
 export const InvitePage = () => {
@@ -24,7 +22,10 @@ export const InvitePage = () => {
   const { user } = useAuthStore();
 
   const [step, setStep] = useState<Step>('loading');
-  const [invite, setInvite] = useState<{ vehicles: { brand: string; model: string; year: number }; role: keyof typeof roleConfig } | null>(null);
+  const [invite, setInvite] = useState<{
+    vehicles: { brand: string; model: string; year: number };
+    role: keyof typeof roleConfig;
+  } | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [form, setForm] = useState({ email: '', password: '', full_name: '' });
   const [loading, setLoading] = useState(false);
@@ -88,38 +89,60 @@ export const InvitePage = () => {
   const RoleIcon = cfg?.Icon;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      <div className="absolute -top-40 -left-40 h-96 w-96 bg-sky-blueprint/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 h-96 w-96 bg-sunset-orange/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-md relative">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <Logo size={48} withText={false} />
-          </div>
-          <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">
-            Focus<span className="bg-gradient-to-br from-sky-blueprint via-vivid-blue to-sunset-orange bg-clip-text text-transparent">Hub</span>
-          </h1>
+    <div
+      className="min-h-screen flex items-center justify-center px-6"
+      style={{ background: '#f5f5f7' }}
+    >
+      <div className="w-full max-w-md">
+        {/* Mark */}
+        <div className="flex justify-center mb-8">
+          <span
+            className="rounded-[16px] bg-ink flex items-center justify-center"
+            style={{ width: 56, height: 56 }}
+          >
+            <svg width={28} height={28} viewBox="0 0 24 24" fill="none" aria-hidden>
+              <circle cx="12" cy="12" r="10.25" stroke="#fff" strokeWidth="1.5" />
+              <circle cx="12" cy="12" r="2.4" fill="#fff" />
+              <path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3"
+                stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </span>
         </div>
 
-        <div className="bg-cloud-white border border-sky-blueprint/25 rounded-card p-8 shadow-card">
+        <div className="bg-snow border border-silver-mist rounded-[28px] p-8">
           {step === 'loading' && (
             <div className="flex flex-col items-center py-8">
-              <div className="relative h-12 w-12">
-                <div className="absolute inset-0 rounded-full border-2 border-brand-500/20" />
-                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-brand-400 animate-spin" />
+              <div className="relative h-10 w-10">
+                <div className="absolute inset-0 rounded-full border border-silver-mist" />
+                <div className="absolute inset-0 rounded-full border border-transparent border-t-ink animate-spin" />
               </div>
-              <p className="font-manrope text-caption text-ink-charcoal/70 mt-4">Cargando invitación...</p>
+              <p
+                className="font-text text-graphite mt-4"
+                style={{ fontSize: 14 }}
+              >
+                Cargando invitación...
+              </p>
             </div>
           )}
 
           {step === 'error' && (
             <div className="text-center py-4">
-              <div className="h-16 w-16 mx-auto rounded-card bg-danger-500/15 border border-danger-500/30 flex items-center justify-center mb-4">
-                <XCircle className="h-8 w-8 text-danger-400" />
+              <div className="h-14 w-14 mx-auto rounded-[18px] bg-fog flex items-center justify-center mb-5">
+                <XCircle className="h-7 w-7" style={{ color: '#b64400' }} strokeWidth={1.5} />
               </div>
-              <h2 className="font-simeiz text-heading font-light text-ink-black tracking-tight">Link inválido o expirado</h2>
-              <p className="font-manrope text-caption text-ink-charcoal/70 mt-2 leading-relaxed">
+              <h2
+                className="text-ink"
+                style={{
+                  fontFamily: 'Inter, var(--font-sf-pro-display)',
+                  fontWeight: 600, fontSize: 24, lineHeight: 1.2, letterSpacing: '-0.36px',
+                }}
+              >
+                Link inválido o expirado
+              </h2>
+              <p
+                className="font-text text-graphite mt-3 max-w-xs mx-auto"
+                style={{ fontSize: 15, lineHeight: 1.45 }}
+              >
                 Pide al propietario que genere un link nuevo para volver a invitarte.
               </p>
               <Link to="/login" className="inline-block mt-6">
@@ -130,21 +153,41 @@ export const InvitePage = () => {
 
           {step === 'confirm' && vehicle && cfg && RoleIcon && (
             <div className="text-center">
-              <p className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold mb-2">Te han invitado</p>
-              <h2 className="font-simeiz text-heading font-light text-ink-black tracking-tight">Acceso a vehículo</h2>
+              <span className="eyebrow">Te han invitado</span>
+              <h2
+                className="text-ink mt-3"
+                style={{
+                  fontFamily: 'Inter, var(--font-sf-pro-display)',
+                  fontWeight: 700, fontSize: 40, lineHeight: 1.07, letterSpacing: '-0.6px',
+                }}
+              >
+                Acceso a vehículo
+              </h2>
 
-              <div className="mt-5 bg-gradient-to-br from-sky-blueprint/10 via-canvas-50 to-sunset-orange/5 border border-sky-blueprint/20 rounded-card p-5">
-                <p className="font-simeiz text-heading font-light text-ink-black tracking-tight">
+              <div className="mt-6 bg-fog rounded-[20px] p-5">
+                <p
+                  className="font-display text-ink"
+                  style={{ fontWeight: 600, fontSize: 22, letterSpacing: '-0.36px' }}
+                >
                   {vehicle.brand} {vehicle.model}
                 </p>
-                <p className="font-manrope text-caption text-ink-charcoal/70 mt-0.5">{vehicle.year}</p>
-                <span className={cn('inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border mt-3', cfg.cls)}>
-                  <RoleIcon className="h-3 w-3" />
+                <p
+                  className="font-text text-graphite mt-1"
+                  style={{ fontSize: 14 }}
+                >
+                  {vehicle.year}
+                </p>
+                <span
+                  className="inline-flex items-center gap-1 mt-3 font-mono uppercase text-graphite"
+                  style={{ fontSize: 11, letterSpacing: '0.14em' }}
+                >
+                  <RoleIcon className="h-3 w-3" strokeWidth={1.6} />
                   {cfg.label}
                 </span>
               </div>
 
               <Button
+                variant="accent"
                 onClick={handleAccept}
                 loading={loading}
                 fullWidth
@@ -158,17 +201,38 @@ export const InvitePage = () => {
 
           {step === 'auth' && vehicle && cfg && RoleIcon && (
             <div>
-              <p className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold mb-2 text-center">Te han invitado</p>
-              <h2 className="font-simeiz text-heading font-light text-ink-black tracking-tight text-center mb-3">Acceso a vehículo</h2>
-              <div className="bg-gradient-to-br from-sky-blueprint/10 via-canvas-50 to-sunset-orange/5 border border-sky-blueprint/20 rounded-card p-4 mb-5 text-center">
-                <p className="text-ink-black font-semibold">{vehicle.brand} {vehicle.model} {vehicle.year}</p>
-                <span className={cn('inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border mt-2', cfg.cls)}>
-                  <RoleIcon className="h-3 w-3" />
+              <div className="text-center">
+                <span className="eyebrow">Te han invitado</span>
+                <h2
+                  className="text-ink mt-3"
+                  style={{
+                    fontFamily: 'Inter, var(--font-sf-pro-display)',
+                    fontWeight: 700, fontSize: 32, lineHeight: 1.1, letterSpacing: '-0.4px',
+                  }}
+                >
+                  Acceso a vehículo
+                </h2>
+              </div>
+              <div className="bg-fog rounded-[20px] p-4 mt-5 mb-6 text-center">
+                <p
+                  className="font-text text-ink font-medium"
+                  style={{ fontSize: 15 }}
+                >
+                  {vehicle.brand} {vehicle.model} · {vehicle.year}
+                </p>
+                <span
+                  className="inline-flex items-center gap-1 mt-2 font-mono uppercase text-graphite"
+                  style={{ fontSize: 11, letterSpacing: '0.14em' }}
+                >
+                  <RoleIcon className="h-3 w-3" strokeWidth={1.6} />
                   {cfg.label}
                 </span>
               </div>
 
-              <p className="font-manrope text-caption text-ink-charcoal/70 text-center mb-4">
+              <p
+                className="font-text text-graphite text-center mb-4"
+                style={{ fontSize: 14 }}
+              >
                 {authMode === 'login' ? 'Inicia sesión para aceptar' : 'Crea una cuenta para aceptar'}
               </p>
 
@@ -192,14 +256,15 @@ export const InvitePage = () => {
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
-                <Button type="submit" loading={loading} fullWidth>
+                <Button variant="accent" type="submit" loading={loading} fullWidth>
                   {loading ? '...' : authMode === 'login' ? 'Entrar y aceptar' : 'Registrarme y aceptar'}
                 </Button>
               </form>
 
               <button
                 onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-                className="w-full text-center font-manrope text-caption text-ink-charcoal mt-4 hover:text-ink-black transition-colors"
+                className="w-full text-center font-text text-cobalt-link mt-4 hover:opacity-70 transition-opacity"
+                style={{ fontSize: 14 }}
               >
                 {authMode === 'login' ? '¿Sin cuenta? Regístrate' : '¿Ya tienes cuenta? Entra'}
               </button>
@@ -208,11 +273,24 @@ export const InvitePage = () => {
 
           {step === 'done' && (
             <div className="text-center py-4">
-              <div className="h-16 w-16 mx-auto rounded-card bg-success-500/15 border border-success-500/30 flex items-center justify-center mb-4">
-                <CheckCircle className="h-8 w-8 text-success-400" />
+              <div className="h-14 w-14 mx-auto rounded-[18px] bg-fog flex items-center justify-center mb-5">
+                <CheckCircle className="h-7 w-7" style={{ color: '#1a9e3f' }} strokeWidth={1.5} />
               </div>
-              <h2 className="font-simeiz text-heading font-light text-ink-black tracking-tight">¡Acceso activado!</h2>
-              <p className="font-manrope text-caption text-ink-charcoal/70 mt-2">Redirigiendo al dashboard...</p>
+              <h2
+                className="text-ink"
+                style={{
+                  fontFamily: 'Inter, var(--font-sf-pro-display)',
+                  fontWeight: 600, fontSize: 24, lineHeight: 1.2, letterSpacing: '-0.36px',
+                }}
+              >
+                ¡Acceso activado!
+              </h2>
+              <p
+                className="font-text text-graphite mt-3"
+                style={{ fontSize: 15, lineHeight: 1.45 }}
+              >
+                Redirigiendo al dashboard...
+              </p>
             </div>
           )}
         </div>

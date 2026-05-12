@@ -1,4 +1,7 @@
-import { MapPin, Calendar, Gauge, Fuel, Clock, Thermometer, Share2, Trash2, ChevronRight, Music2, Wind } from 'lucide-react';
+import {
+  MapPin, Calendar, Gauge, Fuel, Clock, Thermometer,
+  Share2, Trash2, ChevronRight, Music2, Wind,
+} from 'lucide-react';
 import type { Trip } from '../../types';
 import { formatDate, formatKm } from '../../utils/formatters';
 import { cn } from '../../utils/cn';
@@ -12,9 +15,9 @@ interface TripCardProps {
 }
 
 const weatherIcon: Record<string, string> = {
-  Clear: '☀️', Clouds: '☁️', Rain: '🌧️', Drizzle: '🌦️',
-  Thunderstorm: '⛈️', Snow: '❄️', Mist: '🌫️', Fog: '🌫️',
-  Haze: '🌫️', Windy: '💨',
+  Clear: '☀', Clouds: '☁', Rain: '🌧', Drizzle: '🌦',
+  Thunderstorm: '⛈', Snow: '❄', Mist: '🌫', Fog: '🌫',
+  Haze: '🌫', Windy: '💨',
 };
 
 const formatDrivingTime = (minutes: number) => {
@@ -24,15 +27,16 @@ const formatDrivingTime = (minutes: number) => {
 };
 
 export const TripCard = ({ trip, selected, onClick, onDelete, onShare }: TripCardProps) => {
-  const hasCoords = trip.start_lat != null || trip.end_lat != null || (trip.waypoints?.length ?? 0) > 0;
+  const hasCoords =
+    trip.start_lat != null || trip.end_lat != null || (trip.waypoints?.length ?? 0) > 0;
 
   return (
     <li
       className={cn(
-        'group bg-cloud-white border rounded-card p-4 transition-all cursor-pointer',
+        'group bg-snow rounded-[14px] p-4 transition-colors cursor-pointer',
         selected
-          ? 'border-sunset-orange/50 shadow-card ring-1 ring-sunset-orange/20'
-          : 'border-sky-blueprint/20 hover:border-sky-blueprint/40 hover:shadow-subtle',
+          ? 'border-2 border-ink'
+          : 'border border-silver-mist hover:bg-fog',
       )}
       onClick={onClick}
     >
@@ -40,71 +44,83 @@ export const TripCard = ({ trip, selected, onClick, onDelete, onShare }: TripCar
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           {trip.title && (
-            <p className="font-simeiz text-subheading font-light text-ink-black leading-tight truncate mb-0.5">
+            <p
+              className="font-display text-ink truncate"
+              style={{
+                fontWeight: 600, fontSize: 17, lineHeight: 1.2, letterSpacing: '-0.1px',
+              }}
+            >
               {trip.title}
             </p>
           )}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-1 font-manrope text-caption text-sky-dark font-medium truncate">
-              <MapPin className="h-3 w-3 shrink-0" />
+          <div className={cn('flex items-center gap-1.5 flex-wrap', trip.title && 'mt-1')}>
+            <span className="inline-flex items-center gap-1 font-text text-ink truncate" style={{ fontSize: 13 }}>
+              <MapPin className="h-3 w-3 shrink-0 text-graphite" strokeWidth={1.6} />
               {trip.start_location}
             </span>
-            <span className="text-ink-charcoal/40">→</span>
-            <span className="inline-flex items-center gap-1 font-manrope text-caption text-sunset-orange font-medium truncate">
-              <MapPin className="h-3 w-3 shrink-0" />
+            <span className="text-silver-mist">→</span>
+            <span className="inline-flex items-center gap-1 font-text text-ink truncate" style={{ fontSize: 13 }}>
+              <MapPin className="h-3 w-3 shrink-0 text-graphite" strokeWidth={1.6} />
               {trip.end_location}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {trip.weather_condition && (
-            <span className="text-base" title={trip.weather_condition}>
-              {weatherIcon[trip.weather_condition] ?? '🌡️'}
+            <span title={trip.weather_condition} style={{ fontSize: 14 }}>
+              {weatherIcon[trip.weather_condition] ?? ''}
             </span>
           )}
           {hasCoords && (
-            <span className="h-1.5 w-1.5 rounded-full bg-sky-blueprint/60" title="Tiene coordenadas" />
+            <span
+              className="rounded-full inline-block"
+              style={{ width: 5, height: 5, background: '#a1a1a6' }}
+              title="Tiene coordenadas"
+            />
           )}
-          <ChevronRight className={cn(
-            'h-4 w-4 transition-all',
-            selected ? 'text-sunset-orange' : 'text-ink-charcoal/40 group-hover:text-sky-dark group-hover:translate-x-0.5',
-          )} />
+          <ChevronRight
+            className={cn(
+              'h-4 w-4 transition-transform',
+              selected ? 'text-ink' : 'text-graphite group-hover:translate-x-0.5',
+            )}
+            strokeWidth={1.6}
+          />
         </div>
       </div>
 
       {/* Stats row */}
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-        <span className="inline-flex items-center gap-1 font-manrope text-caption text-ink-charcoal/70">
-          <Calendar className="h-3 w-3" />
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-graphite font-text" style={{ fontSize: 13 }}>
+        <span className="inline-flex items-center gap-1">
+          <Calendar className="h-3 w-3" strokeWidth={1.6} />
           {formatDate(trip.start_datetime)}
         </span>
         {trip.total_km != null && (
-          <span className="inline-flex items-center gap-1 font-manrope text-caption text-ink-charcoal/70 tabular-nums">
-            <Gauge className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1 tabular-nums">
+            <Gauge className="h-3 w-3" strokeWidth={1.6} />
             {formatKm(trip.total_km)}
           </span>
         )}
         {trip.driving_time_minutes != null && (
-          <span className="inline-flex items-center gap-1 font-manrope text-caption text-ink-charcoal/70">
-            <Clock className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3 w-3" strokeWidth={1.6} />
             {formatDrivingTime(trip.driving_time_minutes)}
           </span>
         )}
         {trip.fuel_consumed != null && (
-          <span className="inline-flex items-center gap-1 font-manrope text-caption text-ink-charcoal/70 tabular-nums">
-            <Fuel className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1 tabular-nums">
+            <Fuel className="h-3 w-3" strokeWidth={1.6} />
             {trip.fuel_consumed.toFixed(1)} L
           </span>
         )}
         {trip.avg_speed != null && (
-          <span className="inline-flex items-center gap-1 font-manrope text-caption text-ink-charcoal/70 tabular-nums">
-            <Wind className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1 tabular-nums">
+            <Wind className="h-3 w-3" strokeWidth={1.6} />
             {trip.avg_speed} km/h
           </span>
         )}
         {trip.weather_temp != null && (
-          <span className="inline-flex items-center gap-1 font-manrope text-caption text-ink-charcoal/70 tabular-nums">
-            <Thermometer className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1 tabular-nums">
+            <Thermometer className="h-3 w-3" strokeWidth={1.6} />
             {trip.weather_temp.toFixed(0)}°C
           </span>
         )}
@@ -114,9 +130,9 @@ export const TripCard = ({ trip, selected, onClick, onDelete, onShare }: TripCar
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 font-manrope text-caption text-success-500 hover:text-success-400 transition-colors"
+            className="inline-flex items-center gap-1 text-cobalt-link hover:opacity-70 transition-opacity"
           >
-            <Music2 className="h-3 w-3" />
+            <Music2 className="h-3 w-3" strokeWidth={1.6} />
             Playlist
           </a>
         )}
@@ -124,33 +140,47 @@ export const TripCard = ({ trip, selected, onClick, onDelete, onShare }: TripCar
 
       {/* Notes snippet */}
       {trip.notes && (
-        <p className="mt-2 font-manrope text-caption text-ink-charcoal/60 line-clamp-1 italic">
+        <p
+          className="mt-2 font-text text-graphite italic line-clamp-1"
+          style={{ fontSize: 13 }}
+        >
           "{trip.notes}"
         </p>
       )}
 
       {/* Waypoints count */}
       {(trip.waypoints?.length ?? 0) > 0 && (
-        <p className="mt-1.5 font-manrope text-caption text-sky-dark/70">
+        <p
+          className="mt-1.5 font-mono uppercase text-graphite"
+          style={{ fontSize: 11, letterSpacing: '0.12em' }}
+        >
           {trip.waypoints!.length} punto{trip.waypoints!.length !== 1 ? 's' : ''} de interés
         </p>
       )}
 
       {/* Actions */}
-      <div className="mt-3 pt-2.5 border-t border-sky-blueprint/12 flex items-center gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="mt-3 pt-3 border-t border-silver-mist flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={(e) => { e.stopPropagation(); onShare(); }}
-          className="inline-flex items-center gap-1 font-manrope text-caption text-ink-charcoal hover:text-sky-dark px-2 py-1 rounded-input hover:bg-sky-blueprint/10 transition-colors"
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full',
+            'font-text font-medium text-ink hover:bg-fog transition-colors',
+          )}
+          style={{ fontSize: 13 }}
           aria-label="Compartir"
         >
-          <Share2 className="h-3.5 w-3.5" /> Compartir
+          <Share2 className="h-3.5 w-3.5" strokeWidth={1.6} /> Compartir
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="inline-flex items-center gap-1 font-manrope text-caption text-ink-charcoal hover:text-danger-400 px-2 py-1 rounded-input hover:bg-danger-500/10 transition-colors"
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full',
+            'font-text font-medium text-graphite hover:text-caution hover:bg-fog transition-colors',
+          )}
+          style={{ fontSize: 13 }}
           aria-label="Eliminar"
         >
-          <Trash2 className="h-3.5 w-3.5" /> Eliminar
+          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} /> Eliminar
         </button>
       </div>
     </li>

@@ -7,28 +7,12 @@ import toast from 'react-hot-toast';
 const GRADIENT_INDIGO =
   'linear-gradient(184deg, rgb(29,29,31) 18%, rgb(168,211,251) 45%, rgb(0,18,249) 78%, rgb(37,53,224) 98%)';
 
-const SWATCHES = [
-  { color: '#596680', label: 'Indigo',  selected: true  },
-  { color: '#dddc8c', label: 'Citrus',  selected: false },
-  { color: '#e8d0d0', label: 'Blush',   selected: false },
-  { color: '#e3e4e5', label: 'Silver',  selected: false },
-];
-
 function Mark({ size = 18, color = '#ffffff' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
       <circle cx="12" cy="12" r="10.25" stroke={color} strokeWidth="1.5" />
       <circle cx="12" cy="12" r="2.4" fill={color} />
       <path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function KeyIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <circle cx="8" cy="12" r="3.5" />
-      <path d="M11.5 12H21M17 12v3.5M20 12v2.5" />
     </svg>
   );
 }

@@ -34,7 +34,7 @@ export const ExpenseChart = ({ expenses }: Props) => {
 
   if (chartData.length === 0) {
     return (
-      <div className="text-center py-8 text-ink-charcoal text-sm">
+      <div className="text-center py-8 font-text text-graphite" style={{ fontSize: 14 }}>
         Sin datos para mostrar
       </div>
     );
@@ -42,9 +42,19 @@ export const ExpenseChart = ({ expenses }: Props) => {
 
   return (
     <div>
-      <div className="text-center mb-4">
-        <p className="font-manrope text-caption text-ink-charcoal uppercase tracking-wider">Total</p>
-        <p className="font-simeiz text-heading-lg font-light text-ink-black tabular-nums">{formatCurrency(total)}</p>
+      <div className="text-center mb-6">
+        <p
+          className="font-mono uppercase text-graphite"
+          style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.14em' }}
+        >
+          Total
+        </p>
+        <p
+          className="font-display text-ink tabular-nums mt-2"
+          style={{ fontWeight: 700, fontSize: 56, lineHeight: 1, letterSpacing: '-0.9px' }}
+        >
+          {formatCurrency(total)}
+        </p>
       </div>
       <ResponsiveContainer width="100%" height={280}>
         <PieChart>

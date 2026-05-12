@@ -42,35 +42,53 @@ export const MaintenancePage = () => {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-4xl mx-auto">
-      <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+    <div className="px-6 sm:px-10 py-10 max-w-5xl mx-auto">
+      <header className="flex items-end justify-between mb-10 gap-6 flex-wrap">
         <div>
-          <p className="font-manrope text-caption text-sky-dark/80 tracking-wide mb-1">
+          <span className="eyebrow">
             {selectedVehicle.brand} {selectedVehicle.model}
-          </p>
-          <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">Mantenimiento</h1>
-          <p className="font-manrope text-caption text-ink-charcoal/70 mt-1.5">
-            <span className="font-semibold text-ink-black tabular-nums">{records.length}</span> registros · total{' '}
-            <span className="font-semibold text-sunset-orange tabular-nums">{formatCurrency(totalCost)}</span>
+            {selectedVehicle.license_plate ? ` · ${selectedVehicle.license_plate}` : ''}
+          </span>
+          <h1
+            className="text-ink"
+            style={{
+              fontFamily: 'Inter, var(--font-sf-pro-display)',
+              fontWeight: 700,
+              fontSize: 'clamp(40px, 6vw, 56px)',
+              lineHeight: 1.07,
+              letterSpacing: '-0.9px',
+              margin: '12px 0 0',
+            }}
+          >
+            Mantenimiento.
+          </h1>
+          <p
+            className="font-text text-graphite mt-3"
+            style={{ fontSize: 17, lineHeight: 1.45, letterSpacing: '-0.1px' }}
+          >
+            <span className="text-ink font-medium tabular-nums">{records.length}</span> registros · gasto total{' '}
+            <span className="text-ink font-medium tabular-nums">{formatCurrency(totalCost)}</span>
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" />}>
+        <Button variant="accent" onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
           Añadir registro
         </Button>
       </header>
 
-      <div className="flex items-center gap-2 mb-5 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
-        <span className="shrink-0 inline-flex items-center gap-1.5 text-xs text-ink-charcoal">
-          <Filter className="h-3 w-3" /> Filtros:
+      {/* Filter chips */}
+      <div className="flex items-center gap-2 mb-8 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+        <span className="shrink-0 inline-flex items-center gap-1.5 font-mono uppercase text-graphite" style={{ fontSize: 11, letterSpacing: '0.12em' }}>
+          <Filter className="h-3 w-3" strokeWidth={1.6} /> Filtros
         </span>
         <button
           onClick={() => setFilterType('')}
           className={cn(
-            'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+            'shrink-0 px-4 py-2 rounded-full font-text font-medium border transition-colors',
             !filterType
-              ? 'bg-sky-blueprint/15 text-sky-dark border-sky-blueprint/40'
-              : 'border-sky-blueprint/25 text-ink-charcoal hover:text-ink-black hover:border-ink-charcoal/40',
+              ? 'bg-ink text-snow border-ink'
+              : 'bg-snow text-ink border-silver-mist hover:bg-fog',
           )}
+          style={{ fontSize: 13 }}
         >
           Todos
         </button>
@@ -81,11 +99,12 @@ export const MaintenancePage = () => {
               key={t}
               onClick={() => setFilterType(active ? '' : t)}
               className={cn(
-                'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+                'shrink-0 px-4 py-2 rounded-full font-text font-medium border transition-colors',
                 active
-                  ? 'bg-sky-blueprint/15 text-sky-dark border-sky-blueprint/40'
-                  : 'border-sky-blueprint/25 text-ink-charcoal hover:text-ink-black hover:border-ink-charcoal/40',
+                  ? 'bg-ink text-snow border-ink'
+                  : 'bg-snow text-ink border-silver-mist hover:bg-fog',
               )}
+              style={{ fontSize: 13 }}
             >
               {t}
             </button>
@@ -94,9 +113,10 @@ export const MaintenancePage = () => {
         {filterType && (
           <button
             onClick={() => setFilterType('')}
-            className="shrink-0 inline-flex items-center gap-1 text-ink-charcoal hover:text-ink-black text-xs"
+            className="shrink-0 inline-flex items-center gap-1 text-graphite hover:text-ink font-text"
+            style={{ fontSize: 13 }}
           >
-            <X className="h-3 w-3" /> Limpiar
+            <X className="h-3.5 w-3.5" strokeWidth={1.6} /> Limpiar
           </button>
         )}
       </div>

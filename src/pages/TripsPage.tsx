@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Map, List, Download, Route, Filter, X, Gauge, Clock, Fuel, Search } from 'lucide-react';
+import {
+  Plus, Map, List, Download, Route, Filter, X, Gauge, Clock, Fuel, Search,
+} from 'lucide-react';
 import { TripForm } from '../components/trips/TripForm';
 import { TripCard } from '../components/trips/TripCard';
 import { Button } from '../components/ui/Button';
@@ -15,7 +17,9 @@ import { cn } from '../utils/cn';
 import type { CreateTripInput, Trip } from '../types';
 import toast from 'react-hot-toast';
 
-const TripMap = lazy(() => import('../components/trips/TripMap').then((m) => ({ default: m.TripMap })));
+const TripMap = lazy(() =>
+  import('../components/trips/TripMap').then((m) => ({ default: m.TripMap })),
+);
 
 type ViewMode = 'list' | 'map';
 type FilterType = 'all' | 'short' | 'medium' | 'long';
@@ -33,11 +37,11 @@ export const TripsPage = () => {
   const navigate            = useNavigate();
   const { trips, loading, fetchTrips, createTrip, deleteTrip } = useTrips(selectedVehicle?.id);
 
-  const [showForm, setShowForm]         = useState(false);
-  const [view, setView]                 = useState<ViewMode>('list');
-  const [selectedId, setSelectedId]     = useState<string | null>(null);
-  const [filterKm, setFilterKm]         = useState<FilterType>('all');
-  const [search, setSearch]             = useState('');
+  const [showForm, setShowForm]     = useState(false);
+  const [view, setView]             = useState<ViewMode>('list');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filterKm, setFilterKm]     = useState<FilterType>('all');
+  const [search, setSearch]         = useState('');
 
   useEffect(() => {
     if (!selectedVehicle) { navigate('/dashboard'); return; }
@@ -46,7 +50,7 @@ export const TripsPage = () => {
 
   if (!selectedVehicle || !user) return null;
 
-  // ── Filtered list ────────────────────────────────────────────────────────────
+  // ── Filtered list ────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let list = trips;
     if (search.trim()) {
@@ -71,7 +75,7 @@ export const TripsPage = () => {
     return list;
   }, [trips, search, filterKm]);
 
-  // ── Aggregate stats ──────────────────────────────────────────────────────────
+  // ── Aggregate stats ──────────────────────────────────────────────────────
   const stats = useMemo(() => ({
     totalKm:   trips.reduce((s, t) => s + (t.total_km ?? 0), 0),
     totalTime: trips.reduce((s, t) => s + (t.driving_time_minutes ?? 0), 0),
@@ -103,16 +107,32 @@ export const TripsPage = () => {
   const selectedTrip = trips.find((t) => t.id === selectedId) ?? null;
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-6xl mx-auto">
+    <div className="px-6 sm:px-10 py-10 max-w-6xl mx-auto">
       {/* Header */}
-      <header className="flex items-end justify-between mb-6 gap-4 flex-wrap">
+      <header className="flex items-end justify-between mb-10 gap-6 flex-wrap">
         <div>
-          <p className="font-manrope text-caption text-sky-dark/80 tracking-wide mb-1">
+          <span className="eyebrow">
             {selectedVehicle.brand} {selectedVehicle.model}
-          </p>
-          <h1 className="font-simeiz text-heading-lg font-light text-ink-black tracking-tight">Mis viajes</h1>
-          <p className="font-manrope text-caption text-ink-charcoal/70 mt-1">
-            <span className="font-semibold text-ink-black tabular-nums">{trips.length}</span> rutas registradas
+            {selectedVehicle.license_plate ? ` · ${selectedVehicle.license_plate}` : ''}
+          </span>
+          <h1
+            className="text-ink"
+            style={{
+              fontFamily: 'Inter, var(--font-sf-pro-display)',
+              fontWeight: 700,
+              fontSize: 'clamp(40px, 6vw, 56px)',
+              lineHeight: 1.07,
+              letterSpacing: '-0.9px',
+              margin: '12px 0 0',
+            }}
+          >
+            Viajes.
+          </h1>
+          <p
+            className="font-text text-graphite mt-3"
+            style={{ fontSize: 17, lineHeight: 1.45, letterSpacing: '-0.1px' }}
+          >
+            <span className="text-ink font-medium tabular-nums">{trips.length}</span> rutas registradas
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -120,14 +140,15 @@ export const TripsPage = () => {
             variant="secondary"
             size="sm"
             onClick={handleExportCSV}
-            iconLeft={<Download className="h-3.5 w-3.5" />}
+            iconLeft={<Download className="h-3.5 w-3.5" strokeWidth={1.6} />}
             disabled={trips.length === 0}
           >
             CSV
           </Button>
           <Button
+            variant="accent"
             onClick={() => setShowForm(true)}
-            iconLeft={<Plus className="h-4 w-4" />}
+            iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
           >
             <span className="hidden sm:inline">Nuevo viaje</span>
             <span className="sm:hidden">+</span>
@@ -137,52 +158,79 @@ export const TripsPage = () => {
 
       {/* Stats strip */}
       {trips.length > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-8">
           {[
-            { icon: Gauge, label: 'Km totales', value: formatKm(stats.totalKm) },
-            { icon: Clock, label: 'Tiempo total', value: stats.totalTime >= 60 ? `${Math.floor(stats.totalTime / 60)}h ${stats.totalTime % 60}m` : `${stats.totalTime}min` },
-            { icon: Fuel,  label: 'Combustible', value: `${stats.totalFuel.toFixed(1)} L` },
+            { icon: Gauge, label: 'KM TOTALES',   value: formatKm(stats.totalKm) },
+            { icon: Clock, label: 'TIEMPO TOTAL', value: stats.totalTime >= 60
+                ? `${Math.floor(stats.totalTime / 60)}h ${stats.totalTime % 60}m`
+                : `${stats.totalTime}min` },
+            { icon: Fuel,  label: 'COMBUSTIBLE',  value: `${stats.totalFuel.toFixed(1)} L` },
           ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="bg-cloud-white border border-sky-blueprint/20 rounded-card p-3 sm:p-4 text-center">
-              <Icon className="h-4 w-4 text-sky-dark mx-auto mb-1" />
-              <p className="font-simeiz text-subheading font-light text-ink-black tabular-nums">{value}</p>
-              <p className="font-manrope text-caption text-ink-charcoal/60 mt-0.5">{label}</p>
+            <div key={label} className="bg-snow border border-silver-mist rounded-[20px] p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span
+                  className="font-mono uppercase text-graphite"
+                  style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em' }}
+                >
+                  {label}
+                </span>
+                <Icon className="h-4 w-4 text-graphite" strokeWidth={1.6} />
+              </div>
+              <p
+                className="font-display text-ink tabular-nums"
+                style={{
+                  fontWeight: 700, fontSize: 28, lineHeight: 1, letterSpacing: '-0.3px',
+                }}
+              >
+                {value}
+              </p>
             </div>
           ))}
         </div>
       )}
 
       {/* Controls */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
         {/* Search */}
-        <div className="relative flex-1 min-w-[160px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink-charcoal/50" />
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-graphite" strokeWidth={1.6} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar viaje…"
-            className="w-full pl-8 pr-3 py-2 bg-cloud-white border border-sky-blueprint/25 rounded-button font-manrope text-caption text-ink-black placeholder-ink-charcoal/40 focus:outline-none focus:border-sky-blueprint/60 transition-colors"
+            className={cn(
+              'w-full pl-10 pr-9 h-10 rounded-full',
+              'bg-snow border border-silver-mist',
+              'font-text text-ink placeholder:text-graphite',
+              'focus:outline-none focus:border-azure transition-colors',
+            )}
+            style={{ fontSize: 14 }}
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-charcoal/50 hover:text-ink-black">
-              <X className="h-3.5 w-3.5" />
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-graphite hover:text-ink"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={1.6} />
             </button>
           )}
         </div>
 
         {/* Filter chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-          <Filter className="h-3.5 w-3.5 text-ink-charcoal/50 shrink-0" />
+          <Filter className="h-3.5 w-3.5 text-graphite shrink-0" strokeWidth={1.6} />
           {(Object.keys(filterLabel) as FilterType[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilterKm(f)}
               className={cn(
-                'shrink-0 px-3 py-1.5 rounded-button font-manrope text-caption font-medium border transition-all',
+                'shrink-0 px-4 py-2 rounded-full font-text font-medium border transition-colors',
                 filterKm === f
-                  ? 'bg-sky-blueprint/15 text-sky-dark border-sky-blueprint/40'
-                  : 'border-sky-blueprint/25 text-ink-charcoal hover:text-ink-black',
+                  ? 'bg-ink text-snow border-ink'
+                  : 'bg-snow text-ink border-silver-mist hover:bg-fog',
               )}
+              style={{ fontSize: 13 }}
             >
               {filterLabel[f]}
             </button>
@@ -190,18 +238,18 @@ export const TripsPage = () => {
         </div>
 
         {/* View toggle */}
-        <div className="flex bg-canvas-50 border border-sky-blueprint/25 rounded-button p-0.5 shrink-0">
+        <div className="flex bg-fog rounded-full p-1 shrink-0">
           {([['list', List], ['map', Map]] as const).map(([v, Icon]) => (
             <button
               key={v}
               onClick={() => setView(v)}
               className={cn(
-                'p-2 rounded-button transition-colors',
-                view === v ? 'bg-sky-blueprint/15 text-sky-dark' : 'text-ink-charcoal hover:text-ink-black',
+                'h-8 w-8 inline-flex items-center justify-center rounded-full transition-colors',
+                view === v ? 'bg-snow text-ink' : 'text-graphite hover:text-ink',
               )}
               aria-label={v === 'list' ? 'Vista lista' : 'Vista mapa'}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4" strokeWidth={1.6} />
             </button>
           ))}
         </div>
@@ -210,7 +258,7 @@ export const TripsPage = () => {
       {/* Content */}
       {loading ? (
         <div className="space-y-2">
-          {[0,1,2].map((i) => <SkeletonRow key={i} />)}
+          {[0, 1, 2].map((i) => <SkeletonRow key={i} />)}
         </div>
       ) : filtered.length === 0 && trips.length === 0 ? (
         <EmptyState
@@ -218,37 +266,47 @@ export const TripsPage = () => {
           title="Sin viajes registrados"
           description="Empieza a documentar tus rutas, consumo, clima y puntos de interés. Tu historial de conducción te espera."
           action={
-            <Button onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" />} size="lg">
+            <Button variant="accent" onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />} size="lg">
               Registrar primer viaje
             </Button>
           }
         />
       ) : view === 'map' ? (
         <div className="space-y-4">
-          <Suspense fallback={<div className="h-80 bg-canvas-50 rounded-card animate-pulse" />}>
+          <Suspense fallback={
+            <div className="h-80 bg-fog rounded-[28px] animate-pulse border border-silver-mist" />
+          }>
             <TripMap
               trips={filtered}
               selectedTripId={selectedId ?? undefined}
               onTripClick={setSelectedId}
-              className="border border-sky-blueprint/20 shadow-subtle"
+              className="border border-silver-mist rounded-[28px] overflow-hidden"
               style={{ height: 420 }}
             />
           </Suspense>
 
           {selectedTrip && (
-            <div className="bg-cloud-white border border-sky-blueprint/25 rounded-card p-4 shadow-subtle">
-              <p className="font-simeiz text-heading font-light text-ink-black">
+            <div className="bg-snow border border-silver-mist rounded-[20px] p-5">
+              <p
+                className="font-display text-ink"
+                style={{ fontWeight: 600, fontSize: 20, letterSpacing: '-0.2px' }}
+              >
                 {selectedTrip.title ?? `${selectedTrip.start_location} → ${selectedTrip.end_location}`}
               </p>
               {selectedTrip.notes && (
-                <p className="font-manrope text-caption text-ink-charcoal/70 mt-1 italic">"{selectedTrip.notes}"</p>
+                <p
+                  className="font-text text-graphite mt-2 italic"
+                  style={{ fontSize: 14, lineHeight: 1.45 }}
+                >
+                  "{selectedTrip.notes}"
+                </p>
               )}
-              <div className="flex gap-2 mt-3">
-                <Button size="sm" variant="secondary" onClick={() => tripsService.exportGPX(selectedTrip)} iconLeft={<Download className="h-3.5 w-3.5" />}>
+              <div className="flex gap-2 mt-4 flex-wrap">
+                <Button size="sm" variant="secondary" onClick={() => tripsService.exportGPX(selectedTrip)} iconLeft={<Download className="h-3.5 w-3.5" strokeWidth={1.6} />}>
                   GPX
                 </Button>
-                <Button size="sm" variant="secondary" onClick={() => handleShare(selectedTrip)} iconLeft={<Download className="h-3.5 w-3.5" />}>
-                  Compartir
+                <Button size="sm" variant="secondary" onClick={() => handleShare(selectedTrip)}>
+                  Compartir link
                 </Button>
                 <Button size="sm" variant="danger" onClick={() => handleDelete(selectedTrip.id)}>
                   Eliminar
@@ -258,10 +316,16 @@ export const TripsPage = () => {
           )}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="font-manrope text-body text-ink-charcoal/60">Sin resultados para "{search || filterLabel[filterKm]}"</p>
-          <button onClick={() => { setSearch(''); setFilterKm('all'); }} className="font-manrope text-caption text-sky-dark mt-2 hover:underline">
-            Limpiar filtros
+        <div className="text-center py-16">
+          <p className="font-text text-graphite" style={{ fontSize: 15 }}>
+            Sin resultados para "{search || filterLabel[filterKm]}"
+          </p>
+          <button
+            onClick={() => { setSearch(''); setFilterKm('all'); }}
+            className="font-text text-cobalt-link hover:opacity-70 mt-3"
+            style={{ fontSize: 14 }}
+          >
+            Limpiar filtros →
           </button>
         </div>
       ) : (
