@@ -1,9 +1,14 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import {
+  Plus, AlertTriangle, CheckCircle2, ArrowRight, Calendar, Fuel,
+  Wrench, Receipt, Route, SlidersHorizontal, RotateCcw,
+} from 'lucide-react';
 import { useVehicle } from '../hooks/useVehicle';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
+import { useDashboardPrefs } from '../hooks/useDashboardPrefs';
+import type { DashboardWidget } from '../hooks/useDashboardPrefs';
 import { VehicleForm } from '../components/vehicle/VehicleForm';
 import { maintenanceService } from '../services/maintenance.service';
 import { expensesService } from '../services/expenses.service';
@@ -23,12 +28,20 @@ const fmtMonthDay = (d: Date) =>
   d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
     .replace('.', '').toUpperCase();
 
+// Spanish role labels — never expose raw role strings to UI
+const ROLE_LABEL: Record<string, string> = {
+  owner:  'Propietario',
+  editor: 'Editor',
+  viewer: 'Solo lectura',
+};
+
 interface VehicleStats {
   vehicle: VehicleWithAccess;
   records: MaintenanceRecord[];
   expenses: Expense[];
   trips: Trip[];
   alerts: Alert[];
+  errors: { records: boolean; expenses: boolean; trips: boolean };
 }
 
 export const DashboardPage = () => {
@@ -37,8 +50,15 @@ export const DashboardPage = () => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+  const [showCustomize, setShowCustomize] = useState(false);
   const [stats, setStats] = useState<Record<string, VehicleStats>>({});
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
+
+  const { isVisible, toggle, reset, hidden } = useDashboardPrefs();
+
+  // Derived: per-vehicle stats are loaded once every vehicle has an entry in `stats`.
+  const statsLoading = vehicles.length > 0
+    && vehicles.some((v) => !stats[v.id]);
 
   useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
 
@@ -46,10 +66,13 @@ export const DashboardPage = () => {
     if (vehicles.length === 0) return;
     Promise.all(
       vehicles.map(async (v) => {
+        // Track partial errors so the UI can communicate "fallo de carga"
+        // distinctly from "no hay datos".
+        const errors = { records: false, expenses: false, trips: false };
         const [records, expenses, trips] = await Promise.all([
-          maintenanceService.getByVehicle(v.id).catch(() => []),
-          expensesService.getByVehicle(v.id).catch(() => []),
-          tripsService.getByVehicle(v.id).catch(() => []),
+          maintenanceService.getByVehicle(v.id).catch(() => { errors.records = true; return []; }),
+          expensesService.getByVehicle(v.id).catch(() => { errors.expenses = true; return []; }),
+          tripsService.getByVehicle(v.id).catch(() => { errors.trips = true; return []; }),
         ]);
         return {
           id: v.id,
@@ -59,6 +82,7 @@ export const DashboardPage = () => {
             expenses,
             trips,
             alerts: calculateAlerts(v, records).filter((a) => !a.is_dismissed),
+            errors,
           } satisfies VehicleStats,
         };
       }),
@@ -83,22 +107,22 @@ export const DashboardPage = () => {
     const all = Object.entries(stats)
       .filter(([id]) => ids.has(id))
       .map(([, s]) => s);
-    const ytd = new Date().getFullYear();
+    const yearNow = new Date().getFullYear();
     const totalKm = vehicles.reduce((s, v) => s + v.current_km, 0);
     const totalRecords = all.reduce((s, x) => s + x.records.length, 0);
-    const totalSpentYtd = all.reduce(
+    const totalSpent = all.reduce(
       (s, x) =>
         s
         + x.expenses
-            .filter((e) => new Date(e.date).getFullYear() === ytd)
+            .filter((e) => new Date(e.date).getFullYear() === yearNow)
             .reduce((a, e) => a + e.amount, 0)
         + x.records
-            .filter((r) => new Date(r.date).getFullYear() === ytd)
+            .filter((r) => new Date(r.date).getFullYear() === yearNow)
             .reduce((a, r) => a + (r.cost ?? 0), 0),
       0,
     );
     const totalAlerts = all.reduce((s, x) => s + x.alerts.length, 0);
-    return { totalKm, totalRecords, totalSpentYtd, totalAlerts, ytd };
+    return { totalKm, totalRecords, totalSpent, totalAlerts, year: yearNow };
   }, [stats, vehicles]);
 
   // ─── Per-primary-vehicle derived data ─────────────────────────────────────
@@ -218,9 +242,9 @@ export const DashboardPage = () => {
   const expensesByCat = useMemo(() => {
     const cats = { combustible: 0, mantenimiento: 0, seguro: 0 };
     if (!primaryStats) return cats;
-    const ytd = new Date().getFullYear();
+    const yearNow = new Date().getFullYear();
     primaryStats.expenses
-      .filter((e) => new Date(e.date).getFullYear() === ytd)
+      .filter((e) => new Date(e.date).getFullYear() === yearNow)
       .forEach((e) => {
         const c = e.category.toLowerCase();
         if (c.startsWith('combust')) cats.combustible += e.amount;
@@ -228,7 +252,7 @@ export const DashboardPage = () => {
         else if (c.startsWith('seguro')) cats.seguro += e.amount;
       });
     primaryStats.records
-      .filter((r) => new Date(r.date).getFullYear() === ytd)
+      .filter((r) => new Date(r.date).getFullYear() === yearNow)
       .forEach((r) => { cats.mantenimiento += r.cost ?? 0; });
     return cats;
   }, [primaryStats]);
@@ -236,7 +260,7 @@ export const DashboardPage = () => {
   const totalYtdPrimary =
     expensesByCat.combustible + expensesByCat.mantenimiento + expensesByCat.seguro;
 
-  // First name & last-sync copy
+  // First name & last-sync copy (Spanish: "actualizado hace X")
   const firstName = useMemo(() => {
     const full = (user?.user_metadata?.full_name as string | undefined) ?? '';
     const fromName = full.trim().split(/\s+/)[0];
@@ -245,15 +269,52 @@ export const DashboardPage = () => {
   }, [user]);
 
   const lastSyncLabel = useMemo(() => {
-    if (!loadedAt) return 'AHORA';
+    if (!loadedAt) return 'actualizando…';
     const mins = Math.floor((Date.now() - loadedAt.getTime()) / 60_000);
-    if (mins < 1) return 'AHORA';
-    if (mins < 60) return `${mins}m AGO`;
-    return `${Math.floor(mins / 60)}h AGO`;
+    if (mins < 1) return 'actualizado ahora';
+    if (mins < 60) return `actualizado hace ${mins} min`;
+    return `actualizado hace ${Math.floor(mins / 60)} h`;
   }, [loadedAt]);
 
+  // ─── Hero CTA — context-aware ─────────────────────────────────────────────
+  const heroCta = useMemo(() => {
+    if (!primary) {
+      return {
+        label: 'Añadir vehículo',
+        icon: Plus,
+        action: () => setShowForm(true),
+      };
+    }
+    if (primaryStats?.alerts.length || nextMaintenance) {
+      return {
+        label: 'Programar mantenimiento',
+        icon: Wrench,
+        action: () => navigate('/maintenance'),
+      };
+    }
+    if (primaryStats && primaryStats.expenses.length === 0) {
+      return {
+        label: 'Registrar primer gasto',
+        icon: Receipt,
+        action: () => navigate('/expenses'),
+      };
+    }
+    if (primaryStats && primaryStats.trips.length === 0) {
+      return {
+        label: 'Registrar viaje',
+        icon: Route,
+        action: () => navigate('/trips'),
+      };
+    }
+    return {
+      label: 'Programar mantenimiento',
+      icon: Wrench,
+      action: () => navigate('/maintenance'),
+    };
+  }, [primary, primaryStats, nextMaintenance, navigate]);
+
   // ─── Handlers ─────────────────────────────────────────────────────────────
-  const handleAdd = () => setShowForm(true);
+  const handleAdd = useCallback(() => setShowForm(true), []);
 
   const handleCreate = async (data: Parameters<typeof createVehicle>[0]) => {
     try {
@@ -287,233 +348,235 @@ export const DashboardPage = () => {
     pendientes a la vista — sigue así.</>
   );
 
+  const HeroCtaIcon = heroCta.icon;
+
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="page-enter" style={{ background: '#f5f5f7', minHeight: '100%' }}>
       {/* ═══ BLOCK 1 · INDIGO HERO ═══════════════════════════════════════════ */}
       <section
-        className="indigo-hero mx-10 mt-6"
-        style={{
-          position: 'relative',
-          color: '#fff',
-          borderRadius: 28,
-          overflow: 'hidden',
-          background:
-            'linear-gradient(184deg, rgb(29,29,31) 18%, rgb(168,211,251) 45%, rgb(0,18,249) 78%, rgb(37,53,224) 98%)',
-          padding: 40,
-          minHeight: 440,
-          display: 'grid',
-          gap: 40,
-          gridTemplateColumns: '1fr',
-        }}
+        className="hero-shell"
+        aria-labelledby="hero-greeting"
       >
-        <style>{`
-          @media (min-width: 1280px) {
-            .indigo-hero { grid-template-columns: 1.2fr 1fr !important; }
-          }
-        `}</style>
         <span
           className="mono"
           style={{
-            position: 'absolute', left: 24, top: 18, fontSize: 10,
-            letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)',
+            position: 'absolute', left: 18, top: 14, fontSize: 10,
+            letterSpacing: '0.1em', color: 'rgba(255,255,255,0.85)',
           }}
-        >FH · 001 / GARAGE</span>
+          aria-hidden="true"
+        >FH · 001 · GARAJE</span>
         <span
           className="mono"
           style={{
-            position: 'absolute', right: 24, bottom: 18, fontSize: 10,
-            letterSpacing: '0.1em', color: 'rgba(255,255,255,0.55)',
+            position: 'absolute', right: 18, bottom: 14, fontSize: 10,
+            letterSpacing: '0.05em', color: 'rgba(255,255,255,0.85)',
           }}
-        >SYNC · {lastSyncLabel}</span>
+          aria-live="polite"
+        >{lastSyncLabel}</span>
 
-          {/* LEFT */}
-          <div style={{
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-            position: 'relative', zIndex: 1, gap: 28,
-          }}>
-            <div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <span style={{
+        {/* LEFT */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          position: 'relative', zIndex: 1, gap: 28,
+        }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span
+                aria-hidden="true"
+                style={{
                   width: 7, height: 7, borderRadius: 999,
                   background: '#1cb05c',
                   boxShadow: '0 0 0 4px rgba(28,176,92,0.25)',
-                }} />
-                <span className="mono" style={{
-                  fontSize: 11, letterSpacing: '0.08em',
-                  color: 'rgba(255,255,255,0.75)',
-                }}>SISTEMA ACTIVO · TU GARAJE</span>
-              </div>
-              <h1 style={{
+                }}
+              />
+              <span className="mono" style={{
+                fontSize: 11, letterSpacing: '0.08em',
+                color: 'rgba(255,255,255,0.92)',
+              }}>Sistema activo · Tu garaje</span>
+            </div>
+            <h1
+              id="hero-greeting"
+              style={{
                 fontFamily: 'Inter, var(--font-sf-pro-display)',
                 fontWeight: 700,
-                fontSize: 'clamp(40px, 6vw, 64px)',
+                fontSize: 'clamp(36px, 6vw, 64px)',
                 lineHeight: 1.04,
                 letterSpacing: '-1.4px',
                 color: '#fff',
                 margin: '14px 0 6px',
-              }}>
-                Hola, {firstName}.
-              </h1>
-              <p style={{
-                fontFamily: 'Inter, var(--font-sf-pro-text)',
-                fontWeight: 300,
-                fontSize: 20,
-                lineHeight: 1.4,
-                letterSpacing: '-0.2px',
-                color: 'rgba(255,255,255,0.82)',
-                maxWidth: 520,
-                margin: 0,
-              }}>
-                {heroSubtitle}
-              </p>
-            </div>
-
-            {/* Frosted KPI strip */}
-            <div className="indigo-kpis" style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              background: 'rgba(255,255,255,0.12)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.22)',
-              borderRadius: 20,
-              overflow: 'hidden',
+              }}
+            >
+              Hola, {firstName}.
+            </h1>
+            <p style={{
+              fontFamily: 'Inter, var(--font-sf-pro-text)',
+              fontWeight: 300,
+              fontSize: 'clamp(16px, 1.7vw, 20px)',
+              lineHeight: 1.4,
+              letterSpacing: '-0.2px',
+              color: 'rgba(255,255,255,0.92)',
+              maxWidth: 520,
+              margin: 0,
             }}>
-              <style>{`
-                @media (min-width: 900px) {
-                  .indigo-kpis { grid-template-columns: repeat(4, 1fr) !important; }
-                  .indigo-kpis > div:nth-child(n+2) { border-left: 1px solid rgba(255,255,255,0.18); }
-                }
-                @media (max-width: 899px) {
-                  .indigo-kpis > div:nth-child(2n) { border-left: 1px solid rgba(255,255,255,0.18); }
-                  .indigo-kpis > div:nth-child(n+3) { border-top: 1px solid rgba(255,255,255,0.18); }
-                }
-              `}</style>
-              {[
-                ['KM TOTALES',     fmtN(aggregate.totalKm),        'flota completa'],
-                ['MANTENIMIENTOS', String(aggregate.totalRecords), 'histórico'],
-                ['GASTO YTD',      fmtEur(aggregate.totalSpentYtd), String(aggregate.ytd)],
-                ['ALERTAS',        String(aggregate.totalAlerts),  'requieren atención'],
-              ].map(([l, v, s]) => (
-                <div key={l} style={{ padding: '18px 22px' }}>
-                  <div className="label" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, letterSpacing: '0.08em' }}>{l}</div>
-                  <div style={{
-                    fontFamily: 'Inter, var(--font-sf-pro-display)',
-                    fontWeight: 700, fontSize: 28, lineHeight: 1,
-                    letterSpacing: '-0.3px', marginTop: 6, color: '#fff',
-                  }}>{v}</div>
-                  <div style={{
-                    fontFamily: 'Inter, var(--font-sf-pro-text)',
-                    fontWeight: 400, fontSize: 12, lineHeight: 1.4,
-                    color: 'rgba(255,255,255,0.7)', marginTop: 4,
-                  }}>{s}</div>
-                </div>
-              ))}
-            </div>
+              {heroSubtitle}
+            </p>
           </div>
 
-          {/* RIGHT */}
-          <div style={{
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-            alignItems: 'stretch', gap: 16,
-          }}>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                className="pill-dark"
-                onClick={handleAdd}
-                style={{ background: '#000', color: '#fff' }}
-              >
-                <Plus size={14} strokeWidth={2.2} style={{ marginRight: 2 }} />
-                Añadir vehículo
-              </button>
-              {primary?.model_3d_url && (
-                <button
-                  className="pill-ghost"
-                  style={{
-                    borderColor: 'rgba(255,255,255,0.4)',
-                    color: '#fff', background: 'rgba(255,255,255,0.08)',
-                  }}
-                >
-                  Ver modelo 3D
-                </button>
-              )}
-            </div>
+          {/* Frosted KPI strip */}
+          <div className="indigo-kpis" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            background: 'rgba(255,255,255,0.14)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.28)',
+            borderRadius: 20,
+            overflow: 'hidden',
+          }}
+            role="list"
+            aria-label="Métricas globales del garaje"
+          >
+            <style>{`
+              @media (min-width: 900px) {
+                .indigo-kpis { grid-template-columns: repeat(4, 1fr) !important; }
+                .indigo-kpis > div:nth-child(n+2) { border-left: 1px solid rgba(255,255,255,0.22); }
+              }
+              @media (max-width: 899px) {
+                .indigo-kpis > div:nth-child(2n) { border-left: 1px solid rgba(255,255,255,0.22); }
+                .indigo-kpis > div:nth-child(n+3) { border-top: 1px solid rgba(255,255,255,0.22); }
+              }
+            `}</style>
+            {[
+              ['Km totales',     fmtN(aggregate.totalKm),                'flota completa'],
+              ['Mantenimientos', String(aggregate.totalRecords),         'histórico'],
+              [`Gasto ${aggregate.year}`, fmtEur(aggregate.totalSpent), 'año en curso'],
+              ['Alertas',        String(aggregate.totalAlerts),          'requieren atención'],
+            ].map(([l, v, s]) => (
+              <div key={l as string} role="listitem" style={{ padding: '18px 22px' }}>
+                <div className="label" style={{
+                  color: 'rgba(255,255,255,0.85)', fontSize: 11, letterSpacing: '0.08em',
+                }}>{l}</div>
+                <div style={{
+                  fontFamily: 'Inter, var(--font-sf-pro-display)',
+                  fontWeight: 700, fontSize: 28, lineHeight: 1,
+                  letterSpacing: '-0.3px', marginTop: 6, color: '#fff',
+                }}>{v}</div>
+                <div style={{
+                  fontFamily: 'Inter, var(--font-sf-pro-text)',
+                  fontWeight: 400, fontSize: 12, lineHeight: 1.4,
+                  color: 'rgba(255,255,255,0.85)', marginTop: 4,
+                }}>{s}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-            <VehicleRender />
+        {/* RIGHT */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          alignItems: 'stretch', gap: 16,
+        }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="pill-ghost focus-on-dark"
+              onClick={() => setShowCustomize(true)}
+              aria-label="Personalizar panel: mostrar u ocultar widgets"
+              style={{
+                borderColor: 'rgba(255,255,255,0.5)',
+                color: '#fff', background: 'rgba(255,255,255,0.10)',
+              }}
+            >
+              <SlidersHorizontal size={14} strokeWidth={2.2} />
+              Personalizar
+            </button>
+            <button
+              type="button"
+              className="pill-dark focus-on-dark"
+              onClick={heroCta.action}
+              aria-label={heroCta.label}
+              style={{ background: '#000', color: '#fff' }}
+            >
+              <HeroCtaIcon size={14} strokeWidth={2.2} />
+              {heroCta.label}
+            </button>
+          </div>
 
-            {primary && (
-              <button
-                type="button"
-                onClick={openPrimary}
-                aria-label={`Abrir ${primary.brand} ${primary.model}`}
-                style={{
-                  all: 'unset',
-                  cursor: 'pointer',
-                  background: 'rgba(255,255,255,0.10)',
-                  border: '1px solid rgba(255,255,255,0.22)',
-                  borderRadius: 16,
-                  padding: '14px 18px',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  gap: 12,
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  transition: 'background 180ms ease, border-color 180ms ease',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)';
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.34)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)';
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.22)';
-                }}
-              >
-                <div>
-                  <div style={{
-                    fontFamily: 'Inter, var(--font-sf-pro-display)',
-                    fontWeight: 600, fontSize: 18, lineHeight: 1.1,
-                    letterSpacing: '-0.2px', color: '#fff',
-                  }}>{primary.brand} {primary.model}</div>
-                  <div className="mono" style={{
-                    fontSize: 11, color: 'rgba(255,255,255,0.7)',
-                    marginTop: 6, letterSpacing: '0.06em',
-                  }}>
-                    {primary.year}
-                    {primary.fuel_type && ` · ${primary.fuel_type.toUpperCase()}`}
-                    {primary.license_plate && ` · ${primary.license_plate}`}
-                    {` · ${primary.role === 'owner' ? 'PROPIETARIO' : primary.role.toUpperCase()}`}
-                  </div>
+          <VehicleRender />
+
+          {primary && (
+            <button
+              type="button"
+              onClick={openPrimary}
+              className="focus-on-dark"
+              aria-label={`Abrir detalle del ${primary.brand} ${primary.model}`}
+              style={{
+                all: 'unset',
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.28)',
+                borderRadius: 16,
+                padding: '14px 18px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                gap: 12,
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                transition: 'background 180ms ease, border-color 180ms ease',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.20)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.40)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.28)';
+              }}
+            >
+              <div>
+                <div style={{
+                  fontFamily: 'Inter, var(--font-sf-pro-display)',
+                  fontWeight: 600, fontSize: 18, lineHeight: 1.1,
+                  letterSpacing: '-0.2px', color: '#fff',
+                }}>{primary.brand} {primary.model}</div>
+                <div className="mono" style={{
+                  fontSize: 11, color: 'rgba(255,255,255,0.85)',
+                  marginTop: 6, letterSpacing: '0.06em',
+                }}>
+                  {primary.year}
+                  {primary.fuel_type && ` · ${primary.fuel_type}`}
+                  {primary.license_plate && ` · ${primary.license_plate}`}
+                  {` · ${ROLE_LABEL[primary.role] ?? primary.role}`}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {primaryStats && primaryStats.alerts.length > 0 && (
-                    <span style={{
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {primaryStats && primaryStats.alerts.length > 0 && (
+                  <span
+                    role="status"
+                    aria-label={`${primaryStats.alerts.length} alertas pendientes`}
+                    style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                       padding: '6px 12px', borderRadius: 999,
-                      background: 'rgba(255,255,255,0.18)',
-                      border: '1px solid rgba(255,255,255,0.3)',
+                      background: 'rgba(255,255,255,0.22)',
+                      border: '1px solid rgba(255,255,255,0.4)',
                       fontFamily: 'Inter, var(--font-sf-pro-text)',
                       fontWeight: 600, fontSize: 12, color: '#fff',
                       whiteSpace: 'nowrap',
-                    }}>
-                      ⚠ {primaryStats.alerts.length} alerta{primaryStats.alerts.length === 1 ? '' : 's'}
-                    </span>
-                  )}
-                  <span style={{
-                    fontFamily: 'Inter, var(--font-sf-pro-text)',
-                    fontSize: 18, color: '#fff', lineHeight: 1,
-                  }}>→</span>
-                </div>
-              </button>
-            )}
-          </div>
+                    }}
+                  >
+                    <AlertTriangle size={12} strokeWidth={2.2} aria-hidden="true" />
+                    {primaryStats.alerts.length} alerta{primaryStats.alerts.length === 1 ? '' : 's'}
+                  </span>
+                )}
+                <ArrowRight size={18} strokeWidth={2} color="#fff" aria-hidden="true" />
+              </div>
+            </button>
+          )}
+        </div>
       </section>
 
       {/* ═══ BLOCK 2 · EDITORIAL BODY ════════════════════════════════════════ */}
-      <div style={{
-        padding: '60px 80px 80px',
-        display: 'flex', flexDirection: 'column', gap: 60,
-      }}>
+      <div className="editorial-body">
         {loading && !primary ? (
           <BodySkeleton />
         ) : !primary ? (
@@ -521,285 +584,400 @@ export const DashboardPage = () => {
         ) : (
           <>
             {/* ── Section 1 — KILOMETRAJE ───────────────────────────────── */}
-            <section className="editorial-grid-2">
-              <style>{`
-                .editorial-grid-2 {
-                  display: grid; grid-template-columns: 1fr; gap: 60px;
-                  align-items: end;
-                }
-                @media (min-width: 900px) {
-                  .editorial-grid-2 { grid-template-columns: 1fr 1fr; gap: 60px; }
-                }
-                .editorial-grid-3 {
-                  display: grid; grid-template-columns: 1fr; gap: 24px;
-                }
-                @media (min-width: 900px) {
-                  .editorial-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-                }
-              `}</style>
-              <div>
-                <span className="eyebrow">
-                  {primary.model}
-                  {primary.license_plate ? ` · ${primary.license_plate}` : ''}
-                </span>
-                <h1 style={{
-                  fontFamily: 'Inter, var(--font-sf-pro-display)',
-                  fontWeight: 700,
-                  fontSize: 'clamp(56px, 9vw, 96px)',
-                  lineHeight: 1,
-                  letterSpacing: '-2.11px',
-                  margin: '12px 0 0',
-                  color: '#1d1d1f',
-                }}>
-                  {fmtN(primary.current_km)}<br />
-                  <span style={{ color: '#707070' }}>kilómetros.</span>
-                </h1>
-                <p style={{
-                  fontFamily: 'Inter, var(--font-sf-pro-text)',
-                  fontWeight: 300, fontSize: 22, lineHeight: 1.4,
-                  letterSpacing: '-0.2px', color: '#474747',
-                  maxWidth: 480, margin: '24px 0 0',
-                }}>
-                  +{fmtN(thisMonthKm)} este mes.{' '}
-                  {pctVsAvg > 0
-                    ? <>Conduciendo un {pctVsAvg}% {moreOrLess} que la media anual.</>
-                    : <>Aún no hay datos suficientes para comparar con la media anual.</>}
-                </p>
-              </div>
-
-              <div className="card" style={{
-                padding: 32, background: '#fff',
-                borderRadius: 20, border: '1px solid #e8e8ed',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="eyebrow">Uso diario · 30 días</span>
-                  <span className="mono" style={{ fontSize: 11, color: '#a1a1a6' }}>
-                    {avgPerDay.toFixed(1).replace('.', ',')} KM/DÍA
-                  </span>
-                </div>
-                <div style={{ marginTop: 20 }}>
-                  <Sparkline data={dailyKm} />
-                </div>
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between', marginTop: 8,
-                  fontFamily: 'var(--font-mono)', fontSize: 11, color: '#a1a1a6',
-                }}>
-                  {axisDates.map((d) => <span key={d}>{d}</span>)}
-                </div>
-              </div>
-            </section>
-
-            {/* ── Section 2 — MANTENIMIENTO HIGHLIGHT ───────────────────── */}
-            <section className="editorial-grid-3">
-              {/* Card A — Alerta crítica */}
-              <div className="card" style={{
-                background: '#fff', borderRadius: 20, border: '1px solid #e8e8ed',
-                padding: 28, minHeight: 280,
-                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              }}>
-                <span className="eyebrow" style={{ color: '#b64400' }}>● Alerta crítica</span>
+            {isVisible('kilometraje') && (
+              <section
+                className="editorial-grid-2"
+                aria-labelledby="km-title"
+              >
+                <style>{`
+                  .editorial-grid-2 {
+                    display: grid; grid-template-columns: 1fr; gap: 40px;
+                    align-items: end;
+                  }
+                  @media (min-width: 900px) {
+                    .editorial-grid-2 { grid-template-columns: 1fr 1fr; gap: 60px; }
+                  }
+                  .editorial-grid-3 {
+                    display: grid; grid-template-columns: 1fr; gap: 24px;
+                  }
+                  @media (min-width: 900px) {
+                    .editorial-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+                  }
+                `}</style>
                 <div>
-                  <div style={{
-                    fontFamily: 'Inter, var(--font-sf-pro-display)',
-                    fontWeight: 700, fontSize: 56, lineHeight: 1,
-                    letterSpacing: '-0.9px', color: '#1d1d1f',
-                  }}>
-                    {nextMaintenance ? fmtN(nextMaintenance.kmRemaining) : '—'}
-                    {nextMaintenance && (
-                      <span style={{
-                        fontFamily: 'Inter, var(--font-sf-pro-text)',
-                        fontWeight: 300, fontSize: 24, color: '#707070',
-                      }}> km</span>
+                  <span className="eyebrow">
+                    {primary.model}
+                    {primary.license_plate ? ` · ${primary.license_plate}` : ''}
+                  </span>
+                  <h2 id="km-title" className="display-xxl" style={{ marginTop: 12 }}>
+                    {fmtN(primary.current_km)}<br />
+                    <span style={{ color: '#707070' }}>kilómetros.</span>
+                  </h2>
+                  <p className="body-soft" style={{ maxWidth: 480, margin: '24px 0 0' }}>
+                    +{fmtN(thisMonthKm)} este mes.{' '}
+                    {pctVsAvg > 0
+                      ? <>Conduciendo un {pctVsAvg}% {moreOrLess} que la media anual.</>
+                      : <>Aún no hay datos suficientes para comparar con la media anual.</>}
+                  </p>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="pill-dark"
+                      onClick={() => navigate('/trips')}
+                      aria-label="Registrar nuevo viaje"
+                    >
+                      <Plus size={14} strokeWidth={2.2} />
+                      Registrar viaje
+                    </button>
+                    <button
+                      type="button"
+                      className="pill-ghost"
+                      onClick={() => navigate('/trips')}
+                    >
+                      Ver todos los viajes
+                    </button>
+                  </div>
+                </div>
+
+                <div className="card" style={{
+                  padding: 32, background: '#fff',
+                  borderRadius: 20, border: '1px solid #e8e8ed',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="eyebrow">Uso diario · 30 días</span>
+                    <span className="mono" style={{ fontSize: 11, color: '#707070' }}>
+                      {avgPerDay.toFixed(1).replace('.', ',')} km/día
+                    </span>
+                  </div>
+                  <div style={{ marginTop: 20 }}>
+                    {primaryStats?.errors.trips ? (
+                      <WidgetError onRetry={() => fetchVehicles()} message="No se pudieron cargar los viajes." />
+                    ) : statsLoading && !primaryStats ? (
+                      <WidgetLoading height={120} />
+                    ) : sumWindow === 0 ? (
+                      <WidgetEmpty
+                        icon={Route}
+                        message="Sin viajes en los últimos 30 días."
+                        ctaLabel="Registrar viaje"
+                        onCta={() => navigate('/trips')}
+                      />
+                    ) : (
+                      <Sparkline data={dailyKm} />
                     )}
                   </div>
-                  <p style={{
-                    fontFamily: 'Inter, var(--font-sf-pro-text)',
-                    fontWeight: 400, fontSize: 17, lineHeight: 1.45,
-                    color: '#1d1d1f', margin: '12px 0 0',
-                  }}>
-                    {nextMaintenance
-                      ? <>hasta el {nextMaintenance.label} recomendado.</>
-                      : <>sin mantenimientos pendientes a la vista.</>}
-                  </p>
-                </div>
-                <button
-                  className="pill-dark"
-                  onClick={() => navigate('/maintenance')}
-                  style={{ alignSelf: 'flex-start' }}
-                >
-                  Programar →
-                </button>
-              </div>
-
-              {/* Card B — Salud general */}
-              <div className="card-fog" style={{
-                background: '#f5f5f7', borderRadius: 20,
-                padding: 28, minHeight: 280,
-                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              }}>
-                <span className="eyebrow">Salud general</span>
-                <div>
                   <div style={{
-                    fontFamily: 'Inter, var(--font-sf-pro-display)',
-                    fontWeight: 700, fontSize: 'clamp(64px, 8vw, 96px)',
-                    lineHeight: 1, letterSpacing: '-2.11px', color: '#1d1d1f',
-                  }}>{healthScore}</div>
-                  <p style={{
-                    fontFamily: 'Inter, var(--font-sf-pro-text)',
-                    fontWeight: 300, fontSize: 17, lineHeight: 1.45,
-                    color: '#474747', margin: '4px 0 0',
+                    display: 'flex', justifyContent: 'space-between', marginTop: 8,
+                    fontFamily: 'var(--font-mono)', fontSize: 11, color: '#a1a1a6',
                   }}>
-                    sobre 100. {healthDetail}
-                  </p>
+                    {axisDates.map((d) => <span key={d}>{d}</span>)}
+                  </div>
                 </div>
-                <button
-                  className="pill-ghost"
-                  onClick={openPrimary}
-                  style={{ alignSelf: 'flex-start' }}
-                >
-                  Ver desglose
-                </button>
-              </div>
+              </section>
+            )}
 
-              {/* Card C — Próximo taller */}
-              <div style={{
-                background: '#000', color: '#fff',
-                borderRadius: 20, padding: 28, minHeight: 280,
-                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              }}>
-                <span className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  Próximo taller
-                </span>
-                <div>
-                  {nextAppointment ? (
-                    <>
-                      <div style={{
-                        fontFamily: 'Inter, var(--font-sf-pro-display)',
-                        fontWeight: 700, fontSize: 32, lineHeight: 1.1,
-                        letterSpacing: '-0.4px',
-                        textTransform: 'capitalize',
-                      }}>
-                        {nextAppointment.dayLabel}<br />{nextAppointment.time}
-                      </div>
-                      <p style={{
-                        fontFamily: 'Inter, var(--font-sf-pro-text)',
-                        fontWeight: 400, fontSize: 15, lineHeight: 1.45,
-                        color: 'rgba(255,255,255,0.7)', margin: '12px 0 0',
-                      }}>
-                        {primary.brand} {primary.model} · {nextAppointment.type}.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{
-                        fontFamily: 'Inter, var(--font-sf-pro-display)',
-                        fontWeight: 700, fontSize: 32, lineHeight: 1.1,
-                        letterSpacing: '-0.4px',
-                      }}>
-                        Sin cita<br />programada
-                      </div>
-                      <p style={{
-                        fontFamily: 'Inter, var(--font-sf-pro-text)',
-                        fontWeight: 400, fontSize: 15, lineHeight: 1.45,
-                        color: 'rgba(255,255,255,0.7)', margin: '12px 0 0',
-                      }}>
-                        Añade una fecha al próximo mantenimiento para reservar tu hueco.
-                      </p>
-                    </>
-                  )}
-                </div>
-                <button
-                  className="pill"
-                  onClick={() => navigate('/maintenance')}
-                  style={{ background: '#fff', color: '#000', alignSelf: 'flex-start' }}
-                >
-                  {nextAppointment ? 'Ver cita →' : 'Programar →'}
-                </button>
-              </div>
-            </section>
-
-            {/* ── Section 3 — GASTOS one-liner ──────────────────────────── */}
-            <section className="gastos-row" style={{ marginBottom: 80 }}>
-              <style>{`
-                .gastos-row {
-                  display: flex; justify-content: space-between; align-items: flex-end;
-                  border-top: 1px solid #e8e8ed; padding-top: 36px;
-                  flex-wrap: wrap; gap: 32px;
-                }
-                .gastos-meta {
-                  display: flex; gap: 48px; align-items: flex-end; flex-wrap: wrap;
-                }
-              `}</style>
-              <div>
-                <span className="eyebrow">Gasto acumulado · {aggregate.ytd}</span>
-                <h2 style={{
-                  fontFamily: 'Inter, var(--font-sf-pro-display)',
-                  fontWeight: 700,
-                  fontSize: 'clamp(48px, 7vw, 80px)',
-                  lineHeight: 1,
-                  letterSpacing: '-1.7px',
-                  margin: '10px 0 0',
-                  color: '#1d1d1f',
+            {/* ── Section 2 — MANTENIMIENTO HIGHLIGHT ───────────────────── */}
+            {isVisible('mantenimiento') && (
+              <section className="editorial-grid-3" aria-label="Estado de mantenimiento">
+                {/* Card A — Alerta crítica */}
+                <div className="card" style={{
+                  background: '#fff', borderRadius: 20, border: '1px solid #e8e8ed',
+                  padding: 28, minHeight: 280,
+                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                 }}>
-                  {fmtN(totalYtdPrimary)} <span style={{ color: '#707070' }}>€</span>
-                </h2>
-              </div>
-              <div className="gastos-meta">
-                {[
-                  ['COMBUSTIBLE',   expensesByCat.combustible],
-                  ['MANTENIMIENTO', expensesByCat.mantenimiento],
-                  ['SEGURO',        expensesByCat.seguro],
-                ].map(([lbl, val]) => (
-                  <div key={lbl as string}>
-                    <span className="label" style={{ color: '#707070' }}>{lbl}</span>
+                  <span
+                    className="eyebrow"
+                    style={{ color: '#b64400', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <AlertTriangle size={11} strokeWidth={2.4} aria-hidden="true" />
+                    Alerta crítica
+                  </span>
+                  <div>
                     <div style={{
                       fontFamily: 'Inter, var(--font-sf-pro-display)',
-                      fontWeight: 600, fontSize: 28, lineHeight: 1,
-                      color: '#1d1d1f', marginTop: 8,
-                    }}>{fmtEur(val as number)}</div>
+                      fontWeight: 700, fontSize: 'clamp(40px, 5vw, 56px)', lineHeight: 1,
+                      letterSpacing: '-0.9px', color: '#1d1d1f',
+                    }}>
+                      {nextMaintenance ? fmtN(nextMaintenance.kmRemaining) : '—'}
+                      {nextMaintenance && (
+                        <span style={{
+                          fontFamily: 'Inter, var(--font-sf-pro-text)',
+                          fontWeight: 300, fontSize: 24, color: '#707070',
+                        }}> km</span>
+                      )}
+                    </div>
+                    <p style={{
+                      fontFamily: 'Inter, var(--font-sf-pro-text)',
+                      fontWeight: 400, fontSize: 17, lineHeight: 1.45,
+                      color: '#1d1d1f', margin: '12px 0 0',
+                    }}>
+                      {nextMaintenance
+                        ? <>hasta el {nextMaintenance.label} recomendado.</>
+                        : <>sin mantenimientos pendientes a la vista.</>}
+                    </p>
                   </div>
-                ))}
-                <button className="pill" onClick={() => navigate('/expenses')}>
-                  Detalle →
-                </button>
-              </div>
-            </section>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="pill-dark"
+                      onClick={() => navigate('/maintenance')}
+                      aria-label={nextMaintenance ? 'Programar mantenimiento' : 'Añadir mantenimiento'}
+                    >
+                      <Wrench size={14} strokeWidth={2.2} />
+                      {nextMaintenance ? 'Programar' : 'Añadir'}
+                      <ArrowRight size={13} strokeWidth={2.2} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card B — Salud general */}
+                <div className="card-fog" style={{
+                  background: '#f5f5f7', borderRadius: 20,
+                  padding: 28, minHeight: 280,
+                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                }}>
+                  <span className="eyebrow">Salud general</span>
+                  <div>
+                    <div
+                      role="meter"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={healthScore}
+                      aria-label={`Salud del vehículo: ${healthScore} sobre 100`}
+                      style={{
+                        fontFamily: 'Inter, var(--font-sf-pro-display)',
+                        fontWeight: 700, fontSize: 'clamp(56px, 8vw, 96px)',
+                        lineHeight: 1, letterSpacing: '-2.11px', color: '#1d1d1f',
+                      }}
+                    >{healthScore}</div>
+                    <p style={{
+                      fontFamily: 'Inter, var(--font-sf-pro-text)',
+                      fontWeight: 300, fontSize: 17, lineHeight: 1.45,
+                      color: '#474747', margin: '4px 0 0',
+                    }}>
+                      sobre 100. {healthDetail}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="pill-ghost"
+                    onClick={openPrimary}
+                    aria-label="Ver desglose detallado del vehículo"
+                  >
+                    Ver desglose
+                  </button>
+                </div>
+
+                {/* Card C — Próximo taller */}
+                <div style={{
+                  background: '#000', color: '#fff',
+                  borderRadius: 20, padding: 28, minHeight: 280,
+                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                }}>
+                  <span
+                    className="eyebrow"
+                    style={{ color: 'rgba(255,255,255,0.75)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Calendar size={11} strokeWidth={2.4} aria-hidden="true" />
+                    Próximo taller
+                  </span>
+                  <div>
+                    {nextAppointment ? (
+                      <>
+                        <div style={{
+                          fontFamily: 'Inter, var(--font-sf-pro-display)',
+                          fontWeight: 700, fontSize: 32, lineHeight: 1.1,
+                          letterSpacing: '-0.4px',
+                          textTransform: 'capitalize',
+                        }}>
+                          {nextAppointment.dayLabel}<br />{nextAppointment.time}
+                        </div>
+                        <p style={{
+                          fontFamily: 'Inter, var(--font-sf-pro-text)',
+                          fontWeight: 400, fontSize: 15, lineHeight: 1.45,
+                          color: 'rgba(255,255,255,0.78)', margin: '12px 0 0',
+                        }}>
+                          {primary.brand} {primary.model} · {nextAppointment.type}.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{
+                          fontFamily: 'Inter, var(--font-sf-pro-display)',
+                          fontWeight: 700, fontSize: 32, lineHeight: 1.1,
+                          letterSpacing: '-0.4px',
+                        }}>
+                          Sin cita<br />programada
+                        </div>
+                        <p style={{
+                          fontFamily: 'Inter, var(--font-sf-pro-text)',
+                          fontWeight: 400, fontSize: 15, lineHeight: 1.45,
+                          color: 'rgba(255,255,255,0.78)', margin: '12px 0 0',
+                        }}>
+                          Añade una fecha al próximo mantenimiento para reservar tu hueco.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="pill focus-on-dark"
+                    onClick={() => navigate('/maintenance')}
+                    aria-label={nextAppointment ? 'Ver cita en mantenimiento' : 'Programar nueva cita'}
+                    style={{ background: '#fff', color: '#000', alignSelf: 'flex-start' }}
+                  >
+                    {nextAppointment ? 'Ver cita' : 'Programar'}
+                    <ArrowRight size={13} strokeWidth={2.2} />
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {/* ── Section 3 — GASTOS one-liner ──────────────────────────── */}
+            {isVisible('gastos') && (
+              <section className="gastos-row" style={{ marginBottom: 80 }} aria-labelledby="gastos-title">
+                <style>{`
+                  .gastos-row {
+                    display: flex; justify-content: space-between; align-items: flex-end;
+                    border-top: 1px solid #e8e8ed; padding-top: 36px;
+                    flex-wrap: wrap; gap: 32px;
+                  }
+                  .gastos-meta {
+                    display: flex; gap: 32px; align-items: flex-end; flex-wrap: wrap;
+                  }
+                `}</style>
+                <div>
+                  <span className="eyebrow">Gasto acumulado · {aggregate.year}</span>
+                  <h2 id="gastos-title" className="display-xl" style={{ marginTop: 10 }}>
+                    {primaryStats?.errors.expenses ? (
+                      <span style={{ color: '#b64400', fontSize: 24 }}>Datos no disponibles</span>
+                    ) : (
+                      <>{fmtN(totalYtdPrimary)} <span style={{ color: '#707070' }}>€</span></>
+                    )}
+                  </h2>
+                </div>
+                <div className="gastos-meta">
+                  {[
+                    ['Combustible',   expensesByCat.combustible,   Fuel],
+                    ['Mantenimiento', expensesByCat.mantenimiento, Wrench],
+                    ['Seguro',        expensesByCat.seguro,        Receipt],
+                  ].map(([lbl, val, Icon]) => {
+                    const Cmp = Icon as typeof Fuel;
+                    return (
+                      <div key={lbl as string}>
+                        <span className="label" style={{
+                          color: '#707070', display: 'inline-flex', alignItems: 'center', gap: 6,
+                        }}>
+                          <Cmp size={11} strokeWidth={2.2} aria-hidden="true" />
+                          {lbl as string}
+                        </span>
+                        <div style={{
+                          fontFamily: 'Inter, var(--font-sf-pro-display)',
+                          fontWeight: 600, fontSize: 28, lineHeight: 1,
+                          color: '#1d1d1f', marginTop: 8,
+                        }}>{fmtEur(val as number)}</div>
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                    <button
+                      type="button"
+                      className="pill-dark"
+                      onClick={() => navigate('/expenses')}
+                      aria-label="Añadir nuevo gasto"
+                    >
+                      <Plus size={14} strokeWidth={2.2} />
+                      Añadir gasto
+                    </button>
+                    <button
+                      type="button"
+                      className="pill"
+                      onClick={() => navigate('/expenses')}
+                      aria-label="Ver detalle completo de gastos"
+                    >
+                      Detalle
+                      <ArrowRight size={13} strokeWidth={2.2} />
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* ── Flota registrada ──────────────────────────────────────── */}
-            <section style={{ borderTop: '1px solid #e8e8ed', paddingTop: 36 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16 }}>
-                <span className="eyebrow">
-                  Flota registrada · {vehicles.length} vehículo{vehicles.length === 1 ? '' : 's'}
-                </span>
-                <span className="mono" style={{ fontSize: 11, color: '#a1a1a6' }}>
-                  CLIC PARA SELECCIONAR
-                </span>
-              </div>
-              <div style={{
-                marginTop: 24,
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: 16,
-              }}>
-                {vehicles.map((v) => (
-                  <VehicleGridCard
-                    key={v.id}
-                    vehicle={v}
-                    stats={stats[v.id]}
-                    isPrimary={v.id === primary?.id}
-                    onSelect={() => {
-                      storeSet(v);
-                      navigate('/car');
+            {isVisible('flota') && (
+              <section style={{ borderTop: '1px solid #e8e8ed', paddingTop: 36 }} aria-labelledby="flota-title">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
+                  <span id="flota-title" className="eyebrow">
+                    Flota registrada · {vehicles.length} vehículo{vehicles.length === 1 ? '' : 's'}
+                  </span>
+                  <span className="mono" style={{ fontSize: 11, color: '#707070' }}>
+                    Haz clic en uno para abrirlo
+                  </span>
+                </div>
+                <div style={{
+                  marginTop: 24,
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: 16,
+                }}>
+                  {vehicles.map((v) => (
+                    <VehicleGridCard
+                      key={v.id}
+                      vehicle={v}
+                      stats={stats[v.id]}
+                      isPrimary={v.id === primary?.id}
+                      onSelect={() => {
+                        storeSet(v);
+                        navigate('/car');
+                      }}
+                    />
+                  ))}
+                  <button
+                    type="button"
+                    onClick={handleAdd}
+                    aria-label="Añadir nuevo vehículo a la flota"
+                    style={{
+                      all: 'unset',
+                      cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center',
+                      gap: 10, minHeight: 200,
+                      background: '#f5f5f7',
+                      border: '1.5px dashed #d2d2d7',
+                      borderRadius: 20,
+                      color: '#474747',
+                      fontFamily: 'Inter, var(--font-sf-pro-text)',
+                      fontWeight: 500, fontSize: 14,
+                      transition: 'border-color 180ms ease, background 180ms ease',
                     }}
-                  />
-                ))}
-              </div>
-            </section>
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = '#0071e3';
+                      (e.currentTarget as HTMLElement).style.background = '#fff';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = '#d2d2d7';
+                      (e.currentTarget as HTMLElement).style.background = '#f5f5f7';
+                    }}
+                  >
+                    <Plus size={22} strokeWidth={1.8} aria-hidden="true" />
+                    Añadir otro vehículo
+                  </button>
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>
 
       {showForm && (
         <VehicleForm onSubmit={handleCreate} onClose={() => setShowForm(false)} />
+      )}
+
+      {showCustomize && (
+        <CustomizePanel
+          hidden={hidden}
+          toggle={toggle}
+          reset={reset}
+          onClose={() => setShowCustomize(false)}
+        />
       )}
     </div>
   );
@@ -820,12 +998,85 @@ const Sparkline = ({ data, width = 460, height = 120 }: {
   const line = pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ');
   const area = `${line} L ${width} ${height} L 0 ${height} Z`;
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} preserveAspectRatio="none">
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width="100%"
+      height={height}
+      preserveAspectRatio="none"
+      role="img"
+      aria-label={`Tendencia de kilómetros diarios: máximo ${Math.round(max)} km`}
+    >
       <path d={area} fill="rgba(29,29,31,0.06)" />
       <path d={line} fill="none" stroke="#1d1d1f" strokeWidth={1.5} />
     </svg>
   );
 };
+
+// ─── Per-widget states ──────────────────────────────────────────────────────
+const WidgetLoading = ({ height = 120 }: { height?: number }) => (
+  <div
+    className="skeleton"
+    role="status"
+    aria-label="Cargando datos"
+    style={{ height, borderRadius: 12 }}
+  />
+);
+
+const WidgetEmpty = ({
+  icon: Icon, message, ctaLabel, onCta,
+}: {
+  icon: typeof Plus; message: string; ctaLabel?: string; onCta?: () => void;
+}) => (
+  <div style={{
+    height: 120, display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center', gap: 8,
+    background: '#fafafa', border: '1px dashed #e8e8ed',
+    borderRadius: 12, color: '#707070',
+    fontFamily: 'Inter, var(--font-sf-pro-text)', fontSize: 13,
+  }}>
+    <Icon size={18} strokeWidth={1.6} aria-hidden="true" />
+    <span>{message}</span>
+    {ctaLabel && onCta && (
+      <button
+        type="button"
+        onClick={onCta}
+        style={{
+          all: 'unset', cursor: 'pointer',
+          color: '#0071e3', fontWeight: 500, fontSize: 12,
+          textDecoration: 'underline',
+        }}
+      >
+        {ctaLabel}
+      </button>
+    )}
+  </div>
+);
+
+const WidgetError = ({ onRetry, message }: { onRetry: () => void; message: string }) => (
+  <div
+    role="alert"
+    style={{
+      height: 120, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 8,
+      background: '#fff1ea', border: '1px solid #f4cdb6',
+      borderRadius: 12, color: '#b64400', fontSize: 13,
+      fontFamily: 'Inter, var(--font-sf-pro-text)',
+    }}
+  >
+    <AlertTriangle size={18} strokeWidth={2} aria-hidden="true" />
+    <span>{message}</span>
+    <button
+      type="button"
+      onClick={onRetry}
+      style={{
+        all: 'unset', cursor: 'pointer', color: '#b64400',
+        fontWeight: 500, fontSize: 12, textDecoration: 'underline',
+      }}
+    >
+      Reintentar
+    </button>
+  </div>
+);
 
 const VehicleRender = () => (
   <div style={{
@@ -835,7 +1086,8 @@ const VehicleRender = () => (
   }}>
     <img
       src="/images/ford-focus.png"
-      alt="Ford Focus"
+      alt=""
+      role="presentation"
       loading="eager"
       style={{
         width: '100%',
@@ -846,8 +1098,7 @@ const VehicleRender = () => (
         filter: 'drop-shadow(0 30px 40px rgba(0,0,0,0.45))',
       }}
       onError={(e) => {
-        // Hide the broken image silently if the file isn't yet in place;
-        // the hero KPI strip below still gives the section presence.
+        // Hide silently if file is missing — the hero KPI strip carries weight.
         (e.currentTarget as HTMLImageElement).style.display = 'none';
       }}
     />
@@ -856,9 +1107,13 @@ const VehicleRender = () => (
 
 // ─── Body skeleton — minimal, zero-shadow ───────────────────────────────────
 const BodySkeleton = () => (
-  <div style={{
-    display: 'grid', gap: 24, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-  }}>
+  <div
+    role="status"
+    aria-label="Cargando panel"
+    style={{
+      display: 'grid', gap: 24, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    }}
+  >
     {[0, 1, 2].map((i) => (
       <div key={i} style={{
         height: 220, borderRadius: 20, background: '#fff',
@@ -881,10 +1136,13 @@ const VehicleGridCard = ({
 }: VehicleGridCardProps) => {
   const alertCount = stats?.alerts.length ?? 0;
   const recordCount = stats?.records.length ?? 0;
+  const hasError = stats?.errors && (stats.errors.records || stats.errors.expenses || stats.errors.trips);
 
   return (
     <button
+      type="button"
       onClick={onSelect}
+      aria-label={`Abrir ${vehicle.brand} ${vehicle.model}${isPrimary ? ' (vehículo principal)' : ''}${alertCount > 0 ? `, ${alertCount} alertas` : ''}`}
       style={{
         all: 'unset',
         display: 'flex',
@@ -898,15 +1156,12 @@ const VehicleGridCard = ({
         minHeight: 200,
         cursor: 'pointer',
         transition: 'all 0.2s ease',
-        opacity: isPrimary ? 1 : 0.8,
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = '#0071e3';
-        (e.currentTarget as HTMLElement).style.opacity = '1';
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = isPrimary ? '#0071e3' : '#e8e8ed';
-        (e.currentTarget as HTMLElement).style.opacity = isPrimary ? '1' : '0.8';
       }}
     >
       <div>
@@ -925,8 +1180,8 @@ const VehicleGridCard = ({
             <div style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              color: '#a1a1a6',
-              letterSpacing: '0.08em',
+              color: '#707070',
+              letterSpacing: '0.06em',
               marginBottom: 8,
             }}>
               {vehicle.year}
@@ -935,33 +1190,30 @@ const VehicleGridCard = ({
             </div>
           </div>
           {alertCount > 0 ? (
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: '4px 8px',
-              borderRadius: 999,
-              background: '#b64400',
-              color: '#fff',
-              fontSize: 11,
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
-            }}>
-              ⚠ {alertCount}
+            <span
+              role="status"
+              aria-label={`${alertCount} alertas pendientes`}
+              className="sev-critical"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '4px 8px', borderRadius: 999,
+                fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+              }}
+            >
+              <AlertTriangle size={12} strokeWidth={2.2} aria-hidden="true" />
+              {alertCount}
             </span>
           ) : (
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 20,
-              height: 20,
-              borderRadius: '50%',
-              background: '#1cb05c',
-              color: '#fff',
-              fontSize: 10,
-            }}>
-              ✓
+            <span
+              role="status"
+              aria-label="Sin alertas"
+              className="sev-ok"
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 22, height: 22, borderRadius: '50%',
+              }}
+            >
+              <CheckCircle2 size={13} strokeWidth={2.4} aria-hidden="true" />
             </span>
           )}
         </div>
@@ -972,7 +1224,7 @@ const VehicleGridCard = ({
           marginTop: 12,
         }}>
           <div>
-            <div style={{ fontSize: 11, color: '#a1a1a6', marginBottom: 4 }}>KM</div>
+            <div style={{ fontSize: 11, color: '#707070', marginBottom: 4 }}>Kilómetros</div>
             <div style={{
               fontFamily: 'Inter, var(--font-sf-pro-display)',
               fontWeight: 600,
@@ -983,7 +1235,7 @@ const VehicleGridCard = ({
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: '#a1a1a6', marginBottom: 4 }}>SVC</div>
+            <div style={{ fontSize: 11, color: '#707070', marginBottom: 4 }}>Mantenimientos</div>
             <div style={{
               fontFamily: 'Inter, var(--font-sf-pro-display)',
               fontWeight: 600,
@@ -998,10 +1250,16 @@ const VehicleGridCard = ({
       <div style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 10,
-        color: '#a1a1a6',
+        color: hasError ? '#b64400' : '#707070',
         marginTop: 12,
+        display: 'inline-flex', alignItems: 'center', gap: 6,
       }}>
-        {isPrimary ? '✓ Vehículo principal' : 'Haz click para seleccionar'}
+        {hasError && <AlertTriangle size={11} strokeWidth={2.2} aria-hidden="true" />}
+        {hasError
+          ? 'Algunos datos no se pudieron cargar'
+          : isPrimary
+            ? '✓ Vehículo principal'
+            : 'Haz clic para seleccionar'}
       </div>
     </button>
   );
@@ -1013,30 +1271,143 @@ const EditorialEmpty = ({ onAdd }: { onAdd: () => void }) => (
     gap: 20, maxWidth: 640,
   }}>
     <span className="eyebrow">Tu garaje · vacío</span>
-    <h2 style={{
-      fontFamily: 'Inter, var(--font-sf-pro-display)',
-      fontWeight: 700, fontSize: 'clamp(40px, 6vw, 64px)',
-      lineHeight: 1.04, letterSpacing: '-1.4px',
-      margin: 0, color: '#1d1d1f',
-    }}>
+    <h2 className="display-lg">
       Empieza añadiendo<br />
       <span style={{ color: '#707070' }}>tu primer vehículo.</span>
     </h2>
-    <p style={{
-      fontFamily: 'Inter, var(--font-sf-pro-text)',
-      fontWeight: 300, fontSize: 20, lineHeight: 1.4,
-      letterSpacing: '-0.2px', color: '#474747', maxWidth: 520, margin: 0,
-    }}>
+    <p className="body-soft" style={{ maxWidth: 520, margin: 0 }}>
       Registra marca, modelo y kilometraje. A partir de ahí, FocusHub te avisará
       de mantenimientos y agrupará gastos y trayectos.
     </p>
     <button
+      type="button"
       className="pill-dark"
       onClick={onAdd}
       style={{ alignSelf: 'flex-start', marginTop: 8 }}
+      aria-label="Añadir primer vehículo"
     >
-      <Plus size={14} strokeWidth={2.2} style={{ marginRight: 2 }} />
+      <Plus size={14} strokeWidth={2.2} aria-hidden="true" />
       Añadir vehículo
     </button>
   </div>
 );
+
+// ─── Customize panel — MVP widget toggle ────────────────────────────────────
+interface CustomizePanelProps {
+  hidden: DashboardWidget[];
+  toggle: (w: DashboardWidget) => void;
+  reset: () => void;
+  onClose: () => void;
+}
+
+const WIDGETS: { key: DashboardWidget; label: string; description: string }[] = [
+  { key: 'kilometraje',   label: 'Kilometraje',     description: 'Total y uso diario de los últimos 30 días.' },
+  { key: 'mantenimiento', label: 'Mantenimiento',   description: 'Alerta crítica, salud y próximo taller.' },
+  { key: 'gastos',        label: 'Gastos del año',  description: 'Combustible, mantenimiento y seguro.' },
+  { key: 'flota',         label: 'Flota registrada', description: 'Tarjetas con todos tus vehículos.' },
+];
+
+const CustomizePanel = ({ hidden, toggle, reset, onClose }: CustomizePanelProps) => {
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="customize-title"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 60,
+        background: 'rgba(20,22,28,0.42)',
+        backdropFilter: 'blur(2px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+        animation: 'fade-in 0.2s ease-out',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{
+        background: '#fff', borderRadius: 24,
+        border: '1px solid #e8e8ed',
+        maxWidth: 480, width: '100%',
+        padding: 28,
+        fontFamily: 'Inter, var(--font-sf-pro-text)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18 }}>
+          <h3 id="customize-title" style={{
+            fontFamily: 'Inter, var(--font-sf-pro-display)',
+            fontWeight: 600, fontSize: 20, letterSpacing: '-0.3px',
+            color: '#1d1d1f', margin: 0,
+          }}>
+            Personalizar panel
+          </h3>
+          <button
+            type="button"
+            onClick={reset}
+            style={{
+              all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontSize: 12, color: '#0071e3', fontWeight: 500,
+            }}
+            aria-label="Restablecer visibilidad por defecto"
+          >
+            <RotateCcw size={12} strokeWidth={2.2} aria-hidden="true" />
+            Restablecer
+          </button>
+        </div>
+        <p style={{
+          margin: '0 0 18px', fontSize: 13, color: '#707070', lineHeight: 1.45,
+        }}>
+          Elige qué widgets quieres ver en tu panel. Tu elección se guarda en este dispositivo.
+        </p>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {WIDGETS.map((w) => {
+            const visible = !hidden.includes(w.key);
+            return (
+              <li key={w.key}>
+                <label
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '12px 14px', borderRadius: 14,
+                    background: '#f5f5f7', border: '1px solid transparent',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = '#e8e8ed';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'transparent';
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={visible}
+                    onChange={() => toggle(w.key)}
+                    aria-label={`${w.label}: ${visible ? 'visible' : 'oculto'}`}
+                    style={{ width: 18, height: 18, accentColor: '#0071e3', cursor: 'pointer' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: '#1d1d1f' }}>
+                      {w.label}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#707070', marginTop: 2 }}>
+                      {w.description}
+                    </div>
+                  </div>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 22 }}>
+          <button type="button" className="pill-dark" onClick={onClose}>
+            Listo
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
