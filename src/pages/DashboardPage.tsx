@@ -827,12 +827,6 @@ const Sparkline = ({ data, width = 460, height = 120 }: {
   );
 };
 
-// ─── Vehicle render — photographic side-view of the car ────────────────────
-//
-// The source image has a solid black background. We use `mix-blend-mode:
-// screen` so the black drops out against the indigo gradient of the hero
-// and only the car body is visible. White/silver bodywork survives intact
-// because screen preserves bright pixels.
 const VehicleRender = () => (
   <div style={{
     width: '100%', maxWidth: 520, alignSelf: 'flex-end',
@@ -847,7 +841,6 @@ const VehicleRender = () => (
         width: '100%',
         height: 'auto',
         objectFit: 'contain',
-        mixBlendMode: 'screen',
         pointerEvents: 'none',
         userSelect: 'none',
         filter: 'drop-shadow(0 30px 40px rgba(0,0,0,0.45))',
