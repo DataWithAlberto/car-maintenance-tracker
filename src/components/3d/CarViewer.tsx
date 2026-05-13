@@ -1,12 +1,44 @@
-import { Suspense, useRef, useState, useEffect } from 'react';
+import { Component, Suspense, useRef, useState, useEffect } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
 import { CAR_PARTS } from '../../utils/constants';
 
-// Preload the model so it's in cache before the component mounts
-useGLTF.preload('/models/ford_focus.glb');
+// Preload the model so it's in cache before the component mounts.
+// Wrapped in try/catch so a parse/network failure here doesn't crash the
+// module's top-level execution (which would take down the whole app chunk).
+try {
+  useGLTF.preload('/models/ford_focus.glb');
+} catch (err) {
+  console.warn('[CarViewer] GLTF preload failed:', err);
+}
+
+// ─── Error boundary ──────────────────────────────────────────────────────────
+// useGLTF throws on network/parse failure. <Suspense> only catches the
+// suspension promise, not the eventual reject. Without this, a failed GLB
+// load tears down the entire Canvas and the user sees nothing.
+interface GLTFBoundaryProps {
+  children: ReactNode;
+  fallback: ReactNode;
+  onError?: (err: unknown) => void;
+}
+interface GLTFBoundaryState { failed: boolean; }
+
+class GLTFErrorBoundary extends Component<GLTFBoundaryProps, GLTFBoundaryState> {
+  state: GLTFBoundaryState = { failed: false };
+  static getDerivedStateFromError(): GLTFBoundaryState { return { failed: true }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[CarViewer] GLTF render error:', error, info);
+    this.props.onError?.(error);
+    // Drop the cached failure so a future retry (if URL changes) can succeed.
+    try { useGLTF.clear('/models/ford_focus.glb'); } catch { /* ignore */ }
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
 
 interface PartClickInfo {
   partKey: string;
@@ -277,7 +309,36 @@ interface CarViewerProps {
 export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarViewerProps) => {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [loadError, setLoadError]       = useState(false);
+  // urlAvailable: null = checking, true = HEAD succeeded, false = unreachable
+  const [urlAvailable, setUrlAvailable] = useState<boolean | null>(modelUrl ? null : false);
   const controlsRef = useRef<{ autoRotate: boolean }>(null);
+
+  // HEAD-check the model URL so we never even attempt useGLTF on a 404 etc.
+  useEffect(() => {
+    if (!modelUrl) { setUrlAvailable(false); return; }
+    let cancelled = false;
+    // 10s timeout — anything slower we treat as unavailable to avoid a
+    // half-loaded canvas hanging forever.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    fetch(modelUrl, { method: 'HEAD', signal: controller.signal })
+      .then((r) => {
+        if (cancelled) return;
+        if (!r.ok) {
+          console.warn(`[CarViewer] HEAD ${modelUrl} returned ${r.status}`);
+          setUrlAvailable(false);
+        } else {
+          setUrlAvailable(true);
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.warn(`[CarViewer] HEAD ${modelUrl} failed:`, err);
+        setUrlAvailable(false);
+      })
+      .finally(() => clearTimeout(timeout));
+    return () => { cancelled = true; controller.abort(); clearTimeout(timeout); };
+  }, [modelUrl]);
 
   const handlePartClick = (info: PartClickInfo) => {
     setSelectedPart(info.partKey);
@@ -289,7 +350,8 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
     setLoadError(true);
   };
 
-  const useGLTF3D = modelUrl && !loadError;
+  const useGLTF3D = modelUrl && urlAvailable === true && !loadError;
+  const proceduralFallback = <ProceduralCar onPartClick={handlePartClick} />;
 
   return (
     <div className="w-full h-full relative">
@@ -305,15 +367,20 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
         <directionalLight position={[-5, 3, -5]} intensity={0.5} />
         <pointLight position={[0, 6, 0]} intensity={0.4} />
 
-        <Suspense fallback={<CarLoader />}>
+        <Suspense fallback={proceduralFallback}>
           {useGLTF3D ? (
-            <GLTFCarSafe
-              url={modelUrl}
-              onPartClick={handlePartClick}
-              onError={handleGLTFError}
-            />
+            <GLTFErrorBoundary
+              fallback={proceduralFallback}
+              onError={(e) => handleGLTFError(modelUrl!, e)}
+            >
+              <GLTFCarSafe
+                url={modelUrl!}
+                onPartClick={handlePartClick}
+                onError={handleGLTFError}
+              />
+            </GLTFErrorBoundary>
           ) : (
-            <ProceduralCar onPartClick={handlePartClick} />
+            proceduralFallback
           )}
           <ContactShadows position={[0, -0.8, 0]} opacity={0.5} scale={12} blur={2} />
           <Environment preset="city" />
@@ -337,12 +404,44 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
         </div>
       )}
 
-      {loadError && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-sunset-orange/10 border border-sunset-orange/30 text-sunset-orange font-manrope text-caption px-4 py-2 rounded-card">
-          <span className="h-1.5 w-1.5 rounded-full bg-warn-400" />
-          Usando modelo procedural — GLTF no disponible
-        </div>
+      {/* Soft progress chip while the high-res model streams in */}
+      {urlAvailable === true && !loadError && (
+        <SuspenseBadge />
       )}
+    </div>
+  );
+};
+
+// ─── SuspenseBadge ────────────────────────────────────────────────────────
+// Small "Cargando modelo" chip shown for the first ~1.5s while useGLTF
+// streams the GLB. Auto-hides itself after a short delay so it doesn't
+// linger once the swap-in happens. Sits OUTSIDE the Canvas so it can use
+// plain DOM.
+const SuspenseBadge = () => {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(false), 1500);
+    return () => clearTimeout(t);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div
+      className="absolute top-4 right-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] pointer-events-none"
+      style={{
+        background: 'rgba(255,255,255,0.92)',
+        border: '1px solid #e8e8ed',
+        color: '#707070',
+        fontFamily: 'var(--font-mono)',
+      }}
+    >
+      <span
+        className="inline-block rounded-full"
+        style={{
+          width: 6, height: 6, background: '#0071e3',
+          animation: 'pulse-ring 1.4s ease-in-out infinite',
+        }}
+      />
+      Cargando modelo…
     </div>
   );
 };
