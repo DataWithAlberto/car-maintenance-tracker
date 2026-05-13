@@ -840,7 +840,7 @@ const VehicleRender = () => (
     margin: '0 auto',
   }}>
     <img
-      src="/images/ford-focus.jpg"
+      src="/images/ford-focus.png"
       alt="Ford Focus"
       loading="eager"
       style={{
