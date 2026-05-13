@@ -82,38 +82,63 @@ export const CarPage = () => {
         color: '#1d1d1f',
       }}
     >
-      {/* ── Top status bar — matches FloatingDock chrome ────────────────── */}
+      {/* ── Top status bar — Apple-style hero header ────────────────────── */}
       <div
-        className="relative z-20 mx-4 sm:mx-6 mt-4 px-5 py-3 flex items-center justify-between gap-3"
+        className="relative z-20 mx-4 sm:mx-6 mt-4 px-7 py-6 flex items-center justify-between gap-6"
         style={{
           borderRadius: 28,
           background: '#ffffff',
           border: '1px solid #e8e8ed',
         }}
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-5 min-w-0 flex-1">
           <span
             style={{
-              width: 36, height: 36, borderRadius: 10,
+              width: 56, height: 56, borderRadius: 16,
               background: '#1d1d1f', color: '#fff',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <Gauge size={18} strokeWidth={1.6} />
+            <Gauge size={26} strokeWidth={1.6} />
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex flex-col gap-1">
             <div
-              className="truncate text-[14px] font-semibold leading-tight"
-              style={{ color: '#1d1d1f', letterSpacing: '-0.2px' }}
+              className="text-[10px] tracking-[0.2em] uppercase flex items-center gap-2"
+              style={{ color: '#707070', fontFamily: 'var(--font-mono)' }}
+            >
+              <span
+                className="inline-block rounded-full"
+                style={{
+                  width: 7, height: 7, background: '#1cb05c',
+                  boxShadow: '0 0 0 4px rgba(28,176,92,0.18)',
+                }}
+              />
+              Vehículo registrado
+            </div>
+            <div
+              className="truncate font-semibold leading-[1.05]"
+              style={{
+                color: '#1d1d1f',
+                fontSize: 'clamp(28px, 3.6vw, 40px)',
+                letterSpacing: '-0.8px',
+                fontFamily: 'Inter, var(--font-sf-pro-display)',
+              }}
             >
               {vehicleTitle}
             </div>
             <div
-              className="text-[10px] mt-0.5 tracking-[0.06em]"
-              style={{ color: '#a1a1a6', fontFamily: 'var(--font-mono)' }}
+              className="text-[14px] flex items-center gap-2 flex-wrap"
+              style={{ color: '#707070', fontWeight: 400 }}
             >
-              {selectedVehicle.year} · {plate} · {formatKm(selectedVehicle.current_km)}
+              <span>{selectedVehicle.year}</span>
+              <span style={{ color: '#d2d2d7' }}>·</span>
+              <span style={{ fontFamily: 'var(--font-mono)' }}>{plate}</span>
+              <span style={{ color: '#d2d2d7' }}>·</span>
+              <span className="inline-flex items-center gap-1 tabular-nums">
+                <Gauge size={13} strokeWidth={1.6} />
+                {formatKm(selectedVehicle.current_km)}
+              </span>
             </div>
           </div>
         </div>
@@ -121,14 +146,14 @@ export const CarPage = () => {
         <div className="flex items-center gap-2 shrink-0">
           {alerts.length > 0 && (
             <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium"
               style={{
                 background: '#fff1ea',
                 color: '#b64400',
                 border: '1px solid #f4cdb6',
               }}
             >
-              <AlertTriangle size={11} strokeWidth={2.2} />
+              <AlertTriangle size={12} strokeWidth={2.2} />
               {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'}
             </span>
           )}
@@ -136,7 +161,7 @@ export const CarPage = () => {
           <button
             onClick={() => setAutoRotate((s) => !s)}
             title={autoRotate ? 'Detener rotación' : 'Rotación automática'}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-full transition-colors"
+            className="h-10 w-10 inline-flex items-center justify-center rounded-full transition-colors"
             style={{
               background: autoRotate ? '#1d1d1f' : '#fff',
               color: autoRotate ? '#fff' : '#1d1d1f',
@@ -144,7 +169,7 @@ export const CarPage = () => {
             }}
           >
             <RotateCcw
-              size={14}
+              size={15}
               strokeWidth={1.6}
               className={autoRotate ? 'animate-spin' : ''}
               style={{ animationDuration: '4s' }}
@@ -154,7 +179,7 @@ export const CarPage = () => {
           <button
             onClick={() => setImmersive((s) => !s)}
             title={immersive ? 'Salir de inmersivo' : 'Modo inmersivo'}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-full transition-colors"
+            className="h-10 w-10 inline-flex items-center justify-center rounded-full transition-colors"
             style={{
               background: '#fff',
               color: '#1d1d1f',
@@ -162,21 +187,22 @@ export const CarPage = () => {
             }}
           >
             {immersive
-              ? <Minimize2 size={14} strokeWidth={1.6} />
-              : <Maximize2 size={14} strokeWidth={1.6} />}
+              ? <Minimize2 size={15} strokeWidth={1.6} />
+              : <Maximize2 size={15} strokeWidth={1.6} />}
           </button>
 
           <button
             onClick={() => { setPrefilledType(''); setShowMaintenanceForm(true); }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[12px] font-semibold rounded-full transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-[14px] font-medium rounded-full transition-colors"
             style={{
               background: '#1d1d1f',
               color: '#fff',
+              letterSpacing: '-0.1px',
             }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#000'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#1d1d1f'; }}
           >
-            <Plus size={13} strokeWidth={2.4} />
+            <Plus size={15} strokeWidth={2.2} />
             Añadir
           </button>
         </div>
