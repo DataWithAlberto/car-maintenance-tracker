@@ -1,0 +1,138 @@
+{
+  "common": {
+    "loading": "Cargando…",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "done": "Listo",
+    "reset": "Restablecer",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "open": "Abrir"
+  },
+  "dashboard": {
+    "hero": {
+      "code": "FH · 001 · GARAJE",
+      "systemActive": "Sistema activo · Tu garaje",
+      "greeting": "Hola, {{name}}.",
+      "subtitleEmpty": "Aún no has añadido ningún vehículo. Empieza por registrar el primero para desbloquear mantenimientos, gastos y alertas.",
+      "subtitleNeedsMaintenance": "Tu {{brand}} {{model}} está {{health}}, pero conviene programar el {{next}} — quedan <strong>{{km}} km</strong>.",
+      "subtitleHealthy": "Tu {{brand}} {{model}} está {{health}}. Sin mantenimientos pendientes a la vista — sigue así.",
+      "syncUpdating": "actualizando…",
+      "syncNow": "actualizado ahora",
+      "syncMin": "actualizado hace {{count}} min",
+      "syncHour_one": "actualizado hace {{count}} h",
+      "syncHour_other": "actualizado hace {{count}} h",
+      "customize": "Personalizar",
+      "customizeAria": "Personalizar panel: mostrar, ocultar o reordenar widgets",
+      "openVehicleAria": "Abrir detalle del {{brand}} {{model}}"
+    },
+    "cta": {
+      "addVehicle": "Añadir vehículo",
+      "scheduleMaintenance": "Programar mantenimiento",
+      "logFirstExpense": "Registrar primer gasto",
+      "logTrip": "Registrar viaje"
+    },
+    "kpi": {
+      "totalKm": "Km totales",
+      "fleet": "flota completa",
+      "maintenanceRecords": "Mantenimientos",
+      "history": "histórico",
+      "spent": "Gasto {{year}}",
+      "yearCurrent": "año en curso",
+      "alerts": "Alertas",
+      "alertsHint": "requieren atención"
+    },
+    "alerts": {
+      "count_one": "{{count}} alerta",
+      "count_other": "{{count}} alertas",
+      "none": "Sin alertas",
+      "pending": "{{count}} alertas pendientes"
+    },
+    "role": {
+      "owner": "Propietario",
+      "editor": "Editor",
+      "viewer": "Solo lectura"
+    },
+    "km": {
+      "title": "kilómetros.",
+      "thisMonth": "+{{count}} este mes.",
+      "vsAverage": "Conduciendo un {{pct}}% {{direction}} que la media anual.",
+      "notEnoughData": "Aún no hay datos suficientes para comparar con la media anual.",
+      "more": "más",
+      "less": "menos",
+      "use30d": "Uso diario · 30 días",
+      "perDay": "{{value}} km/día",
+      "logTrip": "Registrar viaje",
+      "seeAllTrips": "Ver todos los viajes",
+      "noTrips30d": "Sin viajes en los últimos 30 días.",
+      "errorLoading": "No se pudieron cargar los viajes."
+    },
+    "maintenance": {
+      "criticalAlert": "Alerta crítica",
+      "untilNext": "hasta el {{label}} recomendado.",
+      "noneVisible": "sin mantenimientos pendientes a la vista.",
+      "schedule": "Programar",
+      "add": "Añadir",
+      "health": "Salud general",
+      "healthOver100": "sobre 100. {{detail}}",
+      "healthMeterAria": "Salud del vehículo: {{value}} sobre 100",
+      "healthDetailExcellent": "Motor, frenos y suspensión dentro de parámetros.",
+      "healthDetailGood": "Sistemas principales en orden, alertas menores activas.",
+      "healthDetailNeedsAttention": "Varios sistemas requieren atención. Revisa las alertas.",
+      "healthCopyExcellent": "en óptimo estado",
+      "healthCopyGood": "en buen estado",
+      "healthCopyNeedsAttention": "con mantenimiento pendiente",
+      "seeBreakdown": "Ver desglose",
+      "nextShop": "Próximo taller",
+      "noAppointment": "Sin cita programada",
+      "addDateToBook": "Añade una fecha al próximo mantenimiento para reservar tu hueco.",
+      "seeAppointment": "Ver cita"
+    },
+    "expenses": {
+      "ytd": "Gasto acumulado · {{year}}",
+      "fuel": "Combustible",
+      "maintenance": "Mantenimiento",
+      "insurance": "Seguro",
+      "addExpense": "Añadir gasto",
+      "detail": "Detalle",
+      "errorLoading": "Datos no disponibles"
+    },
+    "fleet": {
+      "title": "Flota registrada · {{count}} vehículo",
+      "title_other": "Flota registrada · {{count}} vehículos",
+      "clickToOpen": "Haz clic en uno para abrirlo",
+      "addAnother": "Añadir otro vehículo",
+      "kmLabel": "Kilómetros",
+      "maintenanceLabel": "Mantenimientos",
+      "primary": "✓ Vehículo principal",
+      "selectHint": "Haz clic para seleccionar",
+      "partialDataError": "Algunos datos no se pudieron cargar"
+    },
+    "empty": {
+      "eyebrow": "Tu garaje · vacío",
+      "title": "Empieza añadiendo",
+      "subtitle": "tu primer vehículo.",
+      "body": "Registra marca, modelo y kilometraje. A partir de ahí, FocusHub te avisará de mantenimientos y agrupará gastos y trayectos."
+    },
+    "customize": {
+      "title": "Personalizar panel",
+      "subtitle": "Elige qué widgets quieres ver en tu panel y arrástralos para reordenarlos. Tu elección se guarda en este dispositivo.",
+      "reset": "Restablecer",
+      "resetAria": "Restablecer visibilidad y orden por defecto",
+      "widgets": {
+        "kilometraje": "Kilometraje",
+        "kilometrajeDesc": "Total y uso diario de los últimos 30 días.",
+        "mantenimiento": "Mantenimiento",
+        "mantenimientoDesc": "Alerta crítica, salud y próximo taller.",
+        "gastos": "Gastos del año",
+        "gastosDesc": "Combustible, mantenimiento y seguro.",
+        "flota": "Flota registrada",
+        "flotaDesc": "Tarjetas con todos tus vehículos."
+      },
+      "dragHandleAria": "Mover {{label}}",
+      "visibilityAria": "{{label}}: {{state}}",
+      "visible": "visible",
+      "hidden": "oculto"
+    }
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "retry": "Retry",
+    "close": "Close",
+    "done": "Done",
+    "reset": "Reset",
+    "save": "Save",
+    "cancel": "Cancel",
+    "open": "Open"
+  },
+  "dashboard": {
+    "hero": {
+      "code": "FH · 001 · GARAGE",
+      "systemActive": "System online · Your garage",
+      "greeting": "Hi, {{name}}.",
+      "subtitleEmpty": "You haven't added a vehicle yet. Register your first one to unlock maintenance, expenses and alerts.",
+      "subtitleNeedsMaintenance": "Your {{brand}} {{model}} is {{health}}, but it's time to schedule the {{next}} — <strong>{{km}} km</strong> remaining.",
+      "subtitleHealthy": "Your {{brand}} {{model}} is {{health}}. No upcoming maintenance — keep it up.",
+      "syncUpdating": "syncing…",
+      "syncNow": "updated just now",
+      "syncMin": "updated {{count}} min ago",
+      "syncHour_one": "updated {{count}} h ago",
+      "syncHour_other": "updated {{count}} h ago",
+      "customize": "Customize",
+      "customizeAria": "Customize dashboard: show, hide or reorder widgets",
+      "openVehicleAria": "Open {{brand}} {{model}} detail"
+    },
+    "cta": {
+      "addVehicle": "Add vehicle",
+      "scheduleMaintenance": "Schedule maintenance",
+      "logFirstExpense": "Log first expense",
+      "logTrip": "Log a trip"
+    },
+    "kpi": {
+      "totalKm": "Total km",
+      "fleet": "full fleet",
+      "maintenanceRecords": "Services",
+      "history": "lifetime",
+      "spent": "{{year}} spend",
+      "yearCurrent": "year to date",
+      "alerts": "Alerts",
+      "alertsHint": "need attention"
+    },
+    "alerts": {
+      "count_one": "{{count}} alert",
+      "count_other": "{{count}} alerts",
+      "none": "No alerts",
+      "pending": "{{count}} pending alerts"
+    },
+    "role": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "View-only"
+    },
+    "km": {
+      "title": "kilometers.",
+      "thisMonth": "+{{count}} this month.",
+      "vsAverage": "Driving {{pct}}% {{direction}} than your yearly average.",
+      "notEnoughData": "Not enough data yet to compare against your yearly average.",
+      "more": "more",
+      "less": "less",
+      "use30d": "Daily use · 30 days",
+      "perDay": "{{value}} km/day",
+      "logTrip": "Log a trip",
+      "seeAllTrips": "See all trips",
+      "noTrips30d": "No trips in the last 30 days.",
+      "errorLoading": "Could not load trips."
+    },
+    "maintenance": {
+      "criticalAlert": "Critical alert",
+      "untilNext": "until the recommended {{label}}.",
+      "noneVisible": "no upcoming maintenance in sight.",
+      "schedule": "Schedule",
+      "add": "Add",
+      "health": "Overall health",
+      "healthOver100": "out of 100. {{detail}}",
+      "healthMeterAria": "Vehicle health: {{value}} out of 100",
+      "healthDetailExcellent": "Engine, brakes and suspension within spec.",
+      "healthDetailGood": "Main systems in order, minor alerts active.",
+      "healthDetailNeedsAttention": "Several systems need attention. Check the alerts.",
+      "healthCopyExcellent": "in great shape",
+      "healthCopyGood": "in good shape",
+      "healthCopyNeedsAttention": "in need of maintenance",
+      "seeBreakdown": "See breakdown",
+      "nextShop": "Next service",
+      "noAppointment": "No appointment scheduled",
+      "addDateToBook": "Add a date to the next maintenance to book your slot.",
+      "seeAppointment": "View appointment"
+    },
+    "expenses": {
+      "ytd": "Cumulative spend · {{year}}",
+      "fuel": "Fuel",
+      "maintenance": "Maintenance",
+      "insurance": "Insurance",
+      "addExpense": "Add expense",
+      "detail": "Detail",
+      "errorLoading": "Data unavailable"
+    },
+    "fleet": {
+      "title": "Registered fleet · {{count}} vehicle",
+      "title_other": "Registered fleet · {{count}} vehicles",
+      "clickToOpen": "Click one to open it",
+      "addAnother": "Add another vehicle",
+      "kmLabel": "Kilometers",
+      "maintenanceLabel": "Services",
+      "primary": "✓ Primary vehicle",
+      "selectHint": "Click to select",
+      "partialDataError": "Some data couldn't be loaded"
+    },
+    "empty": {
+      "eyebrow": "Your garage · empty",
+      "title": "Start by adding",
+      "subtitle": "your first vehicle.",
+      "body": "Register make, model and mileage. From there, FocusHub will notify you of maintenance and group expenses and trips."
+    },
+    "customize": {
+      "title": "Customize dashboard",
+      "subtitle": "Choose which widgets to show and drag to reorder them. Your choice is saved on this device.",
+      "reset": "Reset",
+      "resetAria": "Reset visibility and order to defaults",
+      "widgets": {
+        "kilometraje": "Kilometers",
+        "kilometrajeDesc": "Total and daily use over the last 30 days.",
+        "mantenimiento": "Maintenance",
+        "mantenimientoDesc": "Critical alert, health and next service.",
+        "gastos": "Yearly spend",
+        "gastosDesc": "Fuel, maintenance and insurance.",
+        "flota": "Registered fleet",
+        "flotaDesc": "Cards with all your vehicles."
+      },
+      "dragHandleAria": "Move {{label}}",
+      "visibilityAria": "{{label}}: {{state}}",
+      "visible": "visible",
+      "hidden": "hidden"
+    }
+  }
+}

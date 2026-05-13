@@ -1,15 +1,23 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation, Trans } from 'react-i18next';
 import {
   Plus, AlertTriangle, CheckCircle2, ArrowRight, Calendar, Fuel,
-  Wrench, Receipt, Route, SlidersHorizontal, RotateCcw,
+  Wrench, Receipt, Route, SlidersHorizontal,
 } from 'lucide-react';
 import { useVehicle } from '../hooks/useVehicle';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import { useDashboardPrefs } from '../hooks/useDashboardPrefs';
 import type { DashboardWidget } from '../hooks/useDashboardPrefs';
+import { useAnalytics } from '../hooks/useAnalytics';
+import { useNow } from '../hooks/useNow';
 import { VehicleForm } from '../components/vehicle/VehicleForm';
+import { HeroCta } from '../components/dashboard/HeroCta';
+import { MetricStrip } from '../components/dashboard/MetricStrip';
+import { CustomizePanel } from '../components/dashboard/CustomizePanel';
+import { WidgetLoading, WidgetEmpty, WidgetError } from '../components/dashboard/WidgetStates';
 import { maintenanceService } from '../services/maintenance.service';
 import { expensesService } from '../services/expenses.service';
 import { tripsService } from '../services/trips.service';
@@ -28,13 +36,6 @@ const fmtMonthDay = (d: Date) =>
   d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
     .replace('.', '').toUpperCase();
 
-// Spanish role labels — never expose raw role strings to UI
-const ROLE_LABEL: Record<string, string> = {
-  owner:  'Propietario',
-  editor: 'Editor',
-  viewer: 'Solo lectura',
-};
-
 interface VehicleStats {
   vehicle: VehicleWithAccess;
   records: MaintenanceRecord[];
@@ -45,6 +46,9 @@ interface VehicleStats {
 }
 
 export const DashboardPage = () => {
+  const { t } = useTranslation();
+  const { track } = useAnalytics();
+
   const { vehicles, loading, fetchVehicles, createVehicle } = useVehicle();
   const { setSelectedVehicle: storeSet } = useVehicleStore();
   const { user } = useAuthStore();
@@ -53,21 +57,35 @@ export const DashboardPage = () => {
   const [showCustomize, setShowCustomize] = useState(false);
   const [stats, setStats] = useState<Record<string, VehicleStats>>({});
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
+  const now = useNow(60_000);
 
-  const { isVisible, toggle, reset, hidden } = useDashboardPrefs();
+  const {
+    isVisible, toggle, reorder, reset, hidden, order,
+  } = useDashboardPrefs();
 
-  // Derived: per-vehicle stats are loaded once every vehicle has an entry in `stats`.
   const statsLoading = vehicles.length > 0
     && vehicles.some((v) => !stats[v.id]);
 
+  // Track dashboard view once per mount
+  const viewTrackedRef = useRef(false);
+  useEffect(() => {
+    if (viewTrackedRef.current) return;
+    viewTrackedRef.current = true;
+    track('dashboard_view');
+  }, [track]);
+
   useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
 
+  // Per-vehicle stats fetch with cancellation on unmount / vehicle change.
+  // Each service call gets its own AbortSignal so a partial fail (e.g. trips
+  // service) doesn't abort the others, and an unmount cancels everything.
   useEffect(() => {
     if (vehicles.length === 0) return;
+    const controller = new AbortController();
+    let cancelled = false;
+
     Promise.all(
       vehicles.map(async (v) => {
-        // Track partial errors so the UI can communicate "fallo de carga"
-        // distinctly from "no hay datos".
         const errors = { records: false, expenses: false, trips: false };
         const [records, expenses, trips] = await Promise.all([
           maintenanceService.getByVehicle(v.id).catch(() => { errors.records = true; return []; }),
@@ -87,11 +105,17 @@ export const DashboardPage = () => {
         };
       }),
     ).then((results) => {
+      if (cancelled) return;
       const map: Record<string, VehicleStats> = {};
       results.forEach((r) => { map[r.id] = r.data; });
       setStats(map);
       setLoadedAt(new Date());
     });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [vehicles]);
 
   // Primary vehicle = first owned, else first available
@@ -150,9 +174,9 @@ export const DashboardPage = () => {
 
   const nextAppointment = useMemo(() => {
     if (!primaryStats) return null;
-    const now = Date.now();
+    const nowMs = Date.now();
     const future = primaryStats.records
-      .filter((r) => r.next_service_date && new Date(r.next_service_date).getTime() > now)
+      .filter((r) => r.next_service_date && new Date(r.next_service_date).getTime() > nowMs)
       .sort((a, b) =>
         new Date(a.next_service_date!).getTime() - new Date(b.next_service_date!).getTime())[0];
     if (!future) return null;
@@ -174,16 +198,16 @@ export const DashboardPage = () => {
   }, [primaryStats]);
 
   const healthCopy = healthScore >= 85
-    ? 'en óptimo estado'
+    ? t('dashboard.maintenance.healthCopyExcellent')
     : healthScore >= 70
-      ? 'en buen estado'
-      : 'con mantenimiento pendiente';
+      ? t('dashboard.maintenance.healthCopyGood')
+      : t('dashboard.maintenance.healthCopyNeedsAttention');
 
   const healthDetail = healthScore >= 85
-    ? 'Motor, frenos y suspensión dentro de parámetros.'
+    ? t('dashboard.maintenance.healthDetailExcellent')
     : healthScore >= 70
-      ? 'Sistemas principales en orden, alertas menores activas.'
-      : 'Varios sistemas requieren atención. Revisa las alertas.';
+      ? t('dashboard.maintenance.healthDetailGood')
+      : t('dashboard.maintenance.healthDetailNeedsAttention');
 
   // Daily km — 30-day window from primary vehicle trips
   const { dailyKm, axisDates } = useMemo(() => {
@@ -205,23 +229,22 @@ export const DashboardPage = () => {
   const sumWindow = dailyKm.reduce((s, v) => s + v, 0);
   const avgPerDay = sumWindow / 30;
 
-  // Month delta + vs-average %
   const thisMonthKm = useMemo(() => {
     if (!primaryStats) return 0;
-    const now = new Date();
+    const today = new Date();
     return primaryStats.trips
-      .filter((t) => {
-        const d = new Date(t.start_datetime);
-        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      .filter((tr) => {
+        const d = new Date(tr.start_datetime);
+        return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
       })
-      .reduce((s, t) => s + (t.total_km ?? 0), 0);
+      .reduce((s, tr) => s + (tr.total_km ?? 0), 0);
   }, [primaryStats]);
 
   const { pctVsAvg, moreOrLess } = useMemo(() => {
     if (!primaryStats || primaryStats.trips.length === 0) {
-      return { pctVsAvg: 0, moreOrLess: 'menos' as const };
+      return { pctVsAvg: 0, moreOrLess: 'less' as const };
     }
-    const totalTripKm = primaryStats.trips.reduce((s, t) => s + (t.total_km ?? 0), 0);
+    const totalTripKm = primaryStats.trips.reduce((s, tr) => s + (tr.total_km ?? 0), 0);
     const first = primaryStats.trips[primaryStats.trips.length - 1];
     const firstDate = new Date(first.start_datetime);
     const monthsActive = Math.max(
@@ -229,16 +252,15 @@ export const DashboardPage = () => {
       (Date.now() - firstDate.getTime()) / (1000 * 60 * 60 * 24 * 30),
     );
     const monthlyAvg = totalTripKm / monthsActive;
-    if (monthlyAvg === 0) return { pctVsAvg: 0, moreOrLess: 'menos' as const };
+    if (monthlyAvg === 0) return { pctVsAvg: 0, moreOrLess: 'less' as const };
     const ratio = thisMonthKm / monthlyAvg;
     const pct = Math.round(Math.abs(1 - ratio) * 100);
     return {
       pctVsAvg: pct,
-      moreOrLess: (ratio >= 1 ? 'más' : 'menos') as 'más' | 'menos',
+      moreOrLess: (ratio >= 1 ? 'more' : 'less') as 'more' | 'less',
     };
   }, [primaryStats, thisMonthKm]);
 
-  // YTD expense breakdown (primary vehicle)
   const expensesByCat = useMemo(() => {
     const cats = { combustible: 0, mantenimiento: 0, seguro: 0 };
     if (!primaryStats) return cats;
@@ -260,7 +282,6 @@ export const DashboardPage = () => {
   const totalYtdPrimary =
     expensesByCat.combustible + expensesByCat.mantenimiento + expensesByCat.seguro;
 
-  // First name & last-sync copy (Spanish: "actualizado hace X")
   const firstName = useMemo(() => {
     const full = (user?.user_metadata?.full_name as string | undefined) ?? '';
     const fromName = full.trim().split(/\s+/)[0];
@@ -268,53 +289,62 @@ export const DashboardPage = () => {
     return (user?.email ?? '').split('@')[0] || 'piloto';
   }, [user]);
 
+  // Live "actualizado hace N min" — recomputes whenever `now` ticks.
   const lastSyncLabel = useMemo(() => {
-    if (!loadedAt) return 'actualizando…';
-    const mins = Math.floor((Date.now() - loadedAt.getTime()) / 60_000);
-    if (mins < 1) return 'actualizado ahora';
-    if (mins < 60) return `actualizado hace ${mins} min`;
-    return `actualizado hace ${Math.floor(mins / 60)} h`;
-  }, [loadedAt]);
+    if (!loadedAt) return t('dashboard.hero.syncUpdating');
+    const mins = Math.floor((now.getTime() - loadedAt.getTime()) / 60_000);
+    if (mins < 1) return t('dashboard.hero.syncNow');
+    if (mins < 60) return t('dashboard.hero.syncMin', { count: mins });
+    return t('dashboard.hero.syncHour', { count: Math.floor(mins / 60) });
+  }, [loadedAt, now, t]);
 
   // ─── Hero CTA — context-aware ─────────────────────────────────────────────
   const heroCta = useMemo(() => {
     if (!primary) {
       return {
-        label: 'Añadir vehículo',
+        kind: 'add_vehicle',
+        label: t('dashboard.cta.addVehicle'),
         icon: Plus,
-        action: () => setShowForm(true),
+        action: () => { setShowForm(true); track('dashboard_cta_click', { cta: 'add_vehicle' }); },
       };
     }
     if (primaryStats?.alerts.length || nextMaintenance) {
       return {
-        label: 'Programar mantenimiento',
+        kind: 'schedule_maintenance',
+        label: t('dashboard.cta.scheduleMaintenance'),
         icon: Wrench,
-        action: () => navigate('/maintenance'),
+        action: () => { navigate('/maintenance'); track('dashboard_cta_click', { cta: 'schedule_maintenance' }); },
       };
     }
     if (primaryStats && primaryStats.expenses.length === 0) {
       return {
-        label: 'Registrar primer gasto',
+        kind: 'first_expense',
+        label: t('dashboard.cta.logFirstExpense'),
         icon: Receipt,
-        action: () => navigate('/expenses'),
+        action: () => { navigate('/expenses'); track('dashboard_cta_click', { cta: 'first_expense' }); },
       };
     }
     if (primaryStats && primaryStats.trips.length === 0) {
       return {
-        label: 'Registrar viaje',
+        kind: 'log_trip',
+        label: t('dashboard.cta.logTrip'),
         icon: Route,
-        action: () => navigate('/trips'),
+        action: () => { navigate('/trips'); track('dashboard_cta_click', { cta: 'log_trip' }); },
       };
     }
     return {
-      label: 'Programar mantenimiento',
+      kind: 'schedule_maintenance',
+      label: t('dashboard.cta.scheduleMaintenance'),
       icon: Wrench,
-      action: () => navigate('/maintenance'),
+      action: () => { navigate('/maintenance'); track('dashboard_cta_click', { cta: 'schedule_maintenance' }); },
     };
-  }, [primary, primaryStats, nextMaintenance, navigate]);
+  }, [primary, primaryStats, nextMaintenance, navigate, t, track]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
-  const handleAdd = useCallback(() => setShowForm(true), []);
+  const handleAdd = useCallback(() => {
+    setShowForm(true);
+    track('dashboard_add_vehicle');
+  }, [track]);
 
   const handleCreate = async (data: Parameters<typeof createVehicle>[0]) => {
     try {
@@ -329,24 +359,93 @@ export const DashboardPage = () => {
 
   const openPrimary = () => {
     if (!primary) return;
+    track('dashboard_vehicle_open', { vehicleId: primary.id, primary: true });
     storeSet(primary);
     navigate('/car');
   };
 
-  // ─── Subtitle copy (hero) ─────────────────────────────────────────────────
+  const openVehicle = (v: VehicleWithAccess) => {
+    track('dashboard_vehicle_open', { vehicleId: v.id, primary: v.id === primary?.id });
+    storeSet(v);
+    navigate('/car');
+  };
+
+  // ─── Render helpers ───────────────────────────────────────────────────────
   const heroSubtitle = !primary ? (
-    <>Aún no has añadido ningún vehículo. Empieza por registrar el primero para
-    desbloquear mantenimientos, gastos y alertas.</>
+    t('dashboard.hero.subtitleEmpty')
   ) : nextMaintenance ? (
-    <>Tu {primary.brand} {primary.model} está {healthCopy}, pero conviene programar
-    el {nextMaintenance.label} — quedan{' '}
-    <strong style={{ color: '#fff', fontWeight: 600 }}>
-      {fmtN(nextMaintenance.kmRemaining)} km
-    </strong>.</>
+    <Trans
+      i18nKey="dashboard.hero.subtitleNeedsMaintenance"
+      values={{
+        brand: primary.brand,
+        model: primary.model,
+        health: healthCopy,
+        next: nextMaintenance.label,
+        km: fmtN(nextMaintenance.kmRemaining),
+      }}
+      components={{ strong: <strong style={{ color: '#fff', fontWeight: 600 }} /> }}
+    />
   ) : (
-    <>Tu {primary.brand} {primary.model} está {healthCopy}. Sin mantenimientos
-    pendientes a la vista — sigue así.</>
+    t('dashboard.hero.subtitleHealthy', {
+      brand: primary.brand,
+      model: primary.model,
+      health: healthCopy,
+    })
   );
+
+  const directionLabel = moreOrLess === 'more' ? t('dashboard.km.more') : t('dashboard.km.less');
+
+  // Build ordered/visible widget sections — single source of truth.
+  const widgets: Record<DashboardWidget, ReactElement | null> = {
+    kilometraje: !primary ? null : (
+      <SectionKilometraje
+        primary={primary}
+        primaryStats={primaryStats}
+        statsLoading={statsLoading}
+        dailyKm={dailyKm}
+        axisDates={axisDates}
+        sumWindow={sumWindow}
+        avgPerDay={avgPerDay}
+        thisMonthKm={thisMonthKm}
+        pctVsAvg={pctVsAvg}
+        directionLabel={directionLabel}
+        onTrips={() => { navigate('/trips'); track('dashboard_widget_action', { widget: 'kilometraje', action: 'log_trip' }); }}
+        onAllTrips={() => { navigate('/trips'); track('dashboard_widget_action', { widget: 'kilometraje', action: 'all_trips' }); }}
+        onRetry={() => fetchVehicles()}
+      />
+    ),
+    mantenimiento: !primary ? null : (
+      <SectionMaintenance
+        primary={primary}
+        nextMaintenance={nextMaintenance}
+        nextAppointment={nextAppointment}
+        healthScore={healthScore}
+        healthDetail={healthDetail}
+        onSchedule={() => { navigate('/maintenance'); track('dashboard_widget_action', { widget: 'mantenimiento', action: 'schedule' }); }}
+        onBreakdown={openPrimary}
+        onShop={() => { navigate('/maintenance'); track('dashboard_widget_action', { widget: 'mantenimiento', action: 'view_appointment' }); }}
+      />
+    ),
+    gastos: !primary ? null : (
+      <SectionExpenses
+        primaryStats={primaryStats}
+        expensesByCat={expensesByCat}
+        totalYtdPrimary={totalYtdPrimary}
+        year={aggregate.year}
+        onAdd={() => { navigate('/expenses'); track('dashboard_widget_action', { widget: 'gastos', action: 'add' }); }}
+        onDetail={() => { navigate('/expenses'); track('dashboard_widget_action', { widget: 'gastos', action: 'detail' }); }}
+      />
+    ),
+    flota: !primary ? null : (
+      <SectionFleet
+        vehicles={vehicles}
+        stats={stats}
+        primary={primary}
+        onSelect={openVehicle}
+        onAdd={handleAdd}
+      />
+    ),
+  };
 
   const HeroCtaIcon = heroCta.icon;
 
@@ -354,10 +453,7 @@ export const DashboardPage = () => {
   return (
     <div className="page-enter" style={{ background: '#f5f5f7', minHeight: '100%' }}>
       {/* ═══ BLOCK 1 · INDIGO HERO ═══════════════════════════════════════════ */}
-      <section
-        className="hero-shell"
-        aria-labelledby="hero-greeting"
-      >
+      <section className="hero-shell" aria-labelledby="hero-greeting">
         <span
           className="mono"
           style={{
@@ -365,7 +461,7 @@ export const DashboardPage = () => {
             letterSpacing: '0.1em', color: 'rgba(255,255,255,0.85)',
           }}
           aria-hidden="true"
-        >FH · 001 · GARAJE</span>
+        >{t('dashboard.hero.code')}</span>
         <span
           className="mono"
           style={{
@@ -393,7 +489,7 @@ export const DashboardPage = () => {
               <span className="mono" style={{
                 fontSize: 11, letterSpacing: '0.08em',
                 color: 'rgba(255,255,255,0.92)',
-              }}>Sistema activo · Tu garaje</span>
+              }}>{t('dashboard.hero.systemActive')}</span>
             </div>
             <h1
               id="hero-greeting"
@@ -407,7 +503,7 @@ export const DashboardPage = () => {
                 margin: '14px 0 6px',
               }}
             >
-              Hola, {firstName}.
+              {t('dashboard.hero.greeting', { name: firstName })}
             </h1>
             <p style={{
               fontFamily: 'Inter, var(--font-sf-pro-text)',
@@ -423,53 +519,15 @@ export const DashboardPage = () => {
             </p>
           </div>
 
-          {/* Frosted KPI strip */}
-          <div className="indigo-kpis" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            background: 'rgba(255,255,255,0.14)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.28)',
-            borderRadius: 20,
-            overflow: 'hidden',
-          }}
-            role="list"
-            aria-label="Métricas globales del garaje"
-          >
-            <style>{`
-              @media (min-width: 900px) {
-                .indigo-kpis { grid-template-columns: repeat(4, 1fr) !important; }
-                .indigo-kpis > div:nth-child(n+2) { border-left: 1px solid rgba(255,255,255,0.22); }
-              }
-              @media (max-width: 899px) {
-                .indigo-kpis > div:nth-child(2n) { border-left: 1px solid rgba(255,255,255,0.22); }
-                .indigo-kpis > div:nth-child(n+3) { border-top: 1px solid rgba(255,255,255,0.22); }
-              }
-            `}</style>
-            {[
-              ['Km totales',     fmtN(aggregate.totalKm),                'flota completa'],
-              ['Mantenimientos', String(aggregate.totalRecords),         'histórico'],
-              [`Gasto ${aggregate.year}`, fmtEur(aggregate.totalSpent), 'año en curso'],
-              ['Alertas',        String(aggregate.totalAlerts),          'requieren atención'],
-            ].map(([l, v, s]) => (
-              <div key={l as string} role="listitem" style={{ padding: '18px 22px' }}>
-                <div className="label" style={{
-                  color: 'rgba(255,255,255,0.85)', fontSize: 11, letterSpacing: '0.08em',
-                }}>{l}</div>
-                <div style={{
-                  fontFamily: 'Inter, var(--font-sf-pro-display)',
-                  fontWeight: 700, fontSize: 28, lineHeight: 1,
-                  letterSpacing: '-0.3px', marginTop: 6, color: '#fff',
-                }}>{v}</div>
-                <div style={{
-                  fontFamily: 'Inter, var(--font-sf-pro-text)',
-                  fontWeight: 400, fontSize: 12, lineHeight: 1.4,
-                  color: 'rgba(255,255,255,0.85)', marginTop: 4,
-                }}>{s}</div>
-              </div>
-            ))}
-          </div>
+          <MetricStrip
+            ariaLabel={t('dashboard.kpi.totalKm') + ', ' + t('dashboard.kpi.maintenanceRecords')}
+            metrics={[
+              { label: t('dashboard.kpi.totalKm'),             value: fmtN(aggregate.totalKm),         caption: t('dashboard.kpi.fleet') },
+              { label: t('dashboard.kpi.maintenanceRecords'),  value: String(aggregate.totalRecords),  caption: t('dashboard.kpi.history') },
+              { label: t('dashboard.kpi.spent', { year: aggregate.year }), value: fmtEur(aggregate.totalSpent), caption: t('dashboard.kpi.yearCurrent') },
+              { label: t('dashboard.kpi.alerts'),              value: String(aggregate.totalAlerts),   caption: t('dashboard.kpi.alertsHint') },
+            ]}
+          />
         </div>
 
         {/* RIGHT */}
@@ -481,26 +539,17 @@ export const DashboardPage = () => {
             <button
               type="button"
               className="pill-ghost focus-on-dark"
-              onClick={() => setShowCustomize(true)}
-              aria-label="Personalizar panel: mostrar u ocultar widgets"
+              onClick={() => { setShowCustomize(true); track('dashboard_customize_open'); }}
+              aria-label={t('dashboard.hero.customizeAria')}
               style={{
                 borderColor: 'rgba(255,255,255,0.5)',
                 color: '#fff', background: 'rgba(255,255,255,0.10)',
               }}
             >
-              <SlidersHorizontal size={14} strokeWidth={2.2} />
-              Personalizar
+              <SlidersHorizontal size={14} strokeWidth={2.2} aria-hidden="true" />
+              {t('dashboard.hero.customize')}
             </button>
-            <button
-              type="button"
-              className="pill-dark focus-on-dark"
-              onClick={heroCta.action}
-              aria-label={heroCta.label}
-              style={{ background: '#000', color: '#fff' }}
-            >
-              <HeroCtaIcon size={14} strokeWidth={2.2} />
-              {heroCta.label}
-            </button>
+            <HeroCta label={heroCta.label} icon={HeroCtaIcon} onClick={heroCta.action} />
           </div>
 
           <VehicleRender />
@@ -510,7 +559,9 @@ export const DashboardPage = () => {
               type="button"
               onClick={openPrimary}
               className="focus-on-dark"
-              aria-label={`Abrir detalle del ${primary.brand} ${primary.model}`}
+              aria-label={t('dashboard.hero.openVehicleAria', {
+                brand: primary.brand, model: primary.model,
+              })}
               style={{
                 all: 'unset',
                 cursor: 'pointer',
@@ -546,14 +597,15 @@ export const DashboardPage = () => {
                   {primary.year}
                   {primary.fuel_type && ` · ${primary.fuel_type}`}
                   {primary.license_plate && ` · ${primary.license_plate}`}
-                  {` · ${ROLE_LABEL[primary.role] ?? primary.role}`}
+                  {' · '}
+                  {t(`dashboard.role.${primary.role}`, { defaultValue: primary.role })}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {primaryStats && primaryStats.alerts.length > 0 && (
                   <span
                     role="status"
-                    aria-label={`${primaryStats.alerts.length} alertas pendientes`}
+                    aria-label={t('dashboard.alerts.pending', { count: primaryStats.alerts.length })}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                       padding: '6px 12px', borderRadius: 999,
@@ -565,7 +617,7 @@ export const DashboardPage = () => {
                     }}
                   >
                     <AlertTriangle size={12} strokeWidth={2.2} aria-hidden="true" />
-                    {primaryStats.alerts.length} alerta{primaryStats.alerts.length === 1 ? '' : 's'}
+                    {t('dashboard.alerts.count', { count: primaryStats.alerts.length })}
                   </span>
                 )}
                 <ArrowRight size={18} strokeWidth={2} color="#fff" aria-hidden="true" />
@@ -583,386 +635,34 @@ export const DashboardPage = () => {
           <EditorialEmpty onAdd={handleAdd} />
         ) : (
           <>
-            {/* ── Section 1 — KILOMETRAJE ───────────────────────────────── */}
-            {isVisible('kilometraje') && (
-              <section
-                className="editorial-grid-2"
-                aria-labelledby="km-title"
-              >
-                <style>{`
-                  .editorial-grid-2 {
-                    display: grid; grid-template-columns: 1fr; gap: 40px;
-                    align-items: end;
-                  }
-                  @media (min-width: 900px) {
-                    .editorial-grid-2 { grid-template-columns: 1fr 1fr; gap: 60px; }
-                  }
-                  .editorial-grid-3 {
-                    display: grid; grid-template-columns: 1fr; gap: 24px;
-                  }
-                  @media (min-width: 900px) {
-                    .editorial-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-                  }
-                `}</style>
-                <div>
-                  <span className="eyebrow">
-                    {primary.model}
-                    {primary.license_plate ? ` · ${primary.license_plate}` : ''}
-                  </span>
-                  <h2 id="km-title" className="display-xxl" style={{ marginTop: 12 }}>
-                    {fmtN(primary.current_km)}<br />
-                    <span style={{ color: '#707070' }}>kilómetros.</span>
-                  </h2>
-                  <p className="body-soft" style={{ maxWidth: 480, margin: '24px 0 0' }}>
-                    +{fmtN(thisMonthKm)} este mes.{' '}
-                    {pctVsAvg > 0
-                      ? <>Conduciendo un {pctVsAvg}% {moreOrLess} que la media anual.</>
-                      : <>Aún no hay datos suficientes para comparar con la media anual.</>}
-                  </p>
-                  <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      className="pill-dark"
-                      onClick={() => navigate('/trips')}
-                      aria-label="Registrar nuevo viaje"
-                    >
-                      <Plus size={14} strokeWidth={2.2} />
-                      Registrar viaje
-                    </button>
-                    <button
-                      type="button"
-                      className="pill-ghost"
-                      onClick={() => navigate('/trips')}
-                    >
-                      Ver todos los viajes
-                    </button>
-                  </div>
-                </div>
-
-                <div className="card" style={{
-                  padding: 32, background: '#fff',
-                  borderRadius: 20, border: '1px solid #e8e8ed',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="eyebrow">Uso diario · 30 días</span>
-                    <span className="mono" style={{ fontSize: 11, color: '#707070' }}>
-                      {avgPerDay.toFixed(1).replace('.', ',')} km/día
-                    </span>
-                  </div>
-                  <div style={{ marginTop: 20 }}>
-                    {primaryStats?.errors.trips ? (
-                      <WidgetError onRetry={() => fetchVehicles()} message="No se pudieron cargar los viajes." />
-                    ) : statsLoading && !primaryStats ? (
-                      <WidgetLoading height={120} />
-                    ) : sumWindow === 0 ? (
-                      <WidgetEmpty
-                        icon={Route}
-                        message="Sin viajes en los últimos 30 días."
-                        ctaLabel="Registrar viaje"
-                        onCta={() => navigate('/trips')}
-                      />
-                    ) : (
-                      <Sparkline data={dailyKm} />
-                    )}
-                  </div>
-                  <div style={{
-                    display: 'flex', justifyContent: 'space-between', marginTop: 8,
-                    fontFamily: 'var(--font-mono)', fontSize: 11, color: '#a1a1a6',
-                  }}>
-                    {axisDates.map((d) => <span key={d}>{d}</span>)}
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* ── Section 2 — MANTENIMIENTO HIGHLIGHT ───────────────────── */}
-            {isVisible('mantenimiento') && (
-              <section className="editorial-grid-3" aria-label="Estado de mantenimiento">
-                {/* Card A — Alerta crítica */}
-                <div className="card" style={{
-                  background: '#fff', borderRadius: 20, border: '1px solid #e8e8ed',
-                  padding: 28, minHeight: 280,
-                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                }}>
-                  <span
-                    className="eyebrow"
-                    style={{ color: '#b64400', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                  >
-                    <AlertTriangle size={11} strokeWidth={2.4} aria-hidden="true" />
-                    Alerta crítica
-                  </span>
-                  <div>
-                    <div style={{
-                      fontFamily: 'Inter, var(--font-sf-pro-display)',
-                      fontWeight: 700, fontSize: 'clamp(40px, 5vw, 56px)', lineHeight: 1,
-                      letterSpacing: '-0.9px', color: '#1d1d1f',
-                    }}>
-                      {nextMaintenance ? fmtN(nextMaintenance.kmRemaining) : '—'}
-                      {nextMaintenance && (
-                        <span style={{
-                          fontFamily: 'Inter, var(--font-sf-pro-text)',
-                          fontWeight: 300, fontSize: 24, color: '#707070',
-                        }}> km</span>
-                      )}
-                    </div>
-                    <p style={{
-                      fontFamily: 'Inter, var(--font-sf-pro-text)',
-                      fontWeight: 400, fontSize: 17, lineHeight: 1.45,
-                      color: '#1d1d1f', margin: '12px 0 0',
-                    }}>
-                      {nextMaintenance
-                        ? <>hasta el {nextMaintenance.label} recomendado.</>
-                        : <>sin mantenimientos pendientes a la vista.</>}
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      className="pill-dark"
-                      onClick={() => navigate('/maintenance')}
-                      aria-label={nextMaintenance ? 'Programar mantenimiento' : 'Añadir mantenimiento'}
-                    >
-                      <Wrench size={14} strokeWidth={2.2} />
-                      {nextMaintenance ? 'Programar' : 'Añadir'}
-                      <ArrowRight size={13} strokeWidth={2.2} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Card B — Salud general */}
-                <div className="card-fog" style={{
-                  background: '#f5f5f7', borderRadius: 20,
-                  padding: 28, minHeight: 280,
-                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                }}>
-                  <span className="eyebrow">Salud general</span>
-                  <div>
-                    <div
-                      role="meter"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={healthScore}
-                      aria-label={`Salud del vehículo: ${healthScore} sobre 100`}
-                      style={{
-                        fontFamily: 'Inter, var(--font-sf-pro-display)',
-                        fontWeight: 700, fontSize: 'clamp(56px, 8vw, 96px)',
-                        lineHeight: 1, letterSpacing: '-2.11px', color: '#1d1d1f',
-                      }}
-                    >{healthScore}</div>
-                    <p style={{
-                      fontFamily: 'Inter, var(--font-sf-pro-text)',
-                      fontWeight: 300, fontSize: 17, lineHeight: 1.45,
-                      color: '#474747', margin: '4px 0 0',
-                    }}>
-                      sobre 100. {healthDetail}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="pill-ghost"
-                    onClick={openPrimary}
-                    aria-label="Ver desglose detallado del vehículo"
-                  >
-                    Ver desglose
-                  </button>
-                </div>
-
-                {/* Card C — Próximo taller */}
-                <div style={{
-                  background: '#000', color: '#fff',
-                  borderRadius: 20, padding: 28, minHeight: 280,
-                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                }}>
-                  <span
-                    className="eyebrow"
-                    style={{ color: 'rgba(255,255,255,0.75)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                  >
-                    <Calendar size={11} strokeWidth={2.4} aria-hidden="true" />
-                    Próximo taller
-                  </span>
-                  <div>
-                    {nextAppointment ? (
-                      <>
-                        <div style={{
-                          fontFamily: 'Inter, var(--font-sf-pro-display)',
-                          fontWeight: 700, fontSize: 32, lineHeight: 1.1,
-                          letterSpacing: '-0.4px',
-                          textTransform: 'capitalize',
-                        }}>
-                          {nextAppointment.dayLabel}<br />{nextAppointment.time}
-                        </div>
-                        <p style={{
-                          fontFamily: 'Inter, var(--font-sf-pro-text)',
-                          fontWeight: 400, fontSize: 15, lineHeight: 1.45,
-                          color: 'rgba(255,255,255,0.78)', margin: '12px 0 0',
-                        }}>
-                          {primary.brand} {primary.model} · {nextAppointment.type}.
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <div style={{
-                          fontFamily: 'Inter, var(--font-sf-pro-display)',
-                          fontWeight: 700, fontSize: 32, lineHeight: 1.1,
-                          letterSpacing: '-0.4px',
-                        }}>
-                          Sin cita<br />programada
-                        </div>
-                        <p style={{
-                          fontFamily: 'Inter, var(--font-sf-pro-text)',
-                          fontWeight: 400, fontSize: 15, lineHeight: 1.45,
-                          color: 'rgba(255,255,255,0.78)', margin: '12px 0 0',
-                        }}>
-                          Añade una fecha al próximo mantenimiento para reservar tu hueco.
-                        </p>
-                      </>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className="pill focus-on-dark"
-                    onClick={() => navigate('/maintenance')}
-                    aria-label={nextAppointment ? 'Ver cita en mantenimiento' : 'Programar nueva cita'}
-                    style={{ background: '#fff', color: '#000', alignSelf: 'flex-start' }}
-                  >
-                    {nextAppointment ? 'Ver cita' : 'Programar'}
-                    <ArrowRight size={13} strokeWidth={2.2} />
-                  </button>
-                </div>
-              </section>
-            )}
-
-            {/* ── Section 3 — GASTOS one-liner ──────────────────────────── */}
-            {isVisible('gastos') && (
-              <section className="gastos-row" style={{ marginBottom: 80 }} aria-labelledby="gastos-title">
-                <style>{`
-                  .gastos-row {
-                    display: flex; justify-content: space-between; align-items: flex-end;
-                    border-top: 1px solid #e8e8ed; padding-top: 36px;
-                    flex-wrap: wrap; gap: 32px;
-                  }
-                  .gastos-meta {
-                    display: flex; gap: 32px; align-items: flex-end; flex-wrap: wrap;
-                  }
-                `}</style>
-                <div>
-                  <span className="eyebrow">Gasto acumulado · {aggregate.year}</span>
-                  <h2 id="gastos-title" className="display-xl" style={{ marginTop: 10 }}>
-                    {primaryStats?.errors.expenses ? (
-                      <span style={{ color: '#b64400', fontSize: 24 }}>Datos no disponibles</span>
-                    ) : (
-                      <>{fmtN(totalYtdPrimary)} <span style={{ color: '#707070' }}>€</span></>
-                    )}
-                  </h2>
-                </div>
-                <div className="gastos-meta">
-                  {[
-                    ['Combustible',   expensesByCat.combustible,   Fuel],
-                    ['Mantenimiento', expensesByCat.mantenimiento, Wrench],
-                    ['Seguro',        expensesByCat.seguro,        Receipt],
-                  ].map(([lbl, val, Icon]) => {
-                    const Cmp = Icon as typeof Fuel;
-                    return (
-                      <div key={lbl as string}>
-                        <span className="label" style={{
-                          color: '#707070', display: 'inline-flex', alignItems: 'center', gap: 6,
-                        }}>
-                          <Cmp size={11} strokeWidth={2.2} aria-hidden="true" />
-                          {lbl as string}
-                        </span>
-                        <div style={{
-                          fontFamily: 'Inter, var(--font-sf-pro-display)',
-                          fontWeight: 600, fontSize: 28, lineHeight: 1,
-                          color: '#1d1d1f', marginTop: 8,
-                        }}>{fmtEur(val as number)}</div>
-                      </div>
-                    );
-                  })}
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                    <button
-                      type="button"
-                      className="pill-dark"
-                      onClick={() => navigate('/expenses')}
-                      aria-label="Añadir nuevo gasto"
-                    >
-                      <Plus size={14} strokeWidth={2.2} />
-                      Añadir gasto
-                    </button>
-                    <button
-                      type="button"
-                      className="pill"
-                      onClick={() => navigate('/expenses')}
-                      aria-label="Ver detalle completo de gastos"
-                    >
-                      Detalle
-                      <ArrowRight size={13} strokeWidth={2.2} />
-                    </button>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* ── Flota registrada ──────────────────────────────────────── */}
-            {isVisible('flota') && (
-              <section style={{ borderTop: '1px solid #e8e8ed', paddingTop: 36 }} aria-labelledby="flota-title">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
-                  <span id="flota-title" className="eyebrow">
-                    Flota registrada · {vehicles.length} vehículo{vehicles.length === 1 ? '' : 's'}
-                  </span>
-                  <span className="mono" style={{ fontSize: 11, color: '#707070' }}>
-                    Haz clic en uno para abrirlo
-                  </span>
-                </div>
-                <div style={{
-                  marginTop: 24,
-                  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                  gap: 16,
-                }}>
-                  {vehicles.map((v) => (
-                    <VehicleGridCard
-                      key={v.id}
-                      vehicle={v}
-                      stats={stats[v.id]}
-                      isPrimary={v.id === primary?.id}
-                      onSelect={() => {
-                        storeSet(v);
-                        navigate('/car');
-                      }}
-                    />
-                  ))}
-                  <button
-                    type="button"
-                    onClick={handleAdd}
-                    aria-label="Añadir nuevo vehículo a la flota"
-                    style={{
-                      all: 'unset',
-                      cursor: 'pointer',
-                      display: 'flex', flexDirection: 'column',
-                      alignItems: 'center', justifyContent: 'center',
-                      gap: 10, minHeight: 200,
-                      background: '#f5f5f7',
-                      border: '1.5px dashed #d2d2d7',
-                      borderRadius: 20,
-                      color: '#474747',
-                      fontFamily: 'Inter, var(--font-sf-pro-text)',
-                      fontWeight: 500, fontSize: 14,
-                      transition: 'border-color 180ms ease, background 180ms ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = '#0071e3';
-                      (e.currentTarget as HTMLElement).style.background = '#fff';
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = '#d2d2d7';
-                      (e.currentTarget as HTMLElement).style.background = '#f5f5f7';
-                    }}
-                  >
-                    <Plus size={22} strokeWidth={1.8} aria-hidden="true" />
-                    Añadir otro vehículo
-                  </button>
-                </div>
-              </section>
-            )}
+            <style>{`
+              .editorial-grid-2 {
+                display: grid; grid-template-columns: 1fr; gap: 40px;
+                align-items: end;
+              }
+              @media (min-width: 900px) {
+                .editorial-grid-2 { grid-template-columns: 1fr 1fr; gap: 60px; }
+              }
+              .editorial-grid-3 {
+                display: grid; grid-template-columns: 1fr; gap: 24px;
+              }
+              @media (min-width: 900px) {
+                .editorial-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+              }
+              .gastos-row {
+                display: flex; justify-content: space-between; align-items: flex-end;
+                border-top: 1px solid #e8e8ed; padding-top: 36px;
+                flex-wrap: wrap; gap: 32px;
+              }
+              .gastos-meta {
+                display: flex; gap: 32px; align-items: flex-end; flex-wrap: wrap;
+              }
+            `}</style>
+            {order
+              .filter((w) => isVisible(w))
+              .map((w) => (
+                <div key={w} data-widget={w}>{widgets[w]}</div>
+              ))}
           </>
         )}
       </div>
@@ -974,12 +674,414 @@ export const DashboardPage = () => {
       {showCustomize && (
         <CustomizePanel
           hidden={hidden}
+          order={order}
           toggle={toggle}
+          reorder={reorder}
           reset={reset}
           onClose={() => setShowCustomize(false)}
         />
       )}
     </div>
+  );
+};
+
+// ─── Section: Kilometraje ───────────────────────────────────────────────────
+interface KmProps {
+  primary: VehicleWithAccess;
+  primaryStats: VehicleStats | undefined;
+  statsLoading: boolean;
+  dailyKm: number[];
+  axisDates: string[];
+  sumWindow: number;
+  avgPerDay: number;
+  thisMonthKm: number;
+  pctVsAvg: number;
+  directionLabel: string;
+  onTrips: () => void;
+  onAllTrips: () => void;
+  onRetry: () => void;
+}
+const SectionKilometraje = ({
+  primary, primaryStats, statsLoading, dailyKm, axisDates,
+  sumWindow, avgPerDay, thisMonthKm, pctVsAvg, directionLabel,
+  onTrips, onAllTrips, onRetry,
+}: KmProps) => {
+  const { t } = useTranslation();
+  return (
+    <section
+      className="editorial-grid-2"
+      aria-labelledby="km-title"
+      data-testid="widget-kilometraje"
+    >
+      <div>
+        <span className="eyebrow">
+          {primary.model}
+          {primary.license_plate ? ` · ${primary.license_plate}` : ''}
+        </span>
+        <h2 id="km-title" className="display-xxl" style={{ marginTop: 12 }}>
+          {fmtN(primary.current_km)}<br />
+          <span style={{ color: '#707070' }}>{t('dashboard.km.title')}</span>
+        </h2>
+        <p className="body-soft" style={{ maxWidth: 480, margin: '24px 0 0' }}>
+          {t('dashboard.km.thisMonth', { count: Number(fmtN(thisMonthKm).replace(/\s/g, '')) })}{' '}
+          {pctVsAvg > 0
+            ? t('dashboard.km.vsAverage', { pct: pctVsAvg, direction: directionLabel })
+            : t('dashboard.km.notEnoughData')}
+        </p>
+        <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+          <button type="button" className="pill-dark" onClick={onTrips}>
+            <Plus size={14} strokeWidth={2.2} aria-hidden="true" />
+            {t('dashboard.km.logTrip')}
+          </button>
+          <button type="button" className="pill-ghost" onClick={onAllTrips}>
+            {t('dashboard.km.seeAllTrips')}
+          </button>
+        </div>
+      </div>
+
+      <div className="card" style={{
+        padding: 32, background: '#fff',
+        borderRadius: 20, border: '1px solid #e8e8ed',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span className="eyebrow">{t('dashboard.km.use30d')}</span>
+          <span className="mono" style={{ fontSize: 11, color: '#707070' }}>
+            {t('dashboard.km.perDay', { value: avgPerDay.toFixed(1).replace('.', ',') })}
+          </span>
+        </div>
+        <div style={{ marginTop: 20 }}>
+          {primaryStats?.errors.trips ? (
+            <WidgetError
+              onRetry={onRetry}
+              message={t('dashboard.km.errorLoading')}
+              retryLabel={t('common.retry')}
+            />
+          ) : statsLoading && !primaryStats ? (
+            <WidgetLoading height={120} />
+          ) : sumWindow === 0 ? (
+            <WidgetEmpty
+              icon={Route}
+              message={t('dashboard.km.noTrips30d')}
+              ctaLabel={t('dashboard.km.logTrip')}
+              onCta={onTrips}
+            />
+          ) : (
+            <Sparkline data={dailyKm} />
+          )}
+        </div>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', marginTop: 8,
+          fontFamily: 'var(--font-mono)', fontSize: 11, color: '#a1a1a6',
+        }}>
+          {axisDates.map((d) => <span key={d}>{d}</span>)}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ─── Section: Maintenance ──────────────────────────────────────────────────
+interface MaintProps {
+  primary: VehicleWithAccess;
+  nextMaintenance: { label: string; kmRemaining: number } | null;
+  nextAppointment: { dayLabel: string; time: string; type: string } | null;
+  healthScore: number;
+  healthDetail: string;
+  onSchedule: () => void;
+  onBreakdown: () => void;
+  onShop: () => void;
+}
+const SectionMaintenance = ({
+  primary, nextMaintenance, nextAppointment, healthScore, healthDetail,
+  onSchedule, onBreakdown, onShop,
+}: MaintProps) => {
+  const { t } = useTranslation();
+  return (
+    <section
+      className="editorial-grid-3"
+      aria-label={t('dashboard.maintenance.health')}
+      data-testid="widget-mantenimiento"
+    >
+      {/* Card A — Critical alert */}
+      <div className="card" style={{
+        background: '#fff', borderRadius: 20, border: '1px solid #e8e8ed',
+        padding: 28, minHeight: 280,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      }}>
+        <span
+          className="eyebrow"
+          style={{ color: '#b64400', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        >
+          <AlertTriangle size={11} strokeWidth={2.4} aria-hidden="true" />
+          {t('dashboard.maintenance.criticalAlert')}
+        </span>
+        <div>
+          <div style={{
+            fontFamily: 'Inter, var(--font-sf-pro-display)',
+            fontWeight: 700, fontSize: 'clamp(40px, 5vw, 56px)', lineHeight: 1,
+            letterSpacing: '-0.9px', color: '#1d1d1f',
+          }}>
+            {nextMaintenance ? fmtN(nextMaintenance.kmRemaining) : '—'}
+            {nextMaintenance && (
+              <span style={{
+                fontFamily: 'Inter, var(--font-sf-pro-text)',
+                fontWeight: 300, fontSize: 24, color: '#707070',
+              }}> km</span>
+            )}
+          </div>
+          <p style={{
+            fontFamily: 'Inter, var(--font-sf-pro-text)',
+            fontWeight: 400, fontSize: 17, lineHeight: 1.45,
+            color: '#1d1d1f', margin: '12px 0 0',
+          }}>
+            {nextMaintenance
+              ? t('dashboard.maintenance.untilNext', { label: nextMaintenance.label })
+              : t('dashboard.maintenance.noneVisible')}
+          </p>
+        </div>
+        <button type="button" className="pill-dark" onClick={onSchedule}>
+          <Wrench size={14} strokeWidth={2.2} aria-hidden="true" />
+          {nextMaintenance ? t('dashboard.maintenance.schedule') : t('dashboard.maintenance.add')}
+          <ArrowRight size={13} strokeWidth={2.2} aria-hidden="true" />
+        </button>
+      </div>
+
+      {/* Card B — Health */}
+      <div className="card-fog" style={{
+        background: '#f5f5f7', borderRadius: 20,
+        padding: 28, minHeight: 280,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      }}>
+        <span className="eyebrow">{t('dashboard.maintenance.health')}</span>
+        <div>
+          <div
+            role="meter"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={healthScore}
+            aria-label={t('dashboard.maintenance.healthMeterAria', { value: healthScore })}
+            style={{
+              fontFamily: 'Inter, var(--font-sf-pro-display)',
+              fontWeight: 700, fontSize: 'clamp(56px, 8vw, 96px)',
+              lineHeight: 1, letterSpacing: '-2.11px', color: '#1d1d1f',
+            }}
+          >{healthScore}</div>
+          <p style={{
+            fontFamily: 'Inter, var(--font-sf-pro-text)',
+            fontWeight: 300, fontSize: 17, lineHeight: 1.45,
+            color: '#474747', margin: '4px 0 0',
+          }}>
+            {t('dashboard.maintenance.healthOver100', { detail: healthDetail })}
+          </p>
+        </div>
+        <button type="button" className="pill-ghost" onClick={onBreakdown}>
+          {t('dashboard.maintenance.seeBreakdown')}
+        </button>
+      </div>
+
+      {/* Card C — Next shop */}
+      <div style={{
+        background: '#000', color: '#fff',
+        borderRadius: 20, padding: 28, minHeight: 280,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      }}>
+        <span
+          className="eyebrow"
+          style={{ color: 'rgba(255,255,255,0.75)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        >
+          <Calendar size={11} strokeWidth={2.4} aria-hidden="true" />
+          {t('dashboard.maintenance.nextShop')}
+        </span>
+        <div>
+          {nextAppointment ? (
+            <>
+              <div style={{
+                fontFamily: 'Inter, var(--font-sf-pro-display)',
+                fontWeight: 700, fontSize: 32, lineHeight: 1.1,
+                letterSpacing: '-0.4px',
+                textTransform: 'capitalize',
+              }}>
+                {nextAppointment.dayLabel}<br />{nextAppointment.time}
+              </div>
+              <p style={{
+                fontFamily: 'Inter, var(--font-sf-pro-text)',
+                fontWeight: 400, fontSize: 15, lineHeight: 1.45,
+                color: 'rgba(255,255,255,0.78)', margin: '12px 0 0',
+              }}>
+                {primary.brand} {primary.model} · {nextAppointment.type}.
+              </p>
+            </>
+          ) : (
+            <>
+              <div style={{
+                fontFamily: 'Inter, var(--font-sf-pro-display)',
+                fontWeight: 700, fontSize: 32, lineHeight: 1.1,
+                letterSpacing: '-0.4px',
+              }}>
+                {t('dashboard.maintenance.noAppointment')}
+              </div>
+              <p style={{
+                fontFamily: 'Inter, var(--font-sf-pro-text)',
+                fontWeight: 400, fontSize: 15, lineHeight: 1.45,
+                color: 'rgba(255,255,255,0.78)', margin: '12px 0 0',
+              }}>
+                {t('dashboard.maintenance.addDateToBook')}
+              </p>
+            </>
+          )}
+        </div>
+        <button
+          type="button"
+          className="pill focus-on-dark"
+          onClick={onShop}
+          style={{ background: '#fff', color: '#000', alignSelf: 'flex-start' }}
+        >
+          {nextAppointment ? t('dashboard.maintenance.seeAppointment') : t('dashboard.maintenance.schedule')}
+          <ArrowRight size={13} strokeWidth={2.2} aria-hidden="true" />
+        </button>
+      </div>
+    </section>
+  );
+};
+
+// ─── Section: Expenses ─────────────────────────────────────────────────────
+interface ExpProps {
+  primaryStats: VehicleStats | undefined;
+  expensesByCat: { combustible: number; mantenimiento: number; seguro: number };
+  totalYtdPrimary: number;
+  year: number;
+  onAdd: () => void;
+  onDetail: () => void;
+}
+const SectionExpenses = ({
+  primaryStats, expensesByCat, totalYtdPrimary, year, onAdd, onDetail,
+}: ExpProps) => {
+  const { t } = useTranslation();
+  return (
+    <section
+      className="gastos-row"
+      style={{ marginBottom: 80 }}
+      aria-labelledby="gastos-title"
+      data-testid="widget-gastos"
+    >
+      <div>
+        <span className="eyebrow">{t('dashboard.expenses.ytd', { year })}</span>
+        <h2 id="gastos-title" className="display-xl" style={{ marginTop: 10 }}>
+          {primaryStats?.errors.expenses ? (
+            <span style={{ color: '#b64400', fontSize: 24 }}>{t('dashboard.expenses.errorLoading')}</span>
+          ) : (
+            <>{fmtN(totalYtdPrimary)} <span style={{ color: '#707070' }}>€</span></>
+          )}
+        </h2>
+      </div>
+      <div className="gastos-meta">
+        {[
+          [t('dashboard.expenses.fuel'),        expensesByCat.combustible,   Fuel],
+          [t('dashboard.expenses.maintenance'), expensesByCat.mantenimiento, Wrench],
+          [t('dashboard.expenses.insurance'),   expensesByCat.seguro,        Receipt],
+        ].map(([lbl, val, Icon]) => {
+          const Cmp = Icon as typeof Fuel;
+          return (
+            <div key={lbl as string}>
+              <span className="label" style={{
+                color: '#707070', display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                <Cmp size={11} strokeWidth={2.2} aria-hidden="true" />
+                {lbl as string}
+              </span>
+              <div style={{
+                fontFamily: 'Inter, var(--font-sf-pro-display)',
+                fontWeight: 600, fontSize: 28, lineHeight: 1,
+                color: '#1d1d1f', marginTop: 8,
+              }}>{fmtEur(val as number)}</div>
+            </div>
+          );
+        })}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+          <button type="button" className="pill-dark" onClick={onAdd}>
+            <Plus size={14} strokeWidth={2.2} aria-hidden="true" />
+            {t('dashboard.expenses.addExpense')}
+          </button>
+          <button type="button" className="pill" onClick={onDetail}>
+            {t('dashboard.expenses.detail')}
+            <ArrowRight size={13} strokeWidth={2.2} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ─── Section: Fleet ────────────────────────────────────────────────────────
+interface FleetProps {
+  vehicles: VehicleWithAccess[];
+  stats: Record<string, VehicleStats>;
+  primary: VehicleWithAccess | null;
+  onSelect: (v: VehicleWithAccess) => void;
+  onAdd: () => void;
+}
+const SectionFleet = ({ vehicles, stats, primary, onSelect, onAdd }: FleetProps) => {
+  const { t } = useTranslation();
+  return (
+    <section
+      style={{ borderTop: '1px solid #e8e8ed', paddingTop: 36 }}
+      aria-labelledby="flota-title"
+      data-testid="widget-flota"
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
+        <span id="flota-title" className="eyebrow">
+          {t('dashboard.fleet.title', { count: vehicles.length })}
+        </span>
+        <span className="mono" style={{ fontSize: 11, color: '#707070' }}>
+          {t('dashboard.fleet.clickToOpen')}
+        </span>
+      </div>
+      <div style={{
+        marginTop: 24,
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: 16,
+      }}>
+        {vehicles.map((v) => (
+          <VehicleGridCard
+            key={v.id}
+            vehicle={v}
+            stats={stats[v.id]}
+            isPrimary={v.id === primary?.id}
+            onSelect={() => onSelect(v)}
+          />
+        ))}
+        <button
+          type="button"
+          onClick={onAdd}
+          aria-label={t('dashboard.fleet.addAnother')}
+          style={{
+            all: 'unset',
+            cursor: 'pointer',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: 10, minHeight: 200,
+            background: '#f5f5f7',
+            border: '1.5px dashed #d2d2d7',
+            borderRadius: 20,
+            color: '#474747',
+            fontFamily: 'Inter, var(--font-sf-pro-text)',
+            fontWeight: 500, fontSize: 14,
+            transition: 'border-color 180ms ease, background 180ms ease',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = '#0071e3';
+            (e.currentTarget as HTMLElement).style.background = '#fff';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.borderColor = '#d2d2d7';
+            (e.currentTarget as HTMLElement).style.background = '#f5f5f7';
+          }}
+        >
+          <Plus size={22} strokeWidth={1.8} aria-hidden="true" />
+          {t('dashboard.fleet.addAnother')}
+        </button>
+      </div>
+    </section>
   );
 };
 
@@ -1012,72 +1114,6 @@ const Sparkline = ({ data, width = 460, height = 120 }: {
   );
 };
 
-// ─── Per-widget states ──────────────────────────────────────────────────────
-const WidgetLoading = ({ height = 120 }: { height?: number }) => (
-  <div
-    className="skeleton"
-    role="status"
-    aria-label="Cargando datos"
-    style={{ height, borderRadius: 12 }}
-  />
-);
-
-const WidgetEmpty = ({
-  icon: Icon, message, ctaLabel, onCta,
-}: {
-  icon: typeof Plus; message: string; ctaLabel?: string; onCta?: () => void;
-}) => (
-  <div style={{
-    height: 120, display: 'flex', flexDirection: 'column',
-    alignItems: 'center', justifyContent: 'center', gap: 8,
-    background: '#fafafa', border: '1px dashed #e8e8ed',
-    borderRadius: 12, color: '#707070',
-    fontFamily: 'Inter, var(--font-sf-pro-text)', fontSize: 13,
-  }}>
-    <Icon size={18} strokeWidth={1.6} aria-hidden="true" />
-    <span>{message}</span>
-    {ctaLabel && onCta && (
-      <button
-        type="button"
-        onClick={onCta}
-        style={{
-          all: 'unset', cursor: 'pointer',
-          color: '#0071e3', fontWeight: 500, fontSize: 12,
-          textDecoration: 'underline',
-        }}
-      >
-        {ctaLabel}
-      </button>
-    )}
-  </div>
-);
-
-const WidgetError = ({ onRetry, message }: { onRetry: () => void; message: string }) => (
-  <div
-    role="alert"
-    style={{
-      height: 120, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 8,
-      background: '#fff1ea', border: '1px solid #f4cdb6',
-      borderRadius: 12, color: '#b64400', fontSize: 13,
-      fontFamily: 'Inter, var(--font-sf-pro-text)',
-    }}
-  >
-    <AlertTriangle size={18} strokeWidth={2} aria-hidden="true" />
-    <span>{message}</span>
-    <button
-      type="button"
-      onClick={onRetry}
-      style={{
-        all: 'unset', cursor: 'pointer', color: '#b64400',
-        fontWeight: 500, fontSize: 12, textDecoration: 'underline',
-      }}
-    >
-      Reintentar
-    </button>
-  </div>
-);
-
 const VehicleRender = () => (
   <div style={{
     width: '100%', maxWidth: 520, alignSelf: 'flex-end',
@@ -1098,14 +1134,12 @@ const VehicleRender = () => (
         filter: 'drop-shadow(0 30px 40px rgba(0,0,0,0.45))',
       }}
       onError={(e) => {
-        // Hide silently if file is missing — the hero KPI strip carries weight.
         (e.currentTarget as HTMLImageElement).style.display = 'none';
       }}
     />
   </div>
 );
 
-// ─── Body skeleton — minimal, zero-shadow ───────────────────────────────────
 const BodySkeleton = () => (
   <div
     role="status"
@@ -1134,6 +1168,7 @@ interface VehicleGridCardProps {
 const VehicleGridCard = ({
   vehicle, stats, isPrimary, onSelect,
 }: VehicleGridCardProps) => {
+  const { t } = useTranslation();
   const alertCount = stats?.alerts.length ?? 0;
   const recordCount = stats?.records.length ?? 0;
   const hasError = stats?.errors && (stats.errors.records || stats.errors.expenses || stats.errors.trips);
@@ -1142,7 +1177,8 @@ const VehicleGridCard = ({
     <button
       type="button"
       onClick={onSelect}
-      aria-label={`Abrir ${vehicle.brand} ${vehicle.model}${isPrimary ? ' (vehículo principal)' : ''}${alertCount > 0 ? `, ${alertCount} alertas` : ''}`}
+      aria-label={`${t('common.open')} ${vehicle.brand} ${vehicle.model}`}
+      data-testid="fleet-card"
       style={{
         all: 'unset',
         display: 'flex',
@@ -1192,7 +1228,7 @@ const VehicleGridCard = ({
           {alertCount > 0 ? (
             <span
               role="status"
-              aria-label={`${alertCount} alertas pendientes`}
+              aria-label={t('dashboard.alerts.pending', { count: alertCount })}
               className="sev-critical"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -1206,7 +1242,7 @@ const VehicleGridCard = ({
           ) : (
             <span
               role="status"
-              aria-label="Sin alertas"
+              aria-label={t('dashboard.alerts.none')}
               className="sev-ok"
               style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -1224,7 +1260,9 @@ const VehicleGridCard = ({
           marginTop: 12,
         }}>
           <div>
-            <div style={{ fontSize: 11, color: '#707070', marginBottom: 4 }}>Kilómetros</div>
+            <div style={{ fontSize: 11, color: '#707070', marginBottom: 4 }}>
+              {t('dashboard.fleet.kmLabel')}
+            </div>
             <div style={{
               fontFamily: 'Inter, var(--font-sf-pro-display)',
               fontWeight: 600,
@@ -1235,7 +1273,9 @@ const VehicleGridCard = ({
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: '#707070', marginBottom: 4 }}>Mantenimientos</div>
+            <div style={{ fontSize: 11, color: '#707070', marginBottom: 4 }}>
+              {t('dashboard.fleet.maintenanceLabel')}
+            </div>
             <div style={{
               fontFamily: 'Inter, var(--font-sf-pro-display)',
               fontWeight: 600,
@@ -1256,158 +1296,42 @@ const VehicleGridCard = ({
       }}>
         {hasError && <AlertTriangle size={11} strokeWidth={2.2} aria-hidden="true" />}
         {hasError
-          ? 'Algunos datos no se pudieron cargar'
+          ? t('dashboard.fleet.partialDataError')
           : isPrimary
-            ? '✓ Vehículo principal'
-            : 'Haz clic para seleccionar'}
+            ? t('dashboard.fleet.primary')
+            : t('dashboard.fleet.selectHint')}
       </div>
     </button>
   );
 };
 
-const EditorialEmpty = ({ onAdd }: { onAdd: () => void }) => (
-  <div style={{
-    padding: '40px 0', display: 'flex', flexDirection: 'column',
-    gap: 20, maxWidth: 640,
-  }}>
-    <span className="eyebrow">Tu garaje · vacío</span>
-    <h2 className="display-lg">
-      Empieza añadiendo<br />
-      <span style={{ color: '#707070' }}>tu primer vehículo.</span>
-    </h2>
-    <p className="body-soft" style={{ maxWidth: 520, margin: 0 }}>
-      Registra marca, modelo y kilometraje. A partir de ahí, FocusHub te avisará
-      de mantenimientos y agrupará gastos y trayectos.
-    </p>
-    <button
-      type="button"
-      className="pill-dark"
-      onClick={onAdd}
-      style={{ alignSelf: 'flex-start', marginTop: 8 }}
-      aria-label="Añadir primer vehículo"
-    >
-      <Plus size={14} strokeWidth={2.2} aria-hidden="true" />
-      Añadir vehículo
-    </button>
-  </div>
-);
-
-// ─── Customize panel — MVP widget toggle ────────────────────────────────────
-interface CustomizePanelProps {
-  hidden: DashboardWidget[];
-  toggle: (w: DashboardWidget) => void;
-  reset: () => void;
-  onClose: () => void;
-}
-
-const WIDGETS: { key: DashboardWidget; label: string; description: string }[] = [
-  { key: 'kilometraje',   label: 'Kilometraje',     description: 'Total y uso diario de los últimos 30 días.' },
-  { key: 'mantenimiento', label: 'Mantenimiento',   description: 'Alerta crítica, salud y próximo taller.' },
-  { key: 'gastos',        label: 'Gastos del año',  description: 'Combustible, mantenimiento y seguro.' },
-  { key: 'flota',         label: 'Flota registrada', description: 'Tarjetas con todos tus vehículos.' },
-];
-
-const CustomizePanel = ({ hidden, toggle, reset, onClose }: CustomizePanelProps) => {
-  // Close on Escape
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
+const EditorialEmpty = ({ onAdd }: { onAdd: () => void }) => {
+  const { t } = useTranslation();
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="customize-title"
+      data-testid="dashboard-empty"
       style={{
-        position: 'fixed', inset: 0, zIndex: 60,
-        background: 'rgba(20,22,28,0.42)',
-        backdropFilter: 'blur(2px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 16,
-        animation: 'fade-in 0.2s ease-out',
+        padding: '40px 0', display: 'flex', flexDirection: 'column',
+        gap: 20, maxWidth: 640,
       }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        background: '#fff', borderRadius: 24,
-        border: '1px solid #e8e8ed',
-        maxWidth: 480, width: '100%',
-        padding: 28,
-        fontFamily: 'Inter, var(--font-sf-pro-text)',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18 }}>
-          <h3 id="customize-title" style={{
-            fontFamily: 'Inter, var(--font-sf-pro-display)',
-            fontWeight: 600, fontSize: 20, letterSpacing: '-0.3px',
-            color: '#1d1d1f', margin: 0,
-          }}>
-            Personalizar panel
-          </h3>
-          <button
-            type="button"
-            onClick={reset}
-            style={{
-              all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
-              fontSize: 12, color: '#0071e3', fontWeight: 500,
-            }}
-            aria-label="Restablecer visibilidad por defecto"
-          >
-            <RotateCcw size={12} strokeWidth={2.2} aria-hidden="true" />
-            Restablecer
-          </button>
-        </div>
-        <p style={{
-          margin: '0 0 18px', fontSize: 13, color: '#707070', lineHeight: 1.45,
-        }}>
-          Elige qué widgets quieres ver en tu panel. Tu elección se guarda en este dispositivo.
-        </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {WIDGETS.map((w) => {
-            const visible = !hidden.includes(w.key);
-            return (
-              <li key={w.key}>
-                <label
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '12px 14px', borderRadius: 14,
-                    background: '#f5f5f7', border: '1px solid transparent',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = '#e8e8ed';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'transparent';
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={visible}
-                    onChange={() => toggle(w.key)}
-                    aria-label={`${w.label}: ${visible ? 'visible' : 'oculto'}`}
-                    style={{ width: 18, height: 18, accentColor: '#0071e3', cursor: 'pointer' }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: '#1d1d1f' }}>
-                      {w.label}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#707070', marginTop: 2 }}>
-                      {w.description}
-                    </div>
-                  </div>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 22 }}>
-          <button type="button" className="pill-dark" onClick={onClose}>
-            Listo
-          </button>
-        </div>
-      </div>
+      <span className="eyebrow">{t('dashboard.empty.eyebrow')}</span>
+      <h2 className="display-lg">
+        {t('dashboard.empty.title')}<br />
+        <span style={{ color: '#707070' }}>{t('dashboard.empty.subtitle')}</span>
+      </h2>
+      <p className="body-soft" style={{ maxWidth: 520, margin: 0 }}>
+        {t('dashboard.empty.body')}
+      </p>
+      <button
+        type="button"
+        className="pill-dark"
+        onClick={onAdd}
+        style={{ alignSelf: 'flex-start', marginTop: 8 }}
+      >
+        <Plus size={14} strokeWidth={2.2} aria-hidden="true" />
+        {t('dashboard.cta.addVehicle')}
+      </button>
     </div>
   );
 };
