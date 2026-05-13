@@ -827,38 +827,37 @@ const Sparkline = ({ data, width = 460, height = 120 }: {
   );
 };
 
-// ─── Vehicle render placeholder — SVG silhouette ────────────────────────────
+// ─── Vehicle render — photographic side-view of the car ────────────────────
+//
+// The source image has a solid black background. We use `mix-blend-mode:
+// screen` so the black drops out against the indigo gradient of the hero
+// and only the car body is visible. White/silver bodywork survives intact
+// because screen preserves bright pixels.
 const VehicleRender = () => (
   <div style={{
-    width: '100%', maxWidth: 460, height: 240, alignSelf: 'flex-end',
+    width: '100%', maxWidth: 520, alignSelf: 'flex-end',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     margin: '0 auto',
   }}>
-    <svg viewBox="0 0 460 240" width="100%" height="100%" aria-hidden="true">
-      <defs>
-        <linearGradient id="vh-shine" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.55" />
-          <stop offset="60%" stopColor="#ffffff" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M40 165 L90 110 Q110 95 140 92 L260 88 Q310 88 345 105 L400 140 Q420 145 425 165 L425 180 Q425 188 415 188 L370 188 Q364 200 348 200 Q332 200 326 188 L160 188 Q154 200 138 200 Q122 200 116 188 L48 188 Q38 188 38 178 Z"
-        fill="url(#vh-shine)"
-        stroke="rgba(255,255,255,0.55)"
-        strokeWidth="1.25"
-      />
-      <path
-        d="M120 110 L160 90 L250 90 L260 110 Z M270 110 L260 90 L330 90 Q345 92 360 110 Z"
-        fill="rgba(255,255,255,0.25)"
-        stroke="rgba(255,255,255,0.4)"
-        strokeWidth="1"
-      />
-      <circle cx="138" cy="190" r="14" fill="#0a0a14" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-      <circle cx="348" cy="190" r="14" fill="#0a0a14" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-      <circle cx="138" cy="190" r="5" fill="rgba(255,255,255,0.35)" />
-      <circle cx="348" cy="190" r="5" fill="rgba(255,255,255,0.35)" />
-    </svg>
+    <img
+      src="/images/ford-focus.jpg"
+      alt="Ford Focus"
+      loading="eager"
+      style={{
+        width: '100%',
+        height: 'auto',
+        objectFit: 'contain',
+        mixBlendMode: 'screen',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        filter: 'drop-shadow(0 30px 40px rgba(0,0,0,0.45))',
+      }}
+      onError={(e) => {
+        // Hide the broken image silently if the file isn't yet in place;
+        // the hero KPI strip below still gives the section presence.
+        (e.currentTarget as HTMLImageElement).style.display = 'none';
+      }}
+    />
   </div>
 );
 
