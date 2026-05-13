@@ -2,7 +2,7 @@ import { Component, Suspense, useRef, useState, useEffect } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
 import { CAR_PARTS } from '../../utils/constants';
 
@@ -383,7 +383,6 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
             proceduralFallback
           )}
           <ContactShadows position={[0, -0.8, 0]} opacity={0.5} scale={12} blur={2} />
-          <Environment preset="city" />
         </Suspense>
 
         <OrbitControls
