@@ -1,4 +1,4 @@
-import { X, PlusCircle, Wrench, Calendar, Receipt, ChevronRight } from 'lucide-react';
+import { X, PlusCircle, Wrench, ChevronRight } from 'lucide-react';
 import { CAR_PARTS } from '../../utils/constants';
 import type { MaintenanceRecord } from '../../types';
 import { formatDate, formatCurrency } from '../../utils/formatters';
@@ -10,7 +10,17 @@ interface Props {
   onAddMaintenance: (type: string) => void;
 }
 
-export const PartInfoOverlay = ({ partKey, records, onClose, onAddMaintenance }: Props) => {
+const EYEBROW: React.CSSProperties = {
+  fontSize: 10,
+  letterSpacing: '0.2em',
+  textTransform: 'uppercase',
+  color: '#a1a1a6',
+  fontFamily: 'var(--font-mono)',
+};
+
+export const PartInfoOverlay = ({
+  partKey, records, onClose, onAddMaintenance,
+}: Props) => {
   const part = CAR_PARTS[partKey];
   if (!part) return null;
 
@@ -22,68 +32,164 @@ export const PartInfoOverlay = ({ partKey, records, onClose, onAddMaintenance }:
     <>
       {/* Mobile backdrop */}
       <div
-        className="md:hidden fixed inset-0 bg-black/50 z-30"
+        className="md:hidden fixed inset-0 z-30"
         onClick={onClose}
-        style={{ animation: 'fade-in 0.2s ease-out' }}
+        style={{
+          background: 'rgba(20,22,28,0.42)',
+          backdropFilter: 'blur(2px)',
+          animation: 'fade-in 0.2s ease-out',
+        }}
       />
 
       <aside
-        className="absolute md:right-4 md:top-4 md:bottom-4 md:w-80 inset-x-0 bottom-0 md:inset-auto top-auto max-h-[75vh] md:max-h-none bg-cloud-white border border-sky-blueprint/25 md:rounded-card rounded-t-3xl flex flex-col overflow-hidden shadow-card z-40"
-        style={{ animation: 'slide-in-right 0.3s var(--ease-out-expo)' }}
+        className="absolute z-40 flex flex-col overflow-hidden md:right-4 md:top-4 md:bottom-4 md:w-[340px] inset-x-0 bottom-0 md:inset-auto top-auto max-h-[75vh] md:max-h-none"
+        style={{
+          background: '#ffffff',
+          border: '1px solid #e8e8ed',
+          borderRadius: 28,
+          fontFamily: 'Inter, var(--font-sf-pro-text)',
+          color: '#1d1d1f',
+          animation: 'slide-in-right 0.3s var(--ease-out-expo)',
+        }}
       >
-        <header className="flex items-center justify-between p-5 border-b border-sky-blueprint/20">
+        {/* ── Header ─────────────────────────────────────────────────────── */}
+        <header
+          className="flex items-center justify-between gap-3 px-5 py-5"
+          style={{ borderBottom: '1px solid #e8e8ed' }}
+        >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-input bg-gradient-to-br from-sky-blueprint/20 to-sunset-orange/10 border border-sky-blueprint/30 flex items-center justify-center">
-              <Wrench className="h-5 w-5 text-sky-dark" strokeWidth={2} />
-            </div>
+            <span
+              style={{
+                width: 44, height: 44, borderRadius: 14,
+                background: '#1d1d1f', color: '#fff',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Wrench size={20} strokeWidth={1.6} />
+            </span>
             <div className="min-w-0">
-              <h3 className="font-manrope text-body text-ink-black font-semibold tracking-tight truncate">{part.label}</h3>
-              <p className="font-manrope text-caption text-ink-charcoal/70">{relevantRecords.length} {relevantRecords.length === 1 ? 'registro' : 'registros'}</p>
+              <div style={EYEBROW}>Pieza · {partKey.split('_')[0]}</div>
+              <div
+                className="truncate font-semibold leading-tight"
+                style={{
+                  color: '#1d1d1f',
+                  fontSize: 20,
+                  letterSpacing: '-0.4px',
+                  marginTop: 2,
+                  fontFamily: 'Inter, var(--font-sf-pro-display)',
+                }}
+              >
+                {part.label}
+              </div>
+              <div
+                className="text-[12px] mt-0.5"
+                style={{ color: '#707070' }}
+              >
+                {relevantRecords.length}{' '}
+                {relevantRecords.length === 1 ? 'registro' : 'registros'}
+              </div>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-lg text-ink-charcoal hover:text-ink-black hover:bg-canvas-50 transition-colors"
             aria-label="Cerrar"
+            className="shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-full transition-colors"
+            style={{
+              background: '#fff',
+              border: '1px solid #e8e8ed',
+              color: '#1d1d1f',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = '#f5f5f7';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = '#fff';
+            }}
           >
-            <X className="h-4 w-4" />
+            <X size={15} strokeWidth={1.8} />
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          {/* History */}
+        {/* ── Body ───────────────────────────────────────────────────────── */}
+        <div
+          className="flex-1 overflow-y-auto p-5 flex flex-col gap-6 scrollbar-none"
+        >
+          {/* ── History ──────────────────────────────────────────────── */}
           <section>
-            <div className="flex items-center gap-2 mb-2.5">
-              <Calendar className="h-3.5 w-3.5 text-ink-charcoal" />
-              <h4 className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold">Historial reciente</h4>
+            <div style={EYEBROW} className="mb-3">
+              Historial reciente
             </div>
             {relevantRecords.length === 0 ? (
-              <div className="bg-canvas-50/40 border border-dashed border-sky-blueprint/25 rounded-input p-4 text-center">
-                <p className="font-manrope text-caption text-ink-charcoal/70">Sin registros para esta parte</p>
+              <div
+                className="text-center px-4 py-6"
+                style={{
+                  background: '#f5f5f7',
+                  border: '1px dashed #e8e8ed',
+                  borderRadius: 16,
+                }}
+              >
+                <p className="text-[13px]" style={{ color: '#707070' }}>
+                  Sin registros para esta pieza.
+                </p>
+                <p
+                  className="text-[11px] mt-1"
+                  style={{ color: '#a1a1a6', fontFamily: 'var(--font-mono)' }}
+                >
+                  Añade el primero más abajo.
+                </p>
               </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="flex flex-col gap-2">
                 {relevantRecords.map((r) => (
                   <li
                     key={r.id}
-                    className="bg-canvas-50/60 border border-sky-blueprint/20 rounded-input p-3 hover:border-sky-blueprint/40 transition-colors"
+                    className="p-3.5 transition-colors"
+                    style={{
+                      background: '#f5f5f7',
+                      border: '1px solid #ececf0',
+                      borderRadius: 16,
+                    }}
                   >
                     <div className="flex justify-between items-start gap-2">
-                      <span className="font-manrope text-body text-ink-black font-medium leading-tight">{r.type}</span>
+                      <span
+                        className="font-medium leading-tight"
+                        style={{ color: '#1d1d1f', fontSize: 14 }}
+                      >
+                        {r.type}
+                      </span>
                       {r.cost ? (
-                        <span className="shrink-0 inline-flex items-center gap-1 text-sunset-orange font-manrope text-caption font-semibold tabular-nums">
-                          <Receipt className="h-3 w-3" />
+                        <span
+                          className="shrink-0 tabular-nums font-semibold"
+                          style={{
+                            color: '#1d1d1f',
+                            fontSize: 13,
+                          }}
+                        >
                           {formatCurrency(r.cost)}
                         </span>
                       ) : null}
                     </div>
-                    <div className="flex items-center gap-1.5 font-manrope text-caption text-ink-charcoal/70 mt-1.5">
+                    <div
+                      className="flex items-center gap-2 mt-1.5 text-[11px]"
+                      style={{
+                        color: '#707070',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
                       <span>{formatDate(r.date)}</span>
-                      <span className="opacity-50">·</span>
-                      <span className="tabular-nums">{r.km_at_service.toLocaleString()} km</span>
+                      <span style={{ color: '#d2d2d7' }}>·</span>
+                      <span className="tabular-nums">
+                        {r.km_at_service.toLocaleString('es-ES').replace(/\./g, ' ')} km
+                      </span>
                     </div>
                     {r.description && (
-                      <p className="font-manrope text-caption text-ink-charcoal/70 mt-1.5 line-clamp-2 leading-snug">{r.description}</p>
+                      <p
+                        className="mt-2 line-clamp-2 leading-snug"
+                        style={{ color: '#474747', fontSize: 12.5 }}
+                      >
+                        {r.description}
+                      </p>
                     )}
                   </li>
                 ))}
@@ -91,26 +197,53 @@ export const PartInfoOverlay = ({ partKey, records, onClose, onAddMaintenance }:
             )}
           </section>
 
-          {/* Quick add */}
+          {/* ── Quick add ─────────────────────────────────────────────── */}
           <section>
-            <div className="flex items-center gap-2 mb-2.5">
-              <PlusCircle className="h-3.5 w-3.5 text-ink-charcoal" />
-              <h4 className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold">Acción rápida</h4>
+            <div style={EYEBROW} className="mb-3">
+              Acciones rápidas
             </div>
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1.5">
               {part.maintenanceTypes.map((type) => (
                 <button
                   key={type}
                   onClick={() => onAddMaintenance(type)}
-                  className="group w-full flex items-center justify-between text-left font-manrope text-body text-ink-black hover:text-ink-black hover:bg-sky-blueprint/10 rounded-input px-3 py-2.5 transition-all border border-transparent hover:border-sky-blueprint/30"
+                  className="group w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors"
+                  style={{
+                    background: '#fff',
+                    border: '1px solid #e8e8ed',
+                    borderRadius: 14,
+                    color: '#1d1d1f',
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = '#f5f5f7';
+                    (e.currentTarget as HTMLElement).style.borderColor = '#d2d2d7';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = '#fff';
+                    (e.currentTarget as HTMLElement).style.borderColor = '#e8e8ed';
+                  }}
                 >
-                  <span className="flex items-center gap-2.5">
-                    <span className="h-7 w-7 rounded-input bg-canvas-50 group-hover:bg-sky-blueprint/15 flex items-center justify-center transition-colors">
-                      <PlusCircle className="h-3.5 w-3.5 text-sky-dark" />
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      style={{
+                        width: 28, height: 28, borderRadius: 999,
+                        background: '#f5f5f7',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#0071e3',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <PlusCircle size={14} strokeWidth={1.8} />
                     </span>
-                    {type}
+                    <span className="truncate">{type}</span>
                   </span>
-                  <ChevronRight className="h-4 w-4 text-ink-charcoal/80 group-hover:text-sky-dark group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight
+                    size={15}
+                    strokeWidth={1.6}
+                    style={{ color: '#a1a1a6', flexShrink: 0 }}
+                  />
                 </button>
               ))}
             </div>
