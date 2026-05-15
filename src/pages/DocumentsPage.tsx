@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, Trash2, ExternalLink, Star } from 'lucide-react';
+import { Plus, FileText, Star } from 'lucide-react';
 import { DocumentUpload } from '../components/documents/DocumentUpload';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -159,25 +159,22 @@ export const DocumentsPage = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-4 shrink-0">
                   <a
                     href={doc.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={cn(
-                      'h-8 w-8 inline-flex items-center justify-center rounded-full',
-                      'text-graphite hover:text-ink hover:bg-snow transition-colors',
-                    )}
-                    aria-label="Abrir documento"
+                    className="font-text text-graphite hover:text-ink transition-colors"
+                    style={{ fontSize: 13 }}
                   >
-                    <ExternalLink className="h-4 w-4" strokeWidth={1.6} />
+                    Abrir
                   </a>
                   <button
                     onClick={() => handleDelete(doc.id)}
-                    className="h-8 w-8 inline-flex items-center justify-center rounded-full text-graphite hover:text-caution hover:bg-snow transition-colors"
-                    aria-label="Eliminar"
+                    className="font-text text-graphite hover:text-caution transition-colors"
+                    style={{ fontSize: 13 }}
                   >
-                    <Trash2 className="h-4 w-4" strokeWidth={1.6} />
+                    Eliminar
                   </button>
                 </div>
               </li>

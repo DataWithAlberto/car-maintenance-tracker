@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, RotateCcw, Maximize2, Minimize2, AlertTriangle, Gauge } from 'lucide-react';
+import { Plus, AlertTriangle, Gauge } from 'lucide-react';
 const CarViewer = lazy(() => import('../components/3d/CarViewer').then(m => ({ default: m.CarViewer })));
 import { PartInfoOverlay } from '../components/3d/PartInfoOverlay';
 import { MaintenanceForm } from '../components/maintenance/MaintenanceForm';
@@ -23,8 +23,7 @@ export const CarPage = () => {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
   const [prefilledType, setPrefilledType] = useState('');
-  const [autoRotate, setAutoRotate] = useState(false);
-  const [immersive, setImmersive] = useState(false);
+
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -90,35 +89,6 @@ export const CarPage = () => {
     toast.success('Registro añadido');
     setShowMaintenanceForm(false);
   };
-
-  /* ── Immersive mode: full-screen takeover ── */
-  if (immersive) {
-    return (
-      <div className="h-[100vh] fixed inset-0 z-50 bg-snow flex flex-col">
-        <button
-          onClick={() => setImmersive(false)}
-          className="absolute top-4 right-4 z-50 h-10 w-10 inline-flex items-center justify-center rounded-full bg-snow text-ink border border-silver-mist hover:bg-fog transition-colors"
-          title="Salir de inmersivo"
-          style={{ backdropFilter: 'blur(20px)' }}
-        >
-          <Minimize2 className="h-4 w-4" strokeWidth={1.6} />
-        </button>
-        <div className="flex-1 relative" style={{ background: '#f5f5f7' }}>
-          <Suspense fallback={null}>
-            <CarViewer onPartClick={handlePartClick} autoRotate={autoRotate} modelUrl="/models/ford_focus.glb" />
-          </Suspense>
-          {selectedPart && (
-            <PartInfoOverlay
-              partKey={selectedPart}
-              records={records}
-              onClose={() => setSelectedPart(null)}
-              onAddMaintenance={handleAddMaintenance}
-            />
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="px-6 sm:px-10 py-10">
@@ -186,37 +156,10 @@ export const CarPage = () => {
         }>
           <CarViewer
             onPartClick={handlePartClick}
-            autoRotate={autoRotate}
+            autoRotate={false}
             modelUrl="/models/ford_focus.glb"
           />
         </Suspense>
-
-        {/* Floating controls — top right, subtle */}
-        {!selectedPart && (
-          <div className="absolute top-4 right-4 flex items-center gap-1.5">
-            <button
-              onClick={() => setAutoRotate((s) => !s)}
-              className={cn(
-                'h-9 w-9 inline-flex items-center justify-center rounded-full border transition-colors',
-                autoRotate
-                  ? 'bg-ink text-snow border-ink'
-                  : 'bg-snow/90 text-ink border-silver-mist hover:bg-snow',
-              )}
-              style={{ backdropFilter: 'blur(20px)' }}
-              title="Auto-rotar"
-            >
-              <RotateCcw className={cn('h-4 w-4', autoRotate && 'animate-spin')} strokeWidth={1.6} style={{ animationDuration: '4s' }} />
-            </button>
-            <button
-              onClick={() => setImmersive(true)}
-              className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-snow/90 text-ink border border-silver-mist hover:bg-snow transition-colors"
-              style={{ backdropFilter: 'blur(20px)' }}
-              title="Pantalla completa"
-            >
-              <Maximize2 className="h-4 w-4" strokeWidth={1.6} />
-            </button>
-          </div>
-        )}
 
         {/* Alerts indicator — very subtle, top left */}
         {!selectedPart && alerts.length > 0 && (

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plus, Map, List, Download, Route, Filter, X, Gauge, Clock, Fuel, Search,
+  Plus, Download, Route, Filter, X, Gauge, Clock, Fuel, Search,
 } from 'lucide-react';
 import { TripForm } from '../components/trips/TripForm';
 import { TripCard } from '../components/trips/TripCard';
@@ -238,18 +238,17 @@ export const TripsPage = () => {
         </div>
 
         {/* View toggle */}
-        <div className="flex bg-fog rounded-full p-1 shrink-0">
-          {([['list', List], ['map', Map]] as const).map(([v, Icon]) => (
+        <div className="flex bg-fog rounded-full p-1 gap-0.5 shrink-0">
+          {([['list', 'Lista'], ['map', 'Mapa']] as const).map(([v, label]) => (
             <button
               key={v}
               onClick={() => setView(v)}
               className={cn(
-                'h-8 w-8 inline-flex items-center justify-center rounded-full transition-colors',
+                'px-4 h-8 rounded-full font-text font-medium transition-colors text-sm',
                 view === v ? 'bg-snow text-ink' : 'text-graphite hover:text-ink',
               )}
-              aria-label={v === 'list' ? 'Vista lista' : 'Vista mapa'}
             >
-              <Icon className="h-4 w-4" strokeWidth={1.6} />
+              {label}
             </button>
           ))}
         </div>

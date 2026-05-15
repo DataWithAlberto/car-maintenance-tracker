@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Share2, UserPlus, Trash2, Check, X, Mail, Crown, Pencil, Eye } from 'lucide-react';
+import { Share2, UserPlus, Mail, Crown, Pencil, Eye } from 'lucide-react';
 import { ShareModal } from '../components/sharing/ShareModal';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -125,21 +125,20 @@ export const SharingPage = () => {
                   Invitación a vehículo como{' '}
                   <span className="text-cobalt-link font-medium capitalize">{inv.role}</span>
                 </p>
-                <div className="flex gap-1.5">
+                <div className="flex gap-3">
                   <button
                     onClick={() => handleRespond(inv.id, true)}
-                    className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-snow border border-silver-mist hover:bg-fog text-ink transition-colors"
-                    style={{ color: '#1a9e3f' }}
-                    aria-label="Aceptar"
+                    className="font-text font-medium transition-colors"
+                    style={{ fontSize: 14, color: '#1a9e3f' }}
                   >
-                    <Check className="h-4 w-4" strokeWidth={1.8} />
+                    Aceptar
                   </button>
                   <button
                     onClick={() => handleRespond(inv.id, false)}
-                    className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-snow border border-silver-mist hover:bg-fog text-graphite transition-colors"
-                    aria-label="Rechazar"
+                    className="font-text text-graphite hover:text-ink transition-colors"
+                    style={{ fontSize: 14 }}
                   >
-                    <X className="h-4 w-4" strokeWidth={1.6} />
+                    Rechazar
                   </button>
                 </div>
               </div>
@@ -227,13 +226,10 @@ export const SharingPage = () => {
                   {isOwner && (
                     <button
                       onClick={() => handleRemove(acc.id)}
-                      className={cn(
-                        'h-8 w-8 inline-flex items-center justify-center rounded-full',
-                        'text-graphite hover:text-caution hover:bg-fog transition-colors',
-                      )}
-                      aria-label="Revocar acceso"
+                      className="font-text text-graphite hover:text-caution transition-colors shrink-0"
+                      style={{ fontSize: 13 }}
                     >
-                      <Trash2 className="h-4 w-4" strokeWidth={1.6} />
+                      Revocar
                     </button>
                   )}
                 </li>

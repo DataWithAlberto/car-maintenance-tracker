@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, BarChart2, List, Receipt, Calendar } from 'lucide-react';
+import { Plus, Receipt, Calendar } from 'lucide-react';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
 import { ExpenseChart } from '../components/expenses/ExpenseChart';
 import { Button } from '../components/ui/Button';
@@ -89,18 +89,17 @@ export const ExpensesPage = () => {
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex bg-fog rounded-full p-1">
-            {([['list', List], ['chart', BarChart2]] as const).map(([v, Icon]) => (
+          <div className="flex bg-fog rounded-full p-1 gap-0.5">
+            {([['list', 'Lista'], ['chart', 'Gráfica']] as const).map(([v, label]) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
                 className={cn(
-                  'h-8 w-8 inline-flex items-center justify-center rounded-full transition-colors',
+                  'px-4 h-8 rounded-full font-text font-medium transition-colors text-sm',
                   view === v ? 'bg-snow text-ink' : 'text-graphite hover:text-ink',
                 )}
-                aria-label={v === 'list' ? 'Vista lista' : 'Vista gráfica'}
               >
-                <Icon className="h-4 w-4" strokeWidth={1.6} />
+                {label}
               </button>
             ))}
           </div>
@@ -166,10 +165,10 @@ export const ExpensesPage = () => {
               </div>
               <button
                 onClick={() => handleDelete(e.id)}
-                className="h-8 w-8 inline-flex items-center justify-center rounded-full text-graphite hover:text-caution hover:bg-fog transition-colors"
-                aria-label="Eliminar gasto"
+                className="font-text text-graphite hover:text-caution transition-colors shrink-0"
+                style={{ fontSize: 13 }}
               >
-                <Trash2 className="h-4 w-4" strokeWidth={1.6} />
+                Eliminar
               </button>
             </li>
           ))}
