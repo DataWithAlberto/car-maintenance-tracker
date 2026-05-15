@@ -182,16 +182,13 @@ export const CarPage = () => {
         )}
       </div>
 
-      {/* ── Part info — portal to body so parent transform doesn't break fixed positioning ── */}
       {selectedPart && createPortal(
-        <div className="fixed inset-0 z-50">
-          <PartInfoOverlay
-            partKey={selectedPart}
-            records={records}
-            onClose={() => setSelectedPart(null)}
-            onAddMaintenance={handleAddMaintenance}
-          />
-        </div>,
+        <PartInfoOverlay
+          partKey={selectedPart}
+          records={records}
+          onClose={() => setSelectedPart(null)}
+          onAddMaintenance={handleAddMaintenance}
+        />,
         document.body,
       )}
 

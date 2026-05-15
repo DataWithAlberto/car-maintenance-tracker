@@ -28,7 +28,7 @@ export const PartInfoOverlay = ({ partKey, records, onClose, onAddMaintenance }:
       />
 
       <aside
-        className="absolute md:right-4 md:top-4 md:bottom-4 md:w-80 inset-x-0 bottom-0 md:inset-auto top-auto max-h-[75vh] md:max-h-none bg-cloud-white border border-sky-blueprint/25 md:rounded-card rounded-t-3xl flex flex-col overflow-hidden shadow-card z-40"
+        className="fixed right-0 top-0 bottom-0 w-80 md:right-4 md:top-4 md:bottom-4 md:rounded-card bg-cloud-white border-l md:border border-sky-blueprint/25 rounded-none flex flex-col overflow-hidden shadow-card z-50"
         style={{ animation: 'slide-in-right 0.3s var(--ease-out-expo)' }}
       >
         <header className="flex items-center justify-between p-5 border-b border-sky-blueprint/20">
