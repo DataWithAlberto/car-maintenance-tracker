@@ -1,4 +1,4 @@
-import { X, PlusCircle, Wrench, Calendar, Receipt, ChevronRight } from 'lucide-react';
+import { X, ChevronRight, Calendar, Receipt } from 'lucide-react';
 import { CAR_PARTS } from '../../utils/constants';
 import type { MaintenanceRecord } from '../../types';
 import { formatDate, formatCurrency } from '../../utils/formatters';
@@ -22,13 +22,12 @@ export const PartInfoOverlay = ({ partKey, records, onClose, onAddMaintenance }:
     <>
       {/* Mobile backdrop */}
       <div
-        className="md:hidden fixed inset-0 bg-black/50 z-30"
+        className="md:hidden fixed inset-0 bg-black/30 z-30"
         onClick={onClose}
-        style={{ animation: 'fade-in 0.2s ease-out' }}
       />
 
       <aside
-        className="bg-cloud-white border border-sky-blueprint/25 flex flex-col shadow-card"
+        className="bg-snow border border-silver-mist flex flex-col"
         style={{
           position: 'fixed',
           right: 16,
@@ -38,62 +37,74 @@ export const PartInfoOverlay = ({ partKey, records, onClose, onAddMaintenance }:
           borderRadius: 20,
           overflow: 'hidden',
           zIndex: 9999,
-          animation: 'slide-in-right 0.3s var(--ease-out-expo)',
+          animation: 'slide-in-right 0.25s ease-out',
         }}
       >
-        <header className="flex items-center justify-between p-5 border-b border-sky-blueprint/20">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-input bg-gradient-to-br from-sky-blueprint/20 to-sunset-orange/10 border border-sky-blueprint/30 flex items-center justify-center">
-              <Wrench className="h-5 w-5 text-sky-dark" strokeWidth={2} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="font-manrope text-body text-ink-black font-semibold tracking-tight truncate">{part.label}</h3>
-              <p className="font-manrope text-caption text-ink-charcoal/70">{relevantRecords.length} {relevantRecords.length === 1 ? 'registro' : 'registros'}</p>
-            </div>
+        {/* Header */}
+        <header className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-silver-mist">
+          <div className="min-w-0 pr-3">
+            <span className="eyebrow">Componente</span>
+            <h3
+              className="text-ink mt-1"
+              style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 22, lineHeight: 1.1, letterSpacing: '-0.4px' }}
+            >
+              {part.label}
+            </h3>
+            <p className="font-text text-graphite mt-1" style={{ fontSize: 13 }}>
+              {relevantRecords.length} {relevantRecords.length === 1 ? 'registro' : 'registros'}
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-lg text-ink-charcoal hover:text-ink-black hover:bg-canvas-50 transition-colors"
+            className="shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-full bg-fog hover:bg-silver-mist transition-colors text-ink"
             aria-label="Cerrar"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" strokeWidth={1.8} />
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          {/* History */}
-          <section>
-            <div className="flex items-center gap-2 mb-2.5">
-              <Calendar className="h-3.5 w-3.5 text-ink-charcoal" />
-              <h4 className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold">Historial reciente</h4>
-            </div>
+        <div className="flex-1 overflow-y-auto">
+          {/* Historial */}
+          <section className="px-5 pt-5 pb-4">
+            <h4
+              className="font-mono uppercase text-graphite mb-3 flex items-center gap-1.5"
+              style={{ fontSize: 11, letterSpacing: '0.14em' }}
+            >
+              <Calendar className="h-3 w-3" strokeWidth={1.6} />
+              Historial reciente
+            </h4>
+
             {relevantRecords.length === 0 ? (
-              <div className="bg-canvas-50/40 border border-dashed border-sky-blueprint/25 rounded-input p-4 text-center">
-                <p className="font-manrope text-caption text-ink-charcoal/70">Sin registros para esta parte</p>
+              <div className="bg-fog border border-silver-mist rounded-[14px] p-4 text-center">
+                <p className="font-text text-graphite" style={{ fontSize: 14 }}>
+                  Sin registros para esta parte
+                </p>
               </div>
             ) : (
               <ul className="space-y-2">
                 {relevantRecords.map((r) => (
                   <li
                     key={r.id}
-                    className="bg-canvas-50/60 border border-sky-blueprint/20 rounded-input p-3 hover:border-sky-blueprint/40 transition-colors"
+                    className="bg-fog border border-silver-mist rounded-[14px] p-3"
                   >
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="font-manrope text-body text-ink-black font-medium leading-tight">{r.type}</span>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-text text-ink font-medium leading-tight" style={{ fontSize: 14 }}>
+                        {r.type}
+                      </span>
                       {r.cost ? (
-                        <span className="shrink-0 inline-flex items-center gap-1 text-sunset-orange font-manrope text-caption font-semibold tabular-nums">
-                          <Receipt className="h-3 w-3" />
+                        <span className="shrink-0 inline-flex items-center gap-1 font-text text-graphite tabular-nums" style={{ fontSize: 13 }}>
+                          <Receipt className="h-3 w-3" strokeWidth={1.6} />
                           {formatCurrency(r.cost)}
                         </span>
                       ) : null}
                     </div>
-                    <div className="flex items-center gap-1.5 font-manrope text-caption text-ink-charcoal/70 mt-1.5">
-                      <span>{formatDate(r.date)}</span>
-                      <span className="opacity-50">·</span>
-                      <span className="tabular-nums">{r.km_at_service.toLocaleString()} km</span>
-                    </div>
+                    <p className="font-text text-graphite mt-1 tabular-nums" style={{ fontSize: 12 }}>
+                      {formatDate(r.date)} · {r.km_at_service.toLocaleString()} km
+                    </p>
                     {r.description && (
-                      <p className="font-manrope text-caption text-ink-charcoal/70 mt-1.5 line-clamp-2 leading-snug">{r.description}</p>
+                      <p className="font-text text-graphite mt-1 line-clamp-2" style={{ fontSize: 12 }}>
+                        {r.description}
+                      </p>
                     )}
                   </li>
                 ))}
@@ -101,26 +112,25 @@ export const PartInfoOverlay = ({ partKey, records, onClose, onAddMaintenance }:
             )}
           </section>
 
-          {/* Quick add */}
-          <section>
-            <div className="flex items-center gap-2 mb-2.5">
-              <PlusCircle className="h-3.5 w-3.5 text-ink-charcoal" />
-              <h4 className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold">Acción rápida</h4>
-            </div>
+          {/* Acciones */}
+          <section className="px-5 pb-5 border-t border-silver-mist pt-4">
+            <h4
+              className="font-mono uppercase text-graphite mb-3"
+              style={{ fontSize: 11, letterSpacing: '0.14em' }}
+            >
+              Añadir registro
+            </h4>
             <div className="space-y-1">
               {part.maintenanceTypes.map((type) => (
                 <button
                   key={type}
                   onClick={() => onAddMaintenance(type)}
-                  className="group w-full flex items-center justify-between text-left font-manrope text-body text-ink-black hover:text-ink-black hover:bg-sky-blueprint/10 rounded-input px-3 py-2.5 transition-all border border-transparent hover:border-sky-blueprint/30"
+                  className="w-full flex items-center justify-between text-left px-4 py-3 rounded-[14px] bg-fog border border-silver-mist hover:bg-silver-mist transition-colors group"
                 >
-                  <span className="flex items-center gap-2.5">
-                    <span className="h-7 w-7 rounded-input bg-canvas-50 group-hover:bg-sky-blueprint/15 flex items-center justify-center transition-colors">
-                      <PlusCircle className="h-3.5 w-3.5 text-sky-dark" />
-                    </span>
+                  <span className="font-text text-ink font-medium" style={{ fontSize: 14 }}>
                     {type}
                   </span>
-                  <ChevronRight className="h-4 w-4 text-ink-charcoal/80 group-hover:text-sky-dark group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight className="h-4 w-4 text-graphite group-hover:text-ink transition-colors" strokeWidth={1.6} />
                 </button>
               ))}
             </div>
