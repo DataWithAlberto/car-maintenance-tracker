@@ -71,7 +71,7 @@ export const SharingPage = () => {
   const isOwner = selectedVehicle.role === 'owner';
 
   return (
-    <div className="px-6 sm:px-10 py-10 max-w-4xl mx-auto">
+    <div className="px-6 sm:px-10 py-10">
       <header className="flex items-end justify-between mb-10 gap-6 flex-wrap">
         <div>
           <span className="eyebrow">

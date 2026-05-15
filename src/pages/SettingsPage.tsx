@@ -19,7 +19,7 @@ export const SettingsPage = () => {
 
   if (!selectedVehicle) {
     return (
-      <div className="px-6 sm:px-10 py-16 max-w-xl mx-auto">
+      <div className="px-6 sm:px-10 py-16">
         <EmptyState
           icon={Car}
           title="Selecciona un vehículo"
@@ -54,7 +54,7 @@ export const SettingsPage = () => {
   };
 
   return (
-    <div className="px-6 sm:px-10 py-10 max-w-3xl mx-auto space-y-8">
+    <div className="px-6 sm:px-10 py-10 space-y-8">
       <header>
         <span className="eyebrow">
           {selectedVehicle.brand} {selectedVehicle.model}

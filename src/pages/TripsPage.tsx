@@ -107,7 +107,7 @@ export const TripsPage = () => {
   const selectedTrip = trips.find((t) => t.id === selectedId) ?? null;
 
   return (
-    <div className="px-6 sm:px-10 py-10 max-w-6xl mx-auto">
+    <div className="px-6 sm:px-10 py-10">
       {/* Header */}
       <header className="flex items-end justify-between mb-10 gap-6 flex-wrap">
         <div>

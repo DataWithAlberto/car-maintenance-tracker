@@ -58,7 +58,7 @@ export const ExpensesPage = () => {
     .reduce((s, e) => s + e.amount, 0);
 
   return (
-    <div className="px-6 sm:px-10 py-10 max-w-5xl mx-auto">
+    <div className="px-6 sm:px-10 py-10">
       <header className="flex items-end justify-between mb-10 gap-6 flex-wrap">
         <div>
           <span className="eyebrow">
