@@ -73,7 +73,6 @@ export const CarPage = () => {
 
   const handlePartClick = (partKey: string) => {
     setSelectedPart(partKey);
-    setAutoRotate(false);
   };
 
   const handleAddMaintenance = (type: string) => {
