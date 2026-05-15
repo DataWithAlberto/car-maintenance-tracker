@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
 import {
   LayoutGrid, Wrench, Receipt, FileText, Route, Share2, Settings,
 } from 'lucide-react';
@@ -9,26 +8,6 @@ import { PageTransition } from '../ui/PageTransition';
 import { useVehicleStore } from '../../store/vehicleStore';
 import { useAuthStore } from '../../store/authStore';
 import { useVehicle } from '../../hooks/useVehicle';
-
-const TOASTER = (
-  <Toaster
-    position="top-right"
-    toastOptions={{
-      style: {
-        background: '#0f1013',
-        color: '#d4d4d8',
-        border: '1px solid #242629',
-        borderRadius: '8px',
-        fontSize: '13px',
-        fontFamily: 'var(--font-mono)',
-        padding: '10px 14px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-      },
-      success: { iconTheme: { primary: '#10b981', secondary: '#0f1013' } },
-      error:   { iconTheme: { primary: '#ef4444', secondary: '#0f1013' } },
-    }}
-  />
-);
 
 export const Layout = () => {
   const location = useLocation();
@@ -88,7 +67,6 @@ export const Layout = () => {
             <Outlet />
           </PageTransition>
         </main>
-        {TOASTER}
       </div>
     );
   }
@@ -115,7 +93,6 @@ export const Layout = () => {
           <Outlet />
         </PageTransition>
       </main>
-      {TOASTER}
     </div>
   );
 };

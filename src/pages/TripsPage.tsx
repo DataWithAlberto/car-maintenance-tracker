@@ -48,8 +48,6 @@ export const TripsPage = () => {
     fetchTrips();
   }, [selectedVehicle?.id]);
 
-  if (!selectedVehicle || !user) return null;
-
   // ── Filtered list ────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let list = trips;
@@ -81,6 +79,8 @@ export const TripsPage = () => {
     totalTime: trips.reduce((s, t) => s + (t.driving_time_minutes ?? 0), 0),
     totalFuel: trips.reduce((s, t) => s + (t.fuel_consumed ?? 0), 0),
   }), [trips]);
+
+  if (!selectedVehicle || !user) return null;
 
   const handleCreate = async (data: CreateTripInput) => {
     await createTrip(user.id, data);

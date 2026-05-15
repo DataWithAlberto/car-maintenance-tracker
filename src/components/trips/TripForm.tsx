@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { MapPin, Navigation, Calendar, Gauge, Fuel, Wind, Thermometer, Music, StickyNote, Loader2, LocateFixed, Clock } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { MapPin, Navigation, Calendar, Gauge, Wind, Thermometer, Music, StickyNote, Loader2, LocateFixed, Clock } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { FloatingInput } from '../ui/FloatingInput';
 import { Button } from '../ui/Button';
@@ -56,25 +56,25 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
     setWeatherLoading(false);
   };
 
+  // Derived: driving time from the two datetimes (no effect / no extra state).
+  const drivingTimeMinutes = useMemo(() => {
+    if (form.start_datetime && form.end_datetime) {
+      const diff = (new Date(form.end_datetime).getTime() - new Date(form.start_datetime).getTime()) / 60000;
+      if (diff > 0) return Math.round(diff);
+    }
+    return undefined;
+  }, [form.start_datetime, form.end_datetime]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await onSubmit(form);
+      await onSubmit({ ...form, driving_time_minutes: drivingTimeMinutes });
       onClose();
     } finally {
       setLoading(false);
     }
   };
-
-  // Auto-calculate driving time when both datetimes are set
-  useEffect(() => {
-    if (form.start_datetime && form.end_datetime) {
-      const diff = (new Date(form.end_datetime).getTime() - new Date(form.start_datetime).getTime()) / 60000;
-      if (diff > 0) set('driving_time_minutes', Math.round(diff));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.start_datetime, form.end_datetime]);
 
   // Auto-calculate total km
   const totalKm = form.end_km != null && form.end_km > form.start_km
@@ -159,10 +159,10 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
               onChange={(e) => set('end_datetime', e.target.value || undefined)}
             />
           </div>
-          {form.driving_time_minutes != null && (
+          {drivingTimeMinutes != null && (
             <p className="font-manrope text-caption text-sky-dark flex items-center gap-1.5">
               <Clock className="h-3 w-3" />
-              Tiempo de conducción: {Math.floor(form.driving_time_minutes / 60)}h {form.driving_time_minutes % 60}min
+              Tiempo de conducción: {Math.floor(drivingTimeMinutes / 60)}h {drivingTimeMinutes % 60}min
             </p>
           )}
         </div>

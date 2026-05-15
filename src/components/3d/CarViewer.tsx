@@ -1,4 +1,4 @@
-import { Suspense, useRef, useState, useEffect } from 'react';
+import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
@@ -126,7 +126,8 @@ const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
   // We also add a runtime guard via useEffect.
   const { scene } = useGLTF(url);
   const [hovered, setHovered] = useState<string | null>(null);
-  const cloned = useRef<THREE.Group>(scene.clone(true));
+  // Clone once per loaded scene — never during every render.
+  const cloned = useMemo(() => scene.clone(true), [scene]);
 
   useEffect(() => {
     if (!scene) {
@@ -161,14 +162,14 @@ const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
   return (
     <Center>
       <primitive
-        object={cloned.current}
+        object={cloned}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
         onClick={handleClick}
       />
       {hovered && CAR_PARTS[hovered] && (
         <Html position={[0, 2, 0]} center>
-          <div className="bg-cloud-white border border-sky-blueprint/40 shadow-card font-manrope text-caption text-ink-black px-3 py-1.5 rounded-card whitespace-nowrap pointer-events-none">
+          <div className="bg-snow border border-silver-mist font-text font-medium text-ink px-3 py-1.5 rounded-full whitespace-nowrap pointer-events-none" style={{ fontSize: 13 }}>
             {CAR_PARTS[hovered].label}
           </div>
         </Html>
@@ -235,7 +236,7 @@ const ProceduralCar = ({ onPartClick }: { onPartClick: (info: PartClickInfo) => 
           />
           {hovered === key && (
             <Html distanceFactor={8} position={[0, (size[1] / 2) + 0.3, 0]}>
-              <div className="bg-cloud-white font-manrope text-caption text-ink-black px-2 py-1 rounded-card border border-sky-blueprint/40 shadow-subtle whitespace-nowrap pointer-events-none">
+              <div className="bg-snow font-text font-medium text-ink px-2 py-1 rounded-full border border-silver-mist whitespace-nowrap pointer-events-none" style={{ fontSize: 13 }}>
                 {CAR_PARTS[key]?.label}
               </div>
             </Html>
@@ -332,14 +333,14 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
       </Canvas>
 
       {selectedPart && (
-        <div className="absolute top-4 left-4 bg-cloud-white border border-sky-blueprint/25 text-sky-dark font-manrope text-caption px-3 py-1.5 rounded-card shadow-subtle">
+        <div className="absolute top-4 left-4 bg-snow border border-silver-mist text-ink font-text font-medium px-3 py-1.5 rounded-full" style={{ fontSize: 13 }}>
           {CAR_PARTS[selectedPart]?.label ?? selectedPart}
         </div>
       )}
 
       {loadError && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-sunset-orange/10 border border-sunset-orange/30 text-sunset-orange font-manrope text-caption px-4 py-2 rounded-card">
-          <span className="h-1.5 w-1.5 rounded-full bg-warn-400" />
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-snow border border-silver-mist font-text px-4 py-2 rounded-full" style={{ fontSize: 13, color: '#b64400' }}>
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#b64400' }} />
           Usando modelo procedural — GLTF no disponible
         </div>
       )}

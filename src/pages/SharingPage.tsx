@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Share2, UserPlus, Mail, Crown, Pencil, Eye } from 'lucide-react';
 import { ShareModal } from '../components/sharing/ShareModal';
@@ -9,7 +9,6 @@ import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import { sharingService } from '../services/sharing.service';
 import type { SharedAccess } from '../types';
-import { cn } from '../utils/cn';
 import toast from 'react-hot-toast';
 
 const roleConfig = {
@@ -34,24 +33,24 @@ export const SharingPage = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
-    if (!selectedVehicle || !user) { navigate('/dashboard'); return; }
-    load();
-    loadInvites();
-  }, [selectedVehicle?.id]);
-
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!selectedVehicle) return;
     setLoading(true);
     sharingService.getByVehicle(selectedVehicle.id)
       .then(setAccesses)
       .finally(() => setLoading(false));
-  };
+  }, [selectedVehicle]);
 
-  const loadInvites = async () => {
+  const loadInvites = useCallback(async () => {
     if (!user) return;
     sharingService.getPendingInvites(user.id).then(setPendingInvites);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!selectedVehicle || !user) { navigate('/dashboard'); return; }
+    load();
+    loadInvites();
+  }, [selectedVehicle?.id]);
 
   const handleRemove = async (id: string) => {
     if (!confirm('¿Revocar acceso?')) return;

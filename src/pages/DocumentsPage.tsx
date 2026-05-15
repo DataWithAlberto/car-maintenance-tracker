@@ -11,7 +11,6 @@ import { documentsService } from '../services/documents.service';
 import type { Document } from '../types';
 import { formatDate } from '../utils/formatters';
 import { isBefore, parseISO, addDays } from 'date-fns';
-import { cn } from '../utils/cn';
 import toast from 'react-hot-toast';
 
 export const DocumentsPage = () => {

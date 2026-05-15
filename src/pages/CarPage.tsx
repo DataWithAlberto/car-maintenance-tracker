@@ -12,7 +12,6 @@ import { useVehicle } from '../hooks/useVehicle';
 import { calculateAlerts } from '../utils/calculations';
 import { formatKm } from '../utils/formatters';
 import { CAR_PARTS } from '../utils/constants';
-import { cn } from '../utils/cn';
 import toast from 'react-hot-toast';
 
 export const CarPage = () => {
@@ -24,8 +23,6 @@ export const CarPage = () => {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
   const [prefilledType, setPrefilledType] = useState('');
-
-  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!selectedVehicle) {
@@ -44,16 +41,15 @@ export const CarPage = () => {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  if (!selectedVehicle) return null;
-
   const alerts = useMemo(
-    () => calculateAlerts(selectedVehicle, records).filter((a) => !dismissedAlerts.has(a.id)),
-    [selectedVehicle, records, dismissedAlerts],
+    () => (selectedVehicle ? calculateAlerts(selectedVehicle, records) : []),
+    [selectedVehicle, records],
   );
 
   // Map part keys → severity (highest)
   const partSeverityMap = useMemo(() => {
     const map: Record<string, 'high' | 'medium' | 'low'> = {};
+    if (!selectedVehicle) return map;
     Object.keys(CAR_PARTS).forEach((partKey) => {
       const part = CAR_PARTS[partKey];
       const partAlerts = records
@@ -71,6 +67,8 @@ export const CarPage = () => {
     });
     return map;
   }, [records, selectedVehicle]);
+
+  if (!selectedVehicle) return null;
 
   const handlePartClick = (partKey: string) => {
     setSelectedPart(partKey);
