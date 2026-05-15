@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Plus, AlertTriangle, Gauge } from 'lucide-react';
 const CarViewer = lazy(() => import('../components/3d/CarViewer').then(m => ({ default: m.CarViewer })));
@@ -181,16 +182,17 @@ export const CarPage = () => {
         )}
       </div>
 
-      {/* ── Part info as full modal overlay (uses fixed positioning context) ── */}
-      {selectedPart && (
-        <div className="fixed inset-0 z-40">
+      {/* ── Part info — portal to body so parent transform doesn't break fixed positioning ── */}
+      {selectedPart && createPortal(
+        <div className="fixed inset-0 z-50">
           <PartInfoOverlay
             partKey={selectedPart}
             records={records}
             onClose={() => setSelectedPart(null)}
             onAddMaintenance={handleAddMaintenance}
           />
-        </div>
+        </div>,
+        document.body,
       )}
 
       {showMaintenanceForm && (
