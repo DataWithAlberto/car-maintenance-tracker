@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Car, Wrench, Sparkles, MapPin, Phone, Globe, Navigation, AlertTriangle, KeyRound,
+  ChevronRight,
 } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { useMechanicsStore } from '../store/mechanicsStore';
+import { useMechanicRatingsStore } from '../store/mechanicRatingsStore';
 import { maintenanceService } from '../services/maintenance.service';
 import { mechanicsService } from '../services/mechanics.service';
 import { claudeService } from '../services/claude.service';
@@ -12,7 +15,7 @@ import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FloatingTextarea } from '../components/ui/FloatingInput';
 import { MechanicsMap } from '../components/mechanics/MechanicsMap';
-import type { Mechanic, Diagnosis, AlertSeverity } from '../types';
+import type { Mechanic, AlertSeverity } from '../types';
 import toast from 'react-hot-toast';
 
 const URGENCY: Record<AlertSeverity, { label: string; bg: string; fg: string }> = {
@@ -24,15 +27,15 @@ const URGENCY: Record<AlertSeverity, { label: string; bg: string; fg: string }> 
 export const MechanicsPage = () => {
   const { selectedVehicle } = useVehicleStore();
   const { anthropicApiKey } = useSettingsStore();
+  const {
+    symptom, origin, mechanics, diagnosis, selectedId,
+    setSymptom, setSearchResult, setSelectedId,
+  } = useMechanicsStore();
+  const { ratings } = useMechanicRatingsStore();
   const navigate = useNavigate();
 
-  const [symptom, setSymptom] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
-  const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(null);
-  const [mechanics, setMechanics] = useState<Mechanic[]>([]);
-  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
 
   if (!selectedVehicle) {
     return (
@@ -54,6 +57,11 @@ export const MechanicsPage = () => {
   const recommendedIds = diagnosis?.recommendations.map((r) => r.mechanicId) ?? [];
   const mechanicById = (id: string) => mechanics.find((m) => m.id === id);
 
+  const openDetail = (id: string) => {
+    setSelectedId(id);
+    navigate('/mechanics/detail');
+  };
+
   const handleDiagnose = async () => {
     if (!anthropicApiKey) {
       toast.error('Configura tu API key de Claude en Ajustes');
@@ -65,17 +73,16 @@ export const MechanicsPage = () => {
     }
 
     setLoading(true);
-    setDiagnosis(null);
+    setSearchResult({ origin: null, mechanics: [], diagnosis: null });
     setSelectedId(undefined);
     try {
       setStatusMsg('Obteniendo tu ubicación…');
       const loc = await mechanicsService.getCurrentLocation();
-      setOrigin(loc);
 
       setStatusMsg('Buscando talleres cercanos…');
       const found = await mechanicsService.findNearby(loc.lat, loc.lng);
-      setMechanics(found);
       if (found.length === 0) {
+        setSearchResult({ origin: loc, mechanics: [], diagnosis: null });
         toast.error('No se encontraron talleres en 15 km a la redonda');
         return;
       }
@@ -91,7 +98,7 @@ export const MechanicsPage = () => {
         symptom: symptom.trim(),
         mechanics: found,
       });
-      setDiagnosis(result);
+      setSearchResult({ origin: loc, mechanics: found, diagnosis: result });
       toast.success('Diagnóstico listo');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Algo salió mal');
@@ -258,7 +265,7 @@ export const MechanicsPage = () => {
             mechanics={mechanics}
             recommendedIds={recommendedIds}
             selectedId={selectedId}
-            onMechanicClick={setSelectedId}
+            onMechanicClick={openDetail}
             style={{ minHeight: 360 }}
           />
 
@@ -274,12 +281,9 @@ export const MechanicsPage = () => {
                 return (
                   <button
                     key={rec.mechanicId}
-                    onClick={() => setSelectedId(m.id)}
+                    onClick={() => openDetail(m.id)}
                     className="w-full text-left rounded-[18px] p-4 transition-colors"
-                    style={{
-                      border: `1px solid ${selectedId === m.id ? '#b64400' : '#e8e8ed'}`,
-                      background: selectedId === m.id ? '#fce8e0' : '#ffffff',
-                    }}
+                    style={{ border: '1px solid #e8e8ed', background: '#ffffff' }}
                   >
                     <div className="flex items-start gap-3">
                       <span
@@ -301,6 +305,7 @@ export const MechanicsPage = () => {
                         </p>
                         <MechanicLinks mechanic={m} />
                       </div>
+                      <ChevronRight className="h-4 w-4 text-graphite shrink-0 mt-1" strokeWidth={1.7} />
                     </div>
                   </button>
                 );
@@ -316,12 +321,9 @@ export const MechanicsPage = () => {
             {mechanics.map((m) => (
               <button
                 key={m.id}
-                onClick={() => setSelectedId(m.id)}
-                className="w-full text-left rounded-[14px] px-4 py-3 transition-colors"
-                style={{
-                  border: `1px solid ${selectedId === m.id ? '#b64400' : '#e8e8ed'}`,
-                  background: selectedId === m.id ? '#fce8e0' : '#f5f5f7',
-                }}
+                onClick={() => openDetail(m.id)}
+                className="w-full text-left rounded-[14px] px-4 py-3 transition-colors hover:bg-fog"
+                style={{ border: '1px solid #e8e8ed', background: '#f5f5f7' }}
               >
                 <div className="flex items-center gap-3">
                   <Wrench className="h-4 w-4 text-graphite shrink-0" strokeWidth={1.6} />
@@ -335,9 +337,17 @@ export const MechanicsPage = () => {
                       </p>
                     )}
                   </div>
-                  <span className="font-text text-graphite tabular-nums shrink-0" style={{ fontSize: 13 }}>
-                    {m.distanceKm.toFixed(1)} km
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {ratings[m.id]?.rating > 0 && (
+                      <span className="inline-flex items-center gap-0.5" style={{ color: '#f5a623' }}>
+                        {'★'.repeat(ratings[m.id].rating)}
+                      </span>
+                    )}
+                    <span className="font-text text-graphite tabular-nums" style={{ fontSize: 13 }}>
+                      {m.distanceKm.toFixed(1)} km
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-graphite" strokeWidth={1.7} />
+                  </div>
                 </div>
               </button>
             ))}

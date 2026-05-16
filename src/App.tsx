@@ -14,6 +14,7 @@ import { SharingPage } from './pages/SharingPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TripsPage } from './pages/TripsPage';
 import { MechanicsPage } from './pages/MechanicsPage';
+import { MechanicDetailPage } from './pages/MechanicDetailPage';
 import { InvitePage } from './pages/InvitePage';
 import { authService } from './services/auth.service';
 import { useAuthStore } from './store/authStore';
@@ -63,6 +64,7 @@ function App() {
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="trips" element={<TripsPage />} />
           <Route path="mechanics" element={<MechanicsPage />} />
+          <Route path="mechanics/detail" element={<MechanicDetailPage />} />
           <Route path="sharing" element={<SharingPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
