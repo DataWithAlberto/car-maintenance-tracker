@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Wrench, Trash2, ChevronRight, Calendar, Gauge, Receipt } from 'lucide-react';
 import type { MaintenanceRecord } from '../../types';
 import { formatDate, formatCurrency, formatKm } from '../../utils/formatters';
@@ -23,14 +24,16 @@ export const MaintenanceList = ({ records, onDelete, onSelect }: Props) => {
 
   return (
     <ul className="space-y-2">
-      {records.map((record) => (
+      {records.map((record, i) => (
         <li
           key={record.id}
           onClick={() => onSelect?.(record)}
           className={cn(
+            'stagger-item',
             'group bg-snow border border-silver-mist rounded-[14px] p-4',
             'flex items-center gap-4 transition-colors hover:bg-fog cursor-pointer',
           )}
+          style={{ '--i': Math.min(i, 10) } as CSSProperties}
         >
           <div className="shrink-0 h-11 w-11 rounded-[10px] bg-fog flex items-center justify-center">
             <Wrench className="h-5 w-5 text-ink" strokeWidth={1.6} />

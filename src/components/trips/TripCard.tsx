@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import {
   MapPin, Calendar, Gauge, Fuel, Clock, Thermometer,
   Share2, Trash2, ChevronRight, Music2, Wind,
@@ -12,6 +13,8 @@ interface TripCardProps {
   onClick: () => void;
   onDelete: () => void;
   onShare: () => void;
+  className?: string;
+  style?: CSSProperties;
 }
 
 const weatherIcon: Record<string, string> = {
@@ -26,7 +29,7 @@ const formatDrivingTime = (minutes: number) => {
   return h > 0 ? `${h}h ${m}min` : `${m}min`;
 };
 
-export const TripCard = ({ trip, selected, onClick, onDelete, onShare }: TripCardProps) => {
+export const TripCard = ({ trip, selected, onClick, onDelete, onShare, className, style }: TripCardProps) => {
   const hasCoords =
     trip.start_lat != null || trip.end_lat != null || (trip.waypoints?.length ?? 0) > 0;
 
@@ -37,7 +40,9 @@ export const TripCard = ({ trip, selected, onClick, onDelete, onShare }: TripCar
         selected
           ? 'border-2 border-ink'
           : 'border border-silver-mist hover:bg-fog',
+        className,
       )}
+      style={style}
       onClick={onClick}
     >
       {/* Header */}

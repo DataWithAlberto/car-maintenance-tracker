@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, FileText, Star } from 'lucide-react';
 import { DocumentUpload } from '../components/documents/DocumentUpload';
@@ -100,13 +100,14 @@ export const DocumentsPage = () => {
         />
       ) : (
         <ul className="space-y-2">
-          {docs.map((doc) => {
+          {docs.map((doc, i) => {
             const expired = isExpired(doc.expiry_date);
             const soon = !expired && isExpiringSoon(doc.expiry_date);
             return (
               <li
                 key={doc.id}
-                className="group bg-snow border border-silver-mist rounded-[14px] p-4 flex items-center gap-4 transition-colors hover:bg-fog"
+                className="stagger-item group bg-snow border border-silver-mist rounded-[14px] p-4 flex items-center gap-4 transition-colors hover:bg-fog"
+                style={{ '--i': Math.min(i, 10) } as CSSProperties}
               >
                 <div className="shrink-0 h-11 w-11 rounded-[10px] bg-fog flex items-center justify-center">
                   <FileText className="h-5 w-5 text-ink" strokeWidth={1.6} />

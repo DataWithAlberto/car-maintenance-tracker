@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, lazy, Suspense } from 'react';
+import { useEffect, useState, useMemo, lazy, Suspense, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Download, Route, Filter, X, Gauge, Clock, Fuel, Search,
@@ -330,7 +330,7 @@ export const TripsPage = () => {
         </div>
       ) : (
         <ul className="space-y-2">
-          {filtered.map((trip) => (
+          {filtered.map((trip, i) => (
             <TripCard
               key={trip.id}
               trip={trip}
@@ -338,6 +338,8 @@ export const TripsPage = () => {
               onClick={() => setSelectedId(trip.id === selectedId ? null : trip.id)}
               onDelete={() => handleDelete(trip.id)}
               onShare={() => handleShare(trip)}
+              className="stagger-item"
+              style={{ '--i': Math.min(i, 10) } as CSSProperties}
             />
           ))}
         </ul>

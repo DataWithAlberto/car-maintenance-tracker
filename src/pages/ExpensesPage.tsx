@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Receipt, Calendar } from 'lucide-react';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
@@ -151,11 +151,12 @@ export const ExpensesPage = () => {
         />
       ) : (
         <ul className="space-y-2">
-          {expenses.map((e) => (
+          {expenses.map((e, i) => (
             <li
               key={e.id}
               onClick={() => setEditing(e)}
-              className="group bg-snow border border-silver-mist rounded-[14px] p-4 flex items-center gap-4 transition-colors hover:bg-fog cursor-pointer"
+              className="stagger-item group bg-snow border border-silver-mist rounded-[14px] p-4 flex items-center gap-4 transition-colors hover:bg-fog cursor-pointer"
+              style={{ '--i': Math.min(i, 10) } as CSSProperties}
             >
               <div className="shrink-0 h-11 w-11 rounded-[10px] bg-fog flex items-center justify-center">
                 <Receipt className="h-5 w-5 text-ink" strokeWidth={1.6} />
