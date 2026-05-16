@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -43,10 +44,10 @@ export const Modal = ({
   }, [open, onClose]);
 
   if (!open) return null;
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
-      style={{ animation: 'fade-in 0.2s ease-out' }}
+      className="flex items-end sm:items-center justify-center p-0 sm:p-6"
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, animation: 'fade-in 0.2s ease-out' }}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -123,6 +124,7 @@ export const Modal = ({
           <div className="p-7 border-t border-silver-mist">{footer}</div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
