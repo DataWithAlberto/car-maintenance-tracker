@@ -137,14 +137,16 @@ export const TripsPage = () => {
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex bg-fog rounded-full p-1 gap-0.5">
+          <div className="flex bg-silver-mist/60 rounded-full p-1 gap-0.5 select-none">
             {([['list', 'Lista'], ['map', 'Mapa']] as const).map(([v, label]) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
                 className={cn(
-                  'px-4 h-8 rounded-full font-text font-medium transition-colors text-sm',
-                  view === v ? 'bg-snow text-ink' : 'text-graphite hover:text-ink',
+                  'focus-ring px-4 h-8 rounded-full font-text font-medium transition-all duration-200 text-sm',
+                  view === v
+                    ? 'bg-snow text-ink shadow-[0_1px_3px_rgba(0,0,0,0.12)] border border-silver-mist/80'
+                    : 'text-graphite hover:text-ink hover:bg-snow/40',
                 )}
               >
                 {label}

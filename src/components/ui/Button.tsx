@@ -39,9 +39,9 @@ const variantStyles: Record<Variant, string> = {
 };
 
 const sizeStyles: Record<Size, string> = {
-  sm: 'h-8  px-4 text-body-sm gap-1.5 rounded-full',
-  md: 'h-10 px-5 text-body    gap-2   rounded-full',
-  lg: 'h-12 px-7 text-body    gap-2   rounded-full',
+  sm: 'h-8  px-4  text-body-sm gap-1.5 rounded-full',
+  md: 'h-10 px-5  text-body    gap-2   rounded-full',
+  lg: 'h-12 px-10 text-body    gap-2   rounded-full',
 };
 
 export const Button = ({

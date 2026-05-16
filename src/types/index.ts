@@ -147,6 +147,35 @@ export interface Trip {
   waypoints?: TripWaypoint[];
 }
 
+// ─── Mechanics (Talleres recomendados por IA) ───────────────────────────────
+
+export interface Mechanic {
+  id: string;            // OSM element id (e.g. "node/123")
+  name: string;
+  lat: number;
+  lng: number;
+  address?: string;
+  phone?: string;
+  website?: string;
+  brand?: string;        // marca en la que se especializa, si la hay
+  openingHours?: string;
+  distanceKm: number;    // distancia al punto de búsqueda
+}
+
+export interface MechanicRecommendation {
+  mechanicId: string;
+  reason: string;
+  urgency: AlertSeverity;
+}
+
+export interface Diagnosis {
+  summary: string;            // diagnóstico del problema
+  likelyCause: string;        // causa más probable
+  urgency: AlertSeverity;     // urgencia general
+  estimatedService: string;   // servicio que necesita el coche
+  recommendations: MechanicRecommendation[]; // talleres ordenados por idoneidad
+}
+
 export interface CreateTripInput {
   title?: string;
   start_location: string;
