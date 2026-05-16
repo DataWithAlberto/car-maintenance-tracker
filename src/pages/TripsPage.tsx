@@ -136,11 +136,25 @@ export const TripsPage = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex bg-fog rounded-full p-1 gap-0.5">
+            {([['list', 'Lista'], ['map', 'Mapa']] as const).map(([v, label]) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={cn(
+                  'px-4 h-8 rounded-full font-text font-medium transition-colors text-sm',
+                  view === v ? 'bg-snow text-ink' : 'text-graphite hover:text-ink',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <Button
             variant="secondary"
-            size="sm"
             onClick={handleExportCSV}
-            iconLeft={<Download className="h-3.5 w-3.5" strokeWidth={1.6} />}
+            iconLeft={<Download className="h-4 w-4" strokeWidth={1.6} />}
             disabled={trips.length === 0}
           >
             CSV
@@ -150,8 +164,7 @@ export const TripsPage = () => {
             onClick={() => setShowForm(true)}
             iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
           >
-            <span className="hidden sm:inline">Nuevo viaje</span>
-            <span className="sm:hidden">+</span>
+            Nuevo viaje
           </Button>
         </div>
       </header>
@@ -189,69 +202,55 @@ export const TripsPage = () => {
         </div>
       )}
 
-      {/* Controls */}
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[180px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-graphite" strokeWidth={1.6} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar viaje…"
-            className={cn(
-              'w-full pl-10 pr-9 h-10 rounded-full',
-              'bg-snow border border-silver-mist',
-              'font-text text-ink placeholder:text-graphite',
-              'focus:outline-none focus:border-azure transition-colors',
-            )}
-            style={{ fontSize: 14 }}
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-graphite hover:text-ink"
-              aria-label="Limpiar búsqueda"
-            >
-              <X className="h-3.5 w-3.5" strokeWidth={1.6} />
-            </button>
+      {/* Search */}
+      <div className="relative mb-3">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-graphite" strokeWidth={1.6} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar viaje…"
+          className={cn(
+            'w-full pl-11 pr-10 h-11 rounded-full',
+            'bg-snow border border-silver-mist',
+            'font-text text-ink placeholder:text-graphite',
+            'focus:outline-none focus:border-azure transition-colors',
           )}
-        </div>
+          style={{ fontSize: 14 }}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-graphite hover:text-ink transition-colors"
+            aria-label="Limpiar búsqueda"
+          >
+            <X className="h-4 w-4" strokeWidth={1.6} />
+          </button>
+        )}
+      </div>
 
-        {/* Filter chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-          <Filter className="h-3.5 w-3.5 text-graphite shrink-0" strokeWidth={1.6} />
-          {(Object.keys(filterLabel) as FilterType[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilterKm(f)}
-              className={cn(
-                'shrink-0 px-4 py-2 rounded-full font-text font-medium border transition-colors',
-                filterKm === f
-                  ? 'bg-ink text-snow border-ink'
-                  : 'bg-snow text-ink border-silver-mist hover:bg-fog',
-              )}
-              style={{ fontSize: 13 }}
-            >
-              {filterLabel[f]}
-            </button>
-          ))}
-        </div>
-
-        {/* View toggle */}
-        <div className="flex bg-fog rounded-full p-1 gap-0.5 shrink-0">
-          {([['list', 'Lista'], ['map', 'Mapa']] as const).map(([v, label]) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={cn(
-                'px-4 h-8 rounded-full font-text font-medium transition-colors text-sm',
-                view === v ? 'bg-snow text-ink' : 'text-graphite hover:text-ink',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+      {/* Filter chips */}
+      <div className="flex items-center gap-2 mb-8 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+        <span
+          className="shrink-0 inline-flex items-center gap-1.5 font-mono uppercase text-graphite"
+          style={{ fontSize: 11, letterSpacing: '0.12em' }}
+        >
+          <Filter className="h-3 w-3" strokeWidth={1.6} /> Filtros
+        </span>
+        {(Object.keys(filterLabel) as FilterType[]).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilterKm(f)}
+            className={cn(
+              'shrink-0 px-4 py-2 rounded-full font-text font-medium border transition-colors',
+              filterKm === f
+                ? 'bg-ink text-snow border-ink'
+                : 'bg-snow text-ink border-silver-mist hover:bg-fog',
+            )}
+            style={{ fontSize: 13 }}
+          >
+            {filterLabel[f]}
+          </button>
+        ))}
       </div>
 
       {/* Content */}
