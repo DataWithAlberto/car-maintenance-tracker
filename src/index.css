@@ -161,23 +161,25 @@
   --font-weight-bold:     700;
 
   /* ─── Spacing ─────────────────────────────────────────────────────────── */
-  --spacing-unit: 4px;
-  --spacing-4:    4px;
-  --spacing-8:    8px;
-  --spacing-12:   12px;
-  --spacing-16:   16px;
-  --spacing-20:   20px;
-  --spacing-24:   24px;
-  --spacing-28:   28px;
-  --spacing-32:   32px;
-  --spacing-40:   40px;
-  --spacing-44:   44px;
-  --spacing-48:   48px;
-  --spacing-52:   52px;
-  --spacing-76:   76px;
-  --spacing-80:   80px;
-  --spacing-120:  120px;
-  --spacing-144:  144px;
+  /* NOTE: Named --sp-N (not --spacing-N) to avoid overriding Tailwind v4's
+     generated h-N / w-N / p-N utilities which resolve to var(--spacing-N). */
+  --sp-unit: 4px;
+  --sp-4:    4px;
+  --sp-8:    8px;
+  --sp-12:   12px;
+  --sp-16:   16px;
+  --sp-20:   20px;
+  --sp-24:   24px;
+  --sp-28:   28px;
+  --sp-32:   32px;
+  --sp-40:   40px;
+  --sp-44:   44px;
+  --sp-48:   48px;
+  --sp-52:   52px;
+  --sp-76:   76px;
+  --sp-80:   80px;
+  --sp-120:  120px;
+  --sp-144:  144px;
 
   /* ─── Border radius ───────────────────────────────────────────────────── */
   --radius-sm:          10px;
