@@ -39,15 +39,9 @@ const variantStyles: Record<Variant, string> = {
 };
 
 const sizeStyles: Record<Size, string> = {
-  sm: 'h-8  px-4 text-body-sm rounded-full',
-  md: 'h-10 px-5 text-body    rounded-full',
-  lg: 'h-12 px-7 text-body    rounded-full',
-};
-
-const sizeGap: Record<Size, string> = {
-  sm: 'gap-1.5',
-  md: 'gap-2',
-  lg: 'gap-2',
+  sm: 'h-8  px-4 text-body-sm gap-1.5 rounded-full',
+  md: 'h-10 px-5 text-body    gap-2   rounded-full',
+  lg: 'h-12 px-7 text-body    gap-2   rounded-full',
 };
 
 export const Button = ({
@@ -78,21 +72,12 @@ export const Button = ({
     )}
     style={{ letterSpacing: '-0.1px' }}
   >
-    {loading && (
-      <span className="absolute inset-0 flex items-center justify-center">
-        <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-      </span>
+    {loading ? (
+      <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+    ) : (
+      iconLeft
     )}
-    <span
-      className={cn(
-        'inline-flex items-center justify-center',
-        sizeGap[size],
-        loading && 'invisible',
-      )}
-    >
-      {iconLeft}
-      {children}
-      {iconRight}
-    </span>
+    {children}
+    {!loading && iconRight}
   </button>
 );
