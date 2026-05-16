@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { FloatingDock, type FloatingDockItem } from './FloatingDock';
 import { PageTransition } from '../ui/PageTransition';
+import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { useVehicleStore } from '../../store/vehicleStore';
 import { useAuthStore } from '../../store/authStore';
 import { useVehicle } from '../../hooks/useVehicle';
@@ -63,9 +64,11 @@ export const Layout = () => {
     return (
       <div className="min-h-screen" style={{ background: '#f5f5f7' }}>
         <main className="overflow-x-hidden">
-          <PageTransition>
-            <Outlet />
-          </PageTransition>
+          <ErrorBoundary key={location.pathname}>
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
+          </ErrorBoundary>
         </main>
       </div>
     );
@@ -89,9 +92,11 @@ export const Layout = () => {
       {/* Reserve 100px on the left so children don't sit under the dock.
           (60px dock + 20px offset + 20px breathing room.) */}
       <main className="pl-[100px] overflow-x-hidden">
-        <PageTransition>
-          <Outlet />
-        </PageTransition>
+        <ErrorBoundary key={location.pathname}>
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
+        </ErrorBoundary>
       </main>
     </div>
   );

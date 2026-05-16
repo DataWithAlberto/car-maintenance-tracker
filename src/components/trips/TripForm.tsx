@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { MapPin, Navigation, Calendar, Gauge, Wind, Thermometer, Music, StickyNote, Loader2, LocateFixed, Clock } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Modal } from '../ui/Modal';
-import { FloatingInput } from '../ui/FloatingInput';
+import { FloatingInput, FloatingTextarea, FloatingSelect } from '../ui/FloatingInput';
 import { Button } from '../ui/Button';
 import { tripsService } from '../../services/trips.service';
 import type { CreateTripInput } from '../../types';
@@ -14,6 +15,15 @@ interface TripFormProps {
 
 const toLocalDatetimeString = (d: Date) =>
   new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+const SectionHeader = ({ icon, children }: { icon: ReactNode; children: ReactNode }) => (
+  <p
+    className="font-mono uppercase text-graphite flex items-center gap-1.5"
+    style={{ fontSize: 11, letterSpacing: '0.12em' }}
+  >
+    {icon} {children}
+  </p>
+);
 
 export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
   const [loading, setLoading]         = useState(false);
@@ -89,9 +99,7 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
 
         {/* Locations */}
         <div className="space-y-3">
-          <p className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold flex items-center gap-1.5">
-            <Navigation className="h-3 w-3" /> Ruta
-          </p>
+          <SectionHeader icon={<Navigation className="h-3 w-3" strokeWidth={1.6} />}>Ruta</SectionHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="relative">
               <FloatingInput
@@ -141,9 +149,7 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
 
         {/* Date & Time */}
         <div className="space-y-3">
-          <p className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold flex items-center gap-1.5">
-            <Calendar className="h-3 w-3" /> Fecha y hora
-          </p>
+          <SectionHeader icon={<Calendar className="h-3 w-3" strokeWidth={1.6} />}>Fecha y hora</SectionHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FloatingInput
               type="datetime-local"
@@ -160,8 +166,8 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
             />
           </div>
           {drivingTimeMinutes != null && (
-            <p className="font-manrope text-caption text-sky-dark flex items-center gap-1.5">
-              <Clock className="h-3 w-3" />
+            <p className="font-text text-graphite flex items-center gap-1.5" style={{ fontSize: 13 }}>
+              <Clock className="h-3 w-3" strokeWidth={1.6} />
               Tiempo de conducción: {Math.floor(drivingTimeMinutes / 60)}h {drivingTimeMinutes % 60}min
             </p>
           )}
@@ -169,9 +175,7 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
 
         {/* Odometer */}
         <div className="space-y-3">
-          <p className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold flex items-center gap-1.5">
-            <Gauge className="h-3 w-3" /> Odómetro
-          </p>
+          <SectionHeader icon={<Gauge className="h-3 w-3" strokeWidth={1.6} />}>Odómetro</SectionHeader>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <FloatingInput
               type="number"
@@ -186,10 +190,10 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
               value={form.end_km ?? ''}
               onChange={(e) => set('end_km', parseInt(e.target.value) || undefined)}
             />
-            <div className="flex items-center px-3 py-2.5 bg-canvas-50 border border-sky-blueprint/15 rounded-input">
+            <div className="flex items-center px-4 bg-fog border border-silver-mist rounded-[14px]">
               <div>
-                <p className="font-manrope text-caption text-ink-charcoal/70">Total</p>
-                <p className="font-simeiz text-body-lg font-light text-ink-black tabular-nums">
+                <p className="font-mono uppercase text-graphite" style={{ fontSize: 10, letterSpacing: '0.12em' }}>Total</p>
+                <p className="font-text text-ink font-medium tabular-nums mt-0.5" style={{ fontSize: 15 }}>
                   {totalKm != null ? `${totalKm} km` : '—'}
                 </p>
               </div>
@@ -219,22 +223,21 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
 
         {/* Weather */}
         <div className="space-y-3">
-          <p className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold flex items-center gap-1.5">
-            <Wind className="h-3 w-3" /> Condiciones climáticas
+          <SectionHeader icon={<Wind className="h-3 w-3" strokeWidth={1.6} />}>
+            Condiciones climáticas
             {weatherLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-          </p>
+          </SectionHeader>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="sm:col-span-2">
-              <select
+              <FloatingSelect
+                label="Clima (opcional)"
                 value={form.weather_condition ?? ''}
                 onChange={(e) => set('weather_condition', e.target.value || undefined)}
-                className="w-full px-3 py-3 bg-cloud-white border-2 border-sky-blueprint/40 rounded-input font-manrope text-body text-ink-black focus:outline-none focus:border-vivid-blue transition-colors"
-              >
-                <option value="">Clima (opcional)</option>
-                {weatherConditions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: '—' },
+                  ...weatherConditions.map((c) => ({ value: c, label: c })),
+                ]}
+              />
             </div>
             <FloatingInput
               type="number"
@@ -253,15 +256,12 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
 
         {/* Extras */}
         <div className="space-y-3">
-          <p className="font-manrope text-caption text-ink-charcoal/70 tracking-wide font-semibold flex items-center gap-1.5">
-            <StickyNote className="h-3 w-3" /> Notas y extras
-          </p>
-          <textarea
-            placeholder="Notas del viaje…"
+          <SectionHeader icon={<StickyNote className="h-3 w-3" strokeWidth={1.6} />}>Notas y extras</SectionHeader>
+          <FloatingTextarea
+            label="Notas del viaje"
             value={form.notes ?? ''}
             onChange={(e) => set('notes', e.target.value || undefined)}
             rows={3}
-            className="w-full px-4 py-3 bg-cloud-white border-2 border-sky-blueprint/40 rounded-input font-manrope text-body text-ink-black placeholder-ink-charcoal/40 focus:outline-none focus:border-vivid-blue transition-colors resize-none"
           />
           <FloatingInput
             label="URL playlist de Spotify (opcional)"

@@ -10,22 +10,33 @@ import { FloatingInput, FloatingTextarea, FloatingSelect } from '../ui/FloatingI
 interface Props {
   initialType?: string;
   currentKm?: number;
+  initialData?: Partial<MaintenanceInput>;
   onSubmit: (data: MaintenanceInput) => Promise<void>;
   onClose: () => void;
 }
 
-export const MaintenanceForm = ({ initialType, currentKm = 0, onSubmit, onClose }: Props) => {
-  const [form, setForm] = useState<Partial<MaintenanceInput>>({
-    type: initialType ?? '',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    km_at_service: currentKm,
-    next_service_km: initialType ? getNextServiceKm(initialType, currentKm) : undefined,
-  });
+export const MaintenanceForm = ({ initialType, currentKm = 0, initialData, onSubmit, onClose }: Props) => {
+  const isEdit = initialData != null;
+  const [form, setForm] = useState<Partial<MaintenanceInput>>(
+    initialData ?? {
+      type: initialType ?? '',
+      date: format(new Date(), 'yyyy-MM-dd'),
+      km_at_service: currentKm,
+      next_service_km: initialType ? getNextServiceKm(initialType, currentKm) : undefined,
+    },
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  const set = (field: keyof MaintenanceInput, value: string | number | undefined) =>
+  const set = (field: keyof MaintenanceInput, value: string | number | undefined) => {
     setForm((f) => ({ ...f, [field]: value }));
+    setErrors((e) => {
+      if (!e[field]) return e;
+      const next = { ...e };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleTypeChange = (type: string) => {
     set('type', type);
@@ -60,14 +71,14 @@ export const MaintenanceForm = ({ initialType, currentKm = 0, onSubmit, onClose 
     <Modal
       open
       onClose={onClose}
-      title="Nuevo registro"
+      title={isEdit ? 'Editar registro' : 'Nuevo registro'}
       description="Documenta un mantenimiento o reparación"
       size="lg"
       footer={
         <div className="flex gap-3">
           <Button type="button" variant="secondary" onClick={onClose} fullWidth>Cancelar</Button>
           <Button type="submit" form="maintenance-form" loading={loading} fullWidth>
-            {loading ? 'Guardando...' : 'Guardar registro'}
+            {loading ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Guardar registro'}
           </Button>
         </div>
       }

@@ -7,21 +7,32 @@ import { Button } from '../ui/Button';
 import { FloatingInput, FloatingTextarea, FloatingSelect } from '../ui/FloatingInput';
 
 interface Props {
+  initialData?: Partial<ExpenseInput>;
   onSubmit: (data: ExpenseInput) => Promise<void>;
   onClose: () => void;
 }
 
-export const ExpenseForm = ({ onSubmit, onClose }: Props) => {
-  const [form, setForm] = useState<Partial<ExpenseInput>>({
-    date: format(new Date(), 'yyyy-MM-dd'),
-    category: '',
-    amount: undefined,
-  });
+export const ExpenseForm = ({ initialData, onSubmit, onClose }: Props) => {
+  const isEdit = initialData != null;
+  const [form, setForm] = useState<Partial<ExpenseInput>>(
+    initialData ?? {
+      date: format(new Date(), 'yyyy-MM-dd'),
+      category: '',
+      amount: undefined,
+    },
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  const set = (field: keyof ExpenseInput, value: string | number | undefined) =>
+  const set = (field: keyof ExpenseInput, value: string | number | undefined) => {
     setForm((f) => ({ ...f, [field]: value }));
+    setErrors((e) => {
+      if (!e[field]) return e;
+      const next = { ...e };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,13 +57,13 @@ export const ExpenseForm = ({ onSubmit, onClose }: Props) => {
     <Modal
       open
       onClose={onClose}
-      title="Nuevo gasto"
+      title={isEdit ? 'Editar gasto' : 'Nuevo gasto'}
       description="Registra un gasto del vehículo"
       footer={
         <div className="flex gap-3">
           <Button type="button" variant="secondary" onClick={onClose} fullWidth>Cancelar</Button>
           <Button type="submit" form="expense-form" variant="accent" loading={loading} fullWidth>
-            {loading ? 'Guardando...' : 'Guardar gasto'}
+            {loading ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Guardar gasto'}
           </Button>
         </div>
       }

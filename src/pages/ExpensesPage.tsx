@@ -10,9 +10,17 @@ import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import { expensesService } from '../services/expenses.service';
 import type { Expense } from '../types';
+import type { ExpenseInput } from '../utils/validators';
 import { formatDate, formatCurrency } from '../utils/formatters';
 import { cn } from '../utils/cn';
 import toast from 'react-hot-toast';
+
+const toInput = (e: Expense): Partial<ExpenseInput> => ({
+  category: e.category,
+  date: e.date,
+  amount: e.amount,
+  description: e.description ?? undefined,
+});
 
 export const ExpensesPage = () => {
   const { selectedVehicle } = useVehicleStore();
@@ -22,6 +30,7 @@ export const ExpensesPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Expense | null>(null);
   const [view, setView] = useState<'list' | 'chart'>('list');
 
   useEffect(() => {
@@ -34,18 +43,30 @@ export const ExpensesPage = () => {
 
   if (!selectedVehicle) return null;
 
-  const handleCreate = async (data: Parameters<typeof expensesService.create>[2]) => {
+  const handleSubmit = async (data: ExpenseInput) => {
     if (!user) return;
-    const e = await expensesService.create(selectedVehicle.id, user.id, data);
-    setExpenses((prev) => [e, ...prev]);
-    toast.success('Gasto añadido');
+    if (editing) {
+      const updated = await expensesService.update(editing.id, data);
+      setExpenses((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+      toast.success('Gasto actualizado');
+    } else {
+      const e = await expensesService.create(selectedVehicle.id, user.id, data);
+      setExpenses((prev) => [e, ...prev]);
+      toast.success('Gasto añadido');
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este gasto?')) return;
-    await expensesService.delete(id);
+    const snapshot = expenses;
     setExpenses((prev) => prev.filter((e) => e.id !== id));
-    toast.success('Gasto eliminado');
+    try {
+      await expensesService.delete(id);
+      toast.success('Gasto eliminado');
+    } catch {
+      setExpenses(snapshot);
+      toast.error('No se pudo eliminar el gasto');
+    }
   };
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
@@ -133,7 +154,8 @@ export const ExpensesPage = () => {
           {expenses.map((e) => (
             <li
               key={e.id}
-              className="group bg-snow border border-silver-mist rounded-[14px] p-4 flex items-center gap-4 transition-colors hover:bg-fog"
+              onClick={() => setEditing(e)}
+              className="group bg-snow border border-silver-mist rounded-[14px] p-4 flex items-center gap-4 transition-colors hover:bg-fog cursor-pointer"
             >
               <div className="shrink-0 h-11 w-11 rounded-[10px] bg-fog flex items-center justify-center">
                 <Receipt className="h-5 w-5 text-ink" strokeWidth={1.6} />
@@ -164,7 +186,7 @@ export const ExpensesPage = () => {
                 </div>
               </div>
               <button
-                onClick={() => handleDelete(e.id)}
+                onClick={(ev) => { ev.stopPropagation(); handleDelete(e.id); }}
                 className="font-text text-graphite hover:text-caution transition-colors shrink-0"
                 style={{ fontSize: 13 }}
               >
@@ -175,8 +197,12 @@ export const ExpensesPage = () => {
         </ul>
       )}
 
-      {showForm && (
-        <ExpenseForm onSubmit={handleCreate} onClose={() => setShowForm(false)} />
+      {(showForm || editing) && (
+        <ExpenseForm
+          initialData={editing ? toInput(editing) : undefined}
+          onSubmit={handleSubmit}
+          onClose={() => { setShowForm(false); setEditing(null); }}
+        />
       )}
     </div>
   );

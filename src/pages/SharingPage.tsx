@@ -54,9 +54,15 @@ export const SharingPage = () => {
 
   const handleRemove = async (id: string) => {
     if (!confirm('¿Revocar acceso?')) return;
-    await sharingService.remove(id);
+    const snapshot = accesses;
     setAccesses((prev) => prev.filter((a) => a.id !== id));
-    toast.success('Acceso revocado');
+    try {
+      await sharingService.remove(id);
+      toast.success('Acceso revocado');
+    } catch {
+      setAccesses(snapshot);
+      toast.error('No se pudo revocar el acceso');
+    }
   };
 
   const handleRespond = async (id: string, accept: boolean) => {

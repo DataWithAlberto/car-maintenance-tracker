@@ -34,9 +34,15 @@ export const DocumentsPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este documento?')) return;
-    await documentsService.delete(id);
+    const snapshot = docs;
     setDocs((prev) => prev.filter((d) => d.id !== id));
-    toast.success('Documento eliminado');
+    try {
+      await documentsService.delete(id);
+      toast.success('Documento eliminado');
+    } catch {
+      setDocs(snapshot);
+      toast.error('No se pudo eliminar el documento');
+    }
   };
 
   const isExpiringSoon = (expiry?: string) =>

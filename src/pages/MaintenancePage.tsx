@@ -10,14 +10,28 @@ import { useMaintenance } from '../hooks/useMaintenance';
 import { MAINTENANCE_TYPES } from '../utils/constants';
 import { formatCurrency } from '../utils/formatters';
 import { cn } from '../utils/cn';
+import type { MaintenanceRecord } from '../types';
+import type { MaintenanceInput } from '../utils/validators';
 import toast from 'react-hot-toast';
+
+const toInput = (r: MaintenanceRecord): Partial<MaintenanceInput> => ({
+  type: r.type,
+  date: r.date,
+  km_at_service: r.km_at_service,
+  cost: r.cost ?? undefined,
+  description: r.description ?? undefined,
+  parts_location: r.parts_location ?? undefined,
+  next_service_km: r.next_service_km ?? undefined,
+  next_service_date: r.next_service_date ?? undefined,
+});
 
 export const MaintenancePage = () => {
   const { selectedVehicle } = useVehicleStore();
-  const { records, loading, fetchRecords, createRecord, deleteRecord } = useMaintenance(selectedVehicle?.id);
+  const { records, loading, fetchRecords, createRecord, updateRecord, deleteRecord } = useMaintenance(selectedVehicle?.id);
   const navigate = useNavigate();
 
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<MaintenanceRecord | null>(null);
   const [filterType, setFilterType] = useState('');
 
   useEffect(() => {
@@ -30,9 +44,14 @@ export const MaintenancePage = () => {
   const filtered = filterType ? records.filter((r) => r.type === filterType) : records;
   const totalCost = records.reduce((s, r) => s + (r.cost ?? 0), 0);
 
-  const handleCreate = async (data: Parameters<typeof createRecord>[0]) => {
-    await createRecord(data);
-    toast.success('Registro añadido');
+  const handleSubmit = async (data: MaintenanceInput) => {
+    if (editing) {
+      await updateRecord(editing.id, data);
+      toast.success('Registro actualizado');
+    } else {
+      await createRecord(data);
+      toast.success('Registro añadido');
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -126,14 +145,15 @@ export const MaintenancePage = () => {
           {[0, 1, 2, 3].map((i) => <SkeletonRow key={i} />)}
         </div>
       ) : (
-        <MaintenanceList records={filtered} onDelete={handleDelete} />
+        <MaintenanceList records={filtered} onDelete={handleDelete} onSelect={setEditing} />
       )}
 
-      {showForm && (
+      {(showForm || editing) && (
         <MaintenanceForm
           currentKm={selectedVehicle.current_km}
-          onSubmit={handleCreate}
-          onClose={() => setShowForm(false)}
+          initialData={editing ? toInput(editing) : undefined}
+          onSubmit={handleSubmit}
+          onClose={() => { setShowForm(false); setEditing(null); }}
         />
       )}
     </div>
