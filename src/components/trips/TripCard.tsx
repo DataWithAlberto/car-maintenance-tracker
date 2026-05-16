@@ -53,15 +53,15 @@ export const TripCard = ({ trip, selected, onClick, onDelete, onShare }: TripCar
               {trip.title}
             </p>
           )}
-          <div className={cn('flex items-center gap-1.5 flex-wrap', trip.title && 'mt-1')}>
-            <span className="inline-flex items-center gap-1 font-text text-ink truncate" style={{ fontSize: 13 }}>
+          <div className={cn('flex items-center gap-1.5', trip.title && 'mt-1')}>
+            <span className="flex items-center gap-1 min-w-0 font-text text-ink" style={{ fontSize: 13 }}>
               <MapPin className="h-3 w-3 shrink-0 text-graphite" strokeWidth={1.6} />
-              {trip.start_location}
+              <span className="truncate">{trip.start_location}</span>
             </span>
-            <span className="text-silver-mist">→</span>
-            <span className="inline-flex items-center gap-1 font-text text-ink truncate" style={{ fontSize: 13 }}>
+            <span className="shrink-0 text-silver-mist">→</span>
+            <span className="flex items-center gap-1 min-w-0 font-text text-ink" style={{ fontSize: 13 }}>
               <MapPin className="h-3 w-3 shrink-0 text-graphite" strokeWidth={1.6} />
-              {trip.end_location}
+              <span className="truncate">{trip.end_location}</span>
             </span>
           </div>
         </div>
@@ -159,7 +159,7 @@ export const TripCard = ({ trip, selected, onClick, onDelete, onShare }: TripCar
       )}
 
       {/* Actions */}
-      <div className="mt-3 pt-3 border-t border-silver-mist flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="mt-3 pt-3 border-t border-silver-mist flex items-center gap-2 justify-end opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
         <button
           onClick={(e) => { e.stopPropagation(); onShare(); }}
           className={cn(

@@ -4,6 +4,7 @@ import {
   LayoutGrid, Wrench, Receipt, FileText, Route, Share2, Settings,
 } from 'lucide-react';
 import { FloatingDock, type FloatingDockItem } from './FloatingDock';
+import { BottomNav } from './BottomNav';
 import { PageTransition } from '../ui/PageTransition';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { useVehicleStore } from '../../store/vehicleStore';
@@ -89,15 +90,17 @@ export const Layout = () => {
         user={userMeta}
         backHref="/dashboard"
       />
-      {/* Reserve 100px on the left so children don't sit under the dock.
-          (60px dock + 20px offset + 20px breathing room.) */}
-      <main className="pl-[100px] overflow-x-hidden">
+      {/* Desktop: reserve 100px on the left for the dock (60px dock + 20px
+          offset + 20px breathing room). Mobile: dock is hidden, BottomNav
+          takes over — reserve bottom space instead. */}
+      <main className="pl-0 md:pl-[100px] pb-24 md:pb-0 overflow-x-hidden">
         <ErrorBoundary key={location.pathname}>
           <PageTransition>
             <Outlet />
           </PageTransition>
         </ErrorBoundary>
       </main>
+      <BottomNav />
     </div>
   );
 };

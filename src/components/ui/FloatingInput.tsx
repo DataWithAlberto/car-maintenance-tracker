@@ -2,6 +2,7 @@ import type {
   InputHTMLAttributes, TextareaHTMLAttributes, SelectHTMLAttributes, ReactNode,
 } from 'react';
 import { useId } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 interface BaseProps {
@@ -158,9 +159,10 @@ export const FloatingSelect = ({
       <label htmlFor={id} className={cn(labelBase, labelFilled, 'text-azure')}>
         {label}
       </label>
-      <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-graphite text-caption">
-        ▾
-      </span>
+      <ChevronDown
+        className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-graphite"
+        strokeWidth={1.8}
+      />
       {error ? (
         <p className={cn(helperBase, 'text-caution')}>{error}</p>
       ) : hint ? (

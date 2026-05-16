@@ -292,7 +292,7 @@ export const DashboardPage = () => {
     <div className="page-enter" style={{ background: '#f5f5f7', minHeight: '100%' }}>
       {/* ═══ BLOCK 1 · INDIGO HERO ═══════════════════════════════════════════ */}
       <section
-        className="indigo-hero mx-10 mt-6"
+        className="indigo-hero mx-5 md:mx-10 mt-6"
         style={{
           position: 'relative',
           color: '#fff',
@@ -300,7 +300,7 @@ export const DashboardPage = () => {
           overflow: 'hidden',
           background:
             'linear-gradient(184deg, rgb(29,29,31) 18%, rgb(168,211,251) 45%, rgb(0,18,249) 78%, rgb(37,53,224) 98%)',
-          padding: 40,
+          padding: 24,
           minHeight: 440,
           display: 'grid',
           gap: 40,
@@ -308,6 +308,9 @@ export const DashboardPage = () => {
         }}
       >
         <style>{`
+          @media (min-width: 768px) {
+            .indigo-hero { padding: 40px !important; }
+          }
           @media (min-width: 1280px) {
             .indigo-hero { grid-template-columns: 1.2fr 1fr !important; }
           }
@@ -402,6 +405,7 @@ export const DashboardPage = () => {
                     fontFamily: 'Inter, var(--font-sf-pro-display)',
                     fontWeight: 700, fontSize: 28, lineHeight: 1,
                     letterSpacing: '-0.3px', marginTop: 6, color: '#fff',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{v}</div>
                   <div style={{
                     fontFamily: 'Inter, var(--font-sf-pro-text)',
@@ -418,7 +422,7 @@ export const DashboardPage = () => {
             display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
             alignItems: 'stretch', gap: 16,
           }}>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button
                 className="pill-dark"
                 onClick={handleAdd}
@@ -447,8 +451,13 @@ export const DashboardPage = () => {
                 type="button"
                 onClick={openPrimary}
                 aria-label={`Abrir ${primary.brand} ${primary.model}`}
+                className="focus-ring"
                 style={{
-                  all: 'unset',
+                  margin: 0,
+                  font: 'inherit',
+                  color: 'inherit',
+                  textAlign: 'left',
+                  width: '100%',
                   cursor: 'pointer',
                   background: 'rgba(255,255,255,0.10)',
                   border: '1px solid rgba(255,255,255,0.22)',
@@ -510,10 +519,16 @@ export const DashboardPage = () => {
       </section>
 
       {/* ═══ BLOCK 2 · EDITORIAL BODY ════════════════════════════════════════ */}
-      <div style={{
-        padding: '60px 80px 80px',
-        display: 'flex', flexDirection: 'column', gap: 60,
-      }}>
+      <div
+        className="dashboard-body"
+        style={{ display: 'flex', flexDirection: 'column' }}
+      >
+        <style>{`
+          .dashboard-body { padding: 40px 20px 80px; gap: 40px; }
+          @media (min-width: 768px) {
+            .dashboard-body { padding: 60px 40px 80px; gap: 60px; }
+          }
+        `}</style>
         {loading && !primary ? (
           <BodySkeleton />
         ) : !primary ? (
@@ -893,8 +908,12 @@ const VehicleGridCard = ({
   return (
     <button
       onClick={onSelect}
+      className="focus-ring"
       style={{
-        all: 'unset',
+        margin: 0,
+        font: 'inherit',
+        color: 'inherit',
+        width: '100%',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',

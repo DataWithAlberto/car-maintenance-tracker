@@ -51,14 +51,14 @@ export const KpiCard = ({
       )}
     >
       {/* Label row */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
           <span
-            className="rounded-full"
+            className="rounded-full shrink-0"
             style={{ width: 6, height: 6, background: dotColor[tone] }}
           />
           <span
-            className="font-mono uppercase text-graphite"
+            className="font-mono uppercase text-graphite truncate"
             style={{
               fontSize: 11,
               fontWeight: 500,
@@ -71,7 +71,7 @@ export const KpiCard = ({
         </div>
         {Icon && (
           <Icon
-            className="h-4 w-4 text-graphite"
+            className="h-4 w-4 shrink-0 text-graphite"
             strokeWidth={1.6}
           />
         )}
@@ -79,11 +79,11 @@ export const KpiCard = ({
 
       {/* Value */}
       <div
-        className="text-ink tabular-nums"
+        className="text-ink tabular-nums truncate"
         style={{
           fontFamily: 'var(--font-sf-pro-display)',
           fontWeight: 700,
-          fontSize: 32,
+          fontSize: 'clamp(22px, 6vw, 32px)',
           lineHeight: 1,
           letterSpacing: '-0.5px',
         }}

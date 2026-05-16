@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { Car } from 'lucide-react';
@@ -32,22 +32,12 @@ export const FloatingDock = ({
   items, activeId, vehicle, user, backHref,
 }: FloatingDockProps) => {
   const [hovered, setHovered] = useState(false);
-  const [coarse, setCoarse] = useState(false);
 
-  // Touch / coarse-pointer detection — keep dock permanently expanded.
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(pointer: coarse)');
-    const apply = () => setCoarse(mq.matches);
-    apply();
-    mq.addEventListener?.('change', apply);
-    return () => mq.removeEventListener?.('change', apply);
-  }, []);
-
-  const open = coarse || hovered;
+  const open = hovered;
 
   return (
     <aside
+      className="hidden md:flex"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -61,7 +51,6 @@ export const FloatingDock = ({
         background: '#ffffff',
         borderRadius: 28,
         border: '1px solid #e8e8ed',
-        display: 'flex',
         flexDirection: 'column',
         zIndex: 50,
         overflow: 'hidden',
@@ -127,6 +116,7 @@ export const FloatingDock = ({
             <Link
               key={it.id}
               to={it.href}
+              className="focus-ring"
               aria-current={isActive ? 'page' : undefined}
               title={!open ? it.label : undefined}
               style={{

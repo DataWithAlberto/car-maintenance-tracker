@@ -51,7 +51,7 @@ export const Navbar = () => {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen((s) => !s)}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-button hover:bg-fog transition-colors focus-ring"
+              className="flex items-center gap-2 px-2 py-1.5 rounded-button hover:bg-silver-mist transition-colors focus-ring"
             >
               <span className="font-sans h-7 w-7 rounded-button bg-azure/10 border border-azure/30 text-azure text-xs font-semibold flex items-center justify-center">
                 {initials}
@@ -69,16 +69,16 @@ export const Navbar = () => {
                 </div>
                 <button
                   onClick={() => { setMenuOpen(false); navigate('/settings'); }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 font-sans text-body text-slate hover:text-ink hover:bg-fog transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 font-sans text-body text-slate hover:text-ink hover:bg-fog transition-colors focus-ring"
                 >
-                  <User className="h-3.5 w-3.5" />
+                  <User className="h-4 w-4 shrink-0" />
                   Ajustes
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 font-sans text-body text-danger-500 hover:bg-danger-500/8 transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 font-sans text-body text-danger-500 hover:bg-danger-500/8 transition-colors focus-ring"
                 >
-                  <LogOut className="h-3.5 w-3.5" />
+                  <LogOut className="h-4 w-4 shrink-0" />
                   Cerrar sesión
                 </button>
               </div>

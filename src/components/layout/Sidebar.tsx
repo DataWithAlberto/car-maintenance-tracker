@@ -59,7 +59,7 @@ export const Sidebar = () => {
             to={to}
             className={({ isActive }) =>
               cn(
-                'group relative flex items-center gap-2.5 px-3 py-2 text-body rounded-card transition-all duration-150',
+                'focus-ring group relative flex items-center gap-2.5 px-3 py-2 text-body rounded-card transition-all duration-150',
                 isActive
                   ? 'text-ink-black bg-cloud-white border border-sky-blueprint/25 shadow-subtle'
                   : 'text-ink-charcoal hover:text-ink-black hover:bg-cloud-white/70',

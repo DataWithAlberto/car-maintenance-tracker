@@ -66,7 +66,8 @@ export const Modal = ({
       <div
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'relative w-full bg-snow',
+          'relative w-full bg-snow flex flex-col',
+          'max-h-[92vh] sm:max-h-[88vh]',
           'rounded-t-[28px] sm:rounded-[28px]',
           sizeMap[size],
         )}
@@ -74,7 +75,7 @@ export const Modal = ({
       >
         {/* Header */}
         {(title || description) && (
-          <div className="flex items-start justify-between gap-4 p-7 border-b border-silver-mist">
+          <div className="shrink-0 flex items-start justify-between gap-4 p-7 border-b border-silver-mist">
             <div className="min-w-0 flex-1">
               {title && (
                 <h2
@@ -107,7 +108,7 @@ export const Modal = ({
               onClick={onClose}
               className={cn(
                 'shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-full',
-                'text-ink hover:bg-fog transition-colors duration-150',
+                'text-ink hover:bg-silver-mist transition-colors duration-150 focus-ring',
               )}
               aria-label="Cerrar"
             >
@@ -117,11 +118,11 @@ export const Modal = ({
         )}
 
         {/* Body */}
-        <div className="p-7 max-h-[70vh] overflow-y-auto">{children}</div>
+        <div className="p-7 flex-1 overflow-y-auto">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="p-7 border-t border-silver-mist">{footer}</div>
+          <div className="shrink-0 p-7 border-t border-silver-mist">{footer}</div>
         )}
       </div>
     </div>,
