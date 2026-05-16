@@ -13,6 +13,7 @@ import { DocumentsPage } from './pages/DocumentsPage';
 import { SharingPage } from './pages/SharingPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TripsPage } from './pages/TripsPage';
+import { MechanicsPage } from './pages/MechanicsPage';
 import { InvitePage } from './pages/InvitePage';
 import { authService } from './services/auth.service';
 import { useAuthStore } from './store/authStore';
@@ -61,6 +62,7 @@ function App() {
           <Route path="expenses" element={<ExpensesPage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="trips" element={<TripsPage />} />
+          <Route path="mechanics" element={<MechanicsPage />} />
           <Route path="sharing" element={<SharingPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>

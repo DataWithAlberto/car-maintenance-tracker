@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, AlertTriangle, Car, LogOut } from 'lucide-react';
+import { Pencil, Trash2, AlertTriangle, Car, LogOut, KeyRound, Sparkles, Check } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { useVehicle } from '../hooks/useVehicle';
 import { useAuth } from '../hooks/useAuth';
 import { VehicleForm } from '../components/vehicle/VehicleForm';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
+import { FloatingInput } from '../components/ui/FloatingInput';
 import { formatKm } from '../utils/formatters';
 import toast from 'react-hot-toast';
 
@@ -14,8 +16,21 @@ export const SettingsPage = () => {
   const { selectedVehicle } = useVehicleStore();
   const { updateVehicle, deleteVehicle } = useVehicle();
   const { logout, user } = useAuth();
+  const { anthropicApiKey, setAnthropicApiKey, clearAnthropicApiKey } = useSettingsStore();
   const navigate = useNavigate();
   const [showEditForm, setShowEditForm] = useState(false);
+  const [apiKeyDraft, setApiKeyDraft] = useState(anthropicApiKey);
+
+  const handleSaveApiKey = () => {
+    setAnthropicApiKey(apiKeyDraft.trim());
+    toast.success(apiKeyDraft.trim() ? 'API key guardada' : 'API key eliminada');
+  };
+
+  const handleClearApiKey = () => {
+    clearAnthropicApiKey();
+    setApiKeyDraft('');
+    toast.success('API key eliminada');
+  };
 
   if (!selectedVehicle) {
     return (
@@ -106,6 +121,87 @@ export const SettingsPage = () => {
           >
             Salir
           </Button>
+        </div>
+      </section>
+
+      {/* AI integration */}
+      <section className="bg-snow border border-silver-mist rounded-[28px] p-7">
+        <h2
+          className="font-mono uppercase text-graphite mb-4"
+          style={{ fontSize: 11, letterSpacing: '0.14em' }}
+        >
+          Inteligencia artificial
+        </h2>
+        <div className="flex items-start gap-4">
+          <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
+            <Sparkles className="h-5 w-5 text-graphite" strokeWidth={1.6} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p
+              className="font-display text-ink"
+              style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px' }}
+            >
+              API key de Claude
+            </p>
+            <p
+              className="font-text text-graphite mt-2 mb-4 max-w-xl"
+              style={{ fontSize: 15, lineHeight: 1.45 }}
+            >
+              Necesaria para el diagnóstico de Talleres IA. Obtén tu clave en{' '}
+              <a
+                href="https://console.anthropic.com/settings/keys"
+                target="_blank"
+                rel="noreferrer"
+                className="text-azure"
+              >
+                console.anthropic.com
+              </a>
+              . Se guarda solo en este navegador.
+            </p>
+
+            <FloatingInput
+              label="API key (sk-ant-…)"
+              type="password"
+              value={apiKeyDraft}
+              onChange={(e) => setApiKeyDraft(e.target.value)}
+              iconLeft={<KeyRound className="h-4 w-4" strokeWidth={1.7} />}
+              className="max-w-md"
+            />
+
+            <div className="flex items-center gap-3 mt-4 flex-wrap">
+              <Button
+                variant="accent"
+                size="sm"
+                onClick={handleSaveApiKey}
+                disabled={apiKeyDraft.trim() === anthropicApiKey}
+                iconLeft={<Check className="h-4 w-4" strokeWidth={1.8} />}
+              >
+                Guardar
+              </Button>
+              {anthropicApiKey && (
+                <Button variant="secondary" size="sm" onClick={handleClearApiKey}>
+                  Eliminar clave
+                </Button>
+              )}
+              {anthropicApiKey && (
+                <span
+                  className="inline-flex items-center gap-1.5 font-text"
+                  style={{ fontSize: 13, color: '#2f6b34' }}
+                >
+                  <Check className="h-3.5 w-3.5" strokeWidth={2} />
+                  Configurada
+                </span>
+              )}
+            </div>
+
+            <p
+              className="font-text text-graphite mt-3 max-w-xl"
+              style={{ fontSize: 12.5, lineHeight: 1.4 }}
+            >
+              Nota: la clave se usa desde el navegador. No la compartas y revócala si
+              sospechas que se ha filtrado.
+            </p>
+          </div>
         </div>
       </section>
 
