@@ -845,7 +845,7 @@ const Sparkline = ({ data, width = 460, height = 120 }: {
 // ─── Vehicle render ──────────────────────────────────────────────────────────
 const VehicleRender = () => (
   <div style={{
-    width: '100%', maxWidth: 460, alignSelf: 'flex-end',
+    width: '100%', maxWidth: 580, alignSelf: 'center',
     margin: '0 auto',
   }}>
     <img
