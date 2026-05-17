@@ -5,6 +5,7 @@ import { useVehicleStore } from '../store/vehicleStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useVehicle } from '../hooks/useVehicle';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../services/supabase';
 import { VehicleForm } from '../components/vehicle/VehicleForm';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -20,6 +21,18 @@ export const SettingsPage = () => {
   const navigate = useNavigate();
   const [showEditForm, setShowEditForm] = useState(false);
   const [apiKeyDraft, setApiKeyDraft] = useState(anthropicApiKey);
+  const [nameDraft, setNameDraft] = useState(
+    (user?.user_metadata?.full_name as string | undefined) ?? ''
+  );
+  const [savingName, setSavingName] = useState(false);
+
+  const handleSaveName = async () => {
+    setSavingName(true);
+    const { error } = await supabase.auth.updateUser({ data: { full_name: nameDraft.trim() } });
+    setSavingName(false);
+    if (error) { toast.error('No se pudo guardar el nombre'); return; }
+    toast.success('Nombre actualizado');
+  };
 
   const handleSaveApiKey = () => {
     setAnthropicApiKey(apiKeyDraft.trim());
@@ -120,6 +133,24 @@ export const SettingsPage = () => {
             iconLeft={<LogOut className="h-4 w-4" strokeWidth={1.6} />}
           >
             Salir
+          </Button>
+        </div>
+        <div className="mt-5 flex items-end gap-3 flex-wrap">
+          <FloatingInput
+            label="Nombre mostrado"
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            className="max-w-xs"
+          />
+          <Button
+            variant="accent"
+            size="sm"
+            onClick={handleSaveName}
+            loading={savingName}
+            disabled={nameDraft.trim() === ((user?.user_metadata?.full_name as string | undefined) ?? '')}
+            iconLeft={<Check className="h-4 w-4" strokeWidth={1.8} />}
+          >
+            Guardar
           </Button>
         </div>
       </section>
