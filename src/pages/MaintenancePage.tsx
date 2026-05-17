@@ -1,18 +1,33 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Filter, X } from 'lucide-react';
+import { Plus, Filter, X, Sparkles, Loader2 } from 'lucide-react';
 import { MaintenanceList } from '../components/maintenance/MaintenanceList';
 import { MaintenanceForm } from '../components/maintenance/MaintenanceForm';
+import { FailureForecast } from '../components/maintenance/FailureForecast';
 import { Button } from '../components/ui/Button';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useMaintenance } from '../hooks/useMaintenance';
+import { useSettingsStore } from '../store/settingsStore';
+import { expensesService } from '../services/expenses.service';
+import { claudeService } from '../services/claude.service';
 import { MAINTENANCE_TYPES } from '../utils/constants';
 import { formatCurrency } from '../utils/formatters';
 import { cn } from '../utils/cn';
-import type { MaintenanceRecord } from '../types';
+import type { MaintenanceRecord, MaintenanceInsight } from '../types';
 import type { MaintenanceInput } from '../utils/validators';
 import toast from 'react-hot-toast';
+
+const SEVERITY_COLOR: Record<string, string> = {
+  high: '#b64400',
+  medium: '#c77700',
+  low: 'var(--color-graphite)',
+};
+const SEVERITY_LABEL: Record<string, string> = {
+  high: 'Urgente',
+  medium: 'Atención',
+  low: 'Informativo',
+};
 
 const toInput = (r: MaintenanceRecord): Partial<MaintenanceInput> => ({
   type: r.type,
@@ -28,11 +43,14 @@ const toInput = (r: MaintenanceRecord): Partial<MaintenanceInput> => ({
 export const MaintenancePage = () => {
   const { selectedVehicle } = useVehicleStore();
   const { records, loading, fetchRecords, createRecord, updateRecord, deleteRecord } = useMaintenance(selectedVehicle?.id);
+  const { anthropicApiKey } = useSettingsStore();
   const navigate = useNavigate();
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<MaintenanceRecord | null>(null);
   const [filterType, setFilterType] = useState('');
+  const [insights, setInsights] = useState<MaintenanceInsight[] | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     if (!selectedVehicle) { navigate('/dashboard'); return; }
@@ -58,6 +76,31 @@ export const MaintenancePage = () => {
     if (!confirm('¿Eliminar este registro?')) return;
     await deleteRecord(id);
     toast.success('Registro eliminado');
+  };
+
+  const handleAnalyze = async () => {
+    if (!selectedVehicle) return;
+    if (!anthropicApiKey) {
+      toast.error('Configura la API key de Claude en Ajustes');
+      navigate('/settings');
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      const expenses = await expensesService.getByVehicle(selectedVehicle.id).catch(() => []);
+      const result = await claudeService.analyzeMaintenance({
+        apiKey: anthropicApiKey,
+        vehicle: selectedVehicle,
+        records,
+        expenses,
+      });
+      setInsights(result);
+      if (result.length === 0) toast('Sin observaciones relevantes');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo completar el análisis');
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   return (
@@ -89,10 +132,86 @@ export const MaintenancePage = () => {
             <span className="text-ink font-medium tabular-nums">{formatCurrency(totalCost)}</span>
           </p>
         </div>
-        <Button variant="accent" onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
-          Añadir registro
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={handleAnalyze}
+            loading={analyzing}
+            iconLeft={<Sparkles className="h-4 w-4" strokeWidth={1.7} />}
+          >
+            Análisis IA
+          </Button>
+          <Button variant="accent" onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
+            Añadir registro
+          </Button>
+        </div>
       </header>
+
+      {/* AI insights */}
+      {(analyzing || insights) && (
+        <div className="bg-snow border border-silver-mist rounded-[28px] p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <span
+              className="inline-flex items-center gap-2 font-mono uppercase text-graphite"
+              style={{ fontSize: 11, letterSpacing: '0.14em' }}
+            >
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={1.7} /> Análisis IA del historial
+            </span>
+            {insights && (
+              <button
+                onClick={() => setInsights(null)}
+                className="text-graphite hover:text-ink transition-colors"
+                aria-label="Cerrar análisis"
+              >
+                <X className="h-4 w-4" strokeWidth={1.7} />
+              </button>
+            )}
+          </div>
+          {analyzing ? (
+            <div className="flex items-center gap-2 text-graphite font-text" style={{ fontSize: 14 }}>
+              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />
+              Analizando mantenimiento y gastos…
+            </div>
+          ) : insights && insights.length > 0 ? (
+            <div className="space-y-3">
+              {insights.map((ins, i) => (
+                <div key={i} className="flex gap-3">
+                  <span
+                    className="shrink-0 mt-1 h-2 w-2 rounded-full"
+                    style={{ background: SEVERITY_COLOR[ins.severity] ?? 'var(--color-graphite)' }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="font-text text-ink font-semibold" style={{ fontSize: 15 }}>
+                        {ins.title}
+                      </span>
+                      <span
+                        className="font-mono uppercase"
+                        style={{
+                          fontSize: 9, letterSpacing: '0.1em',
+                          color: SEVERITY_COLOR[ins.severity] ?? 'var(--color-graphite)',
+                        }}
+                      >
+                        {SEVERITY_LABEL[ins.severity] ?? ins.severity}
+                      </span>
+                    </div>
+                    <p className="font-text text-graphite mt-0.5" style={{ fontSize: 13.5, lineHeight: 1.45 }}>
+                      {ins.detail}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="font-text text-graphite" style={{ fontSize: 14 }}>
+              Sin observaciones relevantes por ahora.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Failure prediction */}
+      {!loading && <FailureForecast vehicle={selectedVehicle} records={records} />}
 
       {/* Filter chips */}
       <div className="flex items-center gap-2 mb-8 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">

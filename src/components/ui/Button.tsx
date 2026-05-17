@@ -18,7 +18,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * Per DESIGN.md:
  * - Primary CTA → #0071e3 (azure) · the sole permission-to-act on neutral surfaces.
  * - Accent      → #000000 (obsidian) · for use on gradient / dark backdrops.
- * - Secondary   → #ffffff + 1px #e8e8ed border · neutral surface alternative.
+ * - Secondary   → #ffffff + 1px var(--color-silver-mist) border · neutral surface alternative.
  * - Ghost       → transparent · text-only, no fill.
  * - Danger      → #b64400 (ember/caution) · destructive actions.
  *

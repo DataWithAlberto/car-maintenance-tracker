@@ -283,7 +283,7 @@ export const MechanicsPage = () => {
                     key={rec.mechanicId}
                     onClick={() => openDetail(m.id)}
                     className="w-full text-left rounded-[18px] p-4 transition-colors"
-                    style={{ border: '1px solid #e8e8ed', background: '#ffffff' }}
+                    style={{ border: '1px solid var(--color-silver-mist)', background: 'var(--color-snow)' }}
                   >
                     <div className="flex items-start gap-3">
                       <span
@@ -323,7 +323,7 @@ export const MechanicsPage = () => {
                 key={m.id}
                 onClick={() => openDetail(m.id)}
                 className="w-full text-left rounded-[14px] px-4 py-3 transition-colors hover:bg-fog"
-                style={{ border: '1px solid #e8e8ed', background: '#f5f5f7' }}
+                style={{ border: '1px solid var(--color-silver-mist)', background: 'var(--color-fog)' }}
               >
                 <div className="flex items-center gap-3">
                   <Wrench className="h-4 w-4 text-graphite shrink-0" strokeWidth={1.6} />

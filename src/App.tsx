@@ -17,11 +17,18 @@ import { MechanicsPage } from './pages/MechanicsPage';
 import { MechanicDetailPage } from './pages/MechanicDetailPage';
 import { OBD2Page } from './pages/OBD2Page';
 import { InvitePage } from './pages/InvitePage';
+import { WorkshopPage } from './pages/WorkshopPage';
 import { authService } from './services/auth.service';
 import { useAuthStore } from './store/authStore';
+import { useThemeStore } from './store/themeStore';
 
 function App() {
   const { setUser, setLoading } = useAuthStore();
+  const theme = useThemeStore((s) => s.theme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     authService.getSession().then((session) => {
@@ -42,13 +49,14 @@ function App() {
       <Toaster
         position="top-right"
         toastOptions={{
-          style: { background: '#ffffff', color: '#000000', border: '1px solid rgba(129,174,217,0.4)', boxShadow: '4px -4px 0px 0px rgb(51,51,51)', borderRadius: '20px' },
+          style: { background: 'var(--color-snow)', color: 'var(--color-ink)', border: '1px solid var(--color-silver-mist)', boxShadow: 'none', borderRadius: '20px' },
         }}
       />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/invite/:token" element={<InvitePage />} />
+        <Route path="/taller/:token" element={<WorkshopPage />} />
         <Route
           path="/"
           element={

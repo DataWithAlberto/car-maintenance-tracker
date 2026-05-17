@@ -11,10 +11,10 @@ import { cn } from '../../utils/cn';
  * The rest stays achromatic — Apple uses color sparingly as a semantic
  * accent, never as a fill that competes with the page content.
  *
- * - Surface: #ffffff snow + 1px #e8e8ed silver border, 14px radius.
+ * - Surface: #ffffff snow + 1px var(--color-silver-mist) silver border, 14px radius.
  * - Severity bar: 3px, full-height, on the left edge.
  * - Label: JetBrains Mono 500 11/.14em uppercase, severity-colored.
- * - Body: SF Pro Text 15/400 #1d1d1f.
+ * - Body: SF Pro Text 15/400 var(--color-ink).
  * - Zero box-shadows.
  * ──────────────────────────────────────────────────────────────────────────── */
 

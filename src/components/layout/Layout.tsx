@@ -63,7 +63,7 @@ export const Layout = () => {
   /* No vehicles yet — minimal shell (login/empty-garage state lives in pages). */
   if (!activeVehicle) {
     return (
-      <div className="min-h-screen" style={{ background: '#f5f5f7' }}>
+      <div className="min-h-screen" style={{ background: 'var(--color-fog)' }}>
         <main className="overflow-x-hidden">
           <ErrorBoundary key={location.pathname}>
             <PageTransition>
@@ -82,7 +82,7 @@ export const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#f5f5f7' }}>
+    <div className="min-h-screen" style={{ background: 'var(--color-fog)' }}>
       <FloatingDock
         items={dockItems}
         activeId={activeId}

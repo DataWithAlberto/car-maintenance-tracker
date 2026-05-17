@@ -126,9 +126,96 @@ export const exportService = {
 </body>
 </html>`;
 
-    const win = window.open('', '_blank');
-    if (!win) throw new Error('No se pudo abrir la ventana de impresión');
-    win.document.write(html);
-    win.document.close();
+    openPrintWindow(html);
+  },
+
+  exportTaxReport(
+    vehicle: Vehicle,
+    expenses: Expense[],
+    records: MaintenanceRecord[],
+    year: number,
+  ): void {
+    const inYear = (d: string): boolean => new Date(d).getFullYear() === year;
+
+    const cats: Record<string, number> = {};
+    expenses.filter((e) => inYear(e.date)).forEach((e) => {
+      cats[e.category] = (cats[e.category] ?? 0) + e.amount;
+    });
+    const maintCost = records
+      .filter((r) => inYear(r.date))
+      .reduce((s, r) => s + (r.cost ?? 0), 0);
+    if (maintCost > 0) cats['Mantenimiento'] = (cats['Mantenimiento'] ?? 0) + maintCost;
+
+    const rows = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+    const total = rows.reduce((s, [, v]) => s + v, 0);
+    const generatedAt = new Date().toLocaleString('es-ES');
+
+    const catRows = rows.length
+      ? rows.map(([name, value]) => `
+        <tr>
+          <td>${esc(name)}</td>
+          <td class="num">${esc(fmtEur(value))}</td>
+          <td class="num">${total > 0 ? Math.round((value / total) * 100) : 0}%</td>
+        </tr>`).join('')
+      : '<tr><td colspan="3" class="empty">Sin gastos este año</td></tr>';
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Informe fiscal ${year} · ${esc(vehicle.brand)} ${esc(vehicle.model)}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1d1d1f; padding: 48px; line-height: 1.5; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #707070; }
+  h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.6px; margin: 6px 0 2px; }
+  .meta { font-size: 13px; color: #707070; }
+  .total { margin-top: 24px; padding: 20px 0; border-top: 1px solid #e8e8ed; border-bottom: 1px solid #e8e8ed; }
+  .total .label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #707070; }
+  .total .value { font-size: 36px; font-weight: 700; letter-spacing: -0.5px; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 28px; }
+  th { text-align: left; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #707070; padding: 8px 10px; border-bottom: 1.5px solid #1d1d1f; }
+  td { padding: 8px 10px; border-bottom: 1px solid #e8e8ed; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .empty { color: #a1a1a6; text-align: center; padding: 16px; }
+  .footer { margin-top: 40px; font-size: 11px; color: #a1a1a6; }
+  @media print { body { padding: 24px; } @page { margin: 16mm; } }
+</style>
+</head>
+<body>
+  <span class="eyebrow">Informe fiscal · ejercicio ${year} · FocusHub</span>
+  <h1>${esc(vehicle.brand)} ${esc(vehicle.model)}</h1>
+  <p class="meta">
+    ${esc(vehicle.year)}${vehicle.license_plate ? ` · ${esc(vehicle.license_plate)}` : ''}${vehicle.vin ? ` · VIN ${esc(vehicle.vin)}` : ''}
+  </p>
+
+  <div class="total">
+    <div class="label">Gasto total deducible · ${year}</div>
+    <div class="value">${esc(fmtEur(total))}</div>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>Categoría</th><th class="num">Importe</th><th class="num">% del total</th>
+    </tr></thead>
+    <tbody>${catRows}</tbody>
+  </table>
+
+  <p class="footer">
+    Generado el ${esc(generatedAt)} · FocusHub.
+    Documento orientativo — no sustituye al asesoramiento de un profesional fiscal.
+  </p>
+  <script>window.onload = function () { window.print(); };</script>
+</body>
+</html>`;
+
+    openPrintWindow(html);
   },
 };
+
+function openPrintWindow(html: string): void {
+  const win = window.open('', '_blank');
+  if (!win) throw new Error('No se pudo abrir la ventana de impresión');
+  win.document.write(html);
+  win.document.close();
+}

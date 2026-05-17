@@ -15,12 +15,12 @@ interface KpiCardProps {
 
 /* ─── Apple-style KPI card ───────────────────────────────────────────────────
  *
- * - Surface: #ffffff (snow) on #f5f5f7 canvas — value-contrast elevation only.
- * - Border: 1px #e8e8ed (silver-mist).
+ * - Surface: #ffffff (snow) on var(--color-fog) canvas — value-contrast elevation only.
+ * - Border: 1px var(--color-silver-mist) (silver-mist).
  * - Radius: 20px (between buttons and cards).
- * - Label: JetBrains Mono 11/.12em uppercase #707070.
+ * - Label: JetBrains Mono 11/.12em uppercase var(--color-graphite).
  * - Value: SF Pro Display 700, 28-32px, tight tracking.
- * - Hint: SF Pro Text 13/400 #707070.
+ * - Hint: SF Pro Text 13/400 var(--color-graphite).
  * - Tone affects ONLY the 6px status dot — the rest stays achromatic.
  * - Zero box-shadows, zero stripes, zero glow.
  * ──────────────────────────────────────────────────────────────────────────── */
@@ -31,7 +31,7 @@ const dotColor: Record<NonNullable<KpiCardProps['tone']>, string> = {
   warn:    '#c77700',
   danger:  '#d70015',
   accent:  '#b64400',
-  neutral: '#a1a1a6',
+  neutral: 'var(--color-mist)',
 };
 
 export const KpiCard = ({

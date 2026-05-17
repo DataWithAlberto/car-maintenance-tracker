@@ -39,6 +39,7 @@ export const expenseSchema = z.object({
   date: z.string().min(1, 'Fecha requerida'),
   amount: z.number().min(0.01, 'Importe inválido'),
   description: z.string().optional(),
+  receipt_url: z.string().optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

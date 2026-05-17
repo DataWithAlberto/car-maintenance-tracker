@@ -48,13 +48,13 @@ export const LoginPage = () => {
 
   const inputBase: React.CSSProperties = {
     width: '100%',
-    background: '#ffffff',
-    border: '1px solid #e8e8ed',
+    background: 'var(--color-snow)',
+    border: '1px solid var(--color-silver-mist)',
     borderRadius: 12,
     padding: '14px 16px',
     fontSize: 17,
     fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif',
-    color: '#1d1d1f',
+    color: 'var(--color-ink)',
     outline: 'none',
     boxSizing: 'border-box',
   };
@@ -65,7 +65,7 @@ export const LoginPage = () => {
     fontWeight: 600,
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
-    color: '#1d1d1f',
+    color: 'var(--color-ink)',
     marginBottom: 8,
     fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif',
   };
@@ -237,7 +237,7 @@ function AuthCard({
         WebkitBackdropFilter: 'saturate(180%) blur(28px)',
         borderRadius: 28,
         border: '1px solid rgba(255,255,255,.5)',
-        color: '#1d1d1f',
+        color: 'var(--color-ink)',
         ...style,
       }}
     >
@@ -252,7 +252,7 @@ function AuthCard({
             flexShrink: 0,
           }}
         />
-        <span style={{ fontSize: 12, fontWeight: 500, color: '#474747', letterSpacing: '-0.04px' }}>
+        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-slate)', letterSpacing: '-0.04px' }}>
           Acceso seguro
         </span>
       </div>
@@ -260,7 +260,7 @@ function AuthCard({
       <h2 style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.6px', margin: '0 0 6px' }}>
         Iniciar sesión
       </h2>
-      <p style={{ fontSize: 15, lineHeight: 1.43, color: '#474747', margin: '0 0 22px' }}>
+      <p style={{ fontSize: 15, lineHeight: 1.43, color: 'var(--color-slate)', margin: '0 0 22px' }}>
         Tu sesión expiró por inactividad. Vuelve a entrar para continuar donde lo dejaste.
       </p>
 
@@ -276,10 +276,10 @@ function AuthCard({
             placeholder="nombre@dominio.com"
             style={{
               ...inputBase,
-              borderColor: errors.email ? '#d70015' : '#e8e8ed',
+              borderColor: errors.email ? '#d70015' : 'var(--color-silver-mist)',
             }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#1d1d1f'; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = errors.email ? '#d70015' : '#e8e8ed'; }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-ink)'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = errors.email ? '#d70015' : 'var(--color-silver-mist)'; }}
           />
           {errors.email && (
             <p style={{ fontSize: 12, color: '#d70015', marginTop: 6, marginLeft: 2 }}>{errors.email}</p>
@@ -299,10 +299,10 @@ function AuthCard({
               style={{
                 ...inputBase,
                 paddingRight: 90,
-                borderColor: errors.password ? '#d70015' : '#e8e8ed',
+                borderColor: errors.password ? '#d70015' : 'var(--color-silver-mist)',
               }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#1d1d1f'; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = errors.password ? '#d70015' : '#e8e8ed'; }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-ink)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = errors.password ? '#d70015' : 'var(--color-silver-mist)'; }}
             />
             <button
               type="button"

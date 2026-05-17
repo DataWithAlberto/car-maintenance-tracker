@@ -13,7 +13,7 @@ interface EmptyStateProps {
 /* ─── Apple-style empty state ────────────────────────────────────────────────
  *
  * - Centered vertical stack.
- * - Icon: 56×56 #f5f5f7 rounded square (silver), 1.5px stroke ink.
+ * - Icon: 56×56 var(--color-fog) rounded square (silver), 1.5px stroke ink.
  *   No blur halo, no shadow, no decoration.
  * - Title: SF Pro Display 600 24/-0.36px ink.
  * - Description: SF Pro Text 17/400 graphite.

@@ -15,12 +15,12 @@ interface ModalProps {
 
 /* ─── Apple-style modal ───────────────────────────────────────────────────────
  *
- * - Surface: #ffffff card on #1d1d1f/40 backdrop with backdrop-blur.
+ * - Surface: #ffffff card on var(--color-ink)/40 backdrop with backdrop-blur.
  * - Radius: 28px (card token).
  * - Zero box-shadow — elevation comes from the dark backdrop alone.
  * - Title: SF Pro Display 600 24/-0.36px (heading-sm).
- * - Description: SF Pro Text 17/400 #707070.
- * - Hairline divider 1px #e8e8ed between header / body / footer.
+ * - Description: SF Pro Text 17/400 var(--color-graphite).
+ * - Hairline divider 1px var(--color-silver-mist) between header / body / footer.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 const sizeMap = {

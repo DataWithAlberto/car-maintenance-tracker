@@ -58,4 +58,22 @@ export const vehicleService = {
     const { error } = await supabase.from('vehicles').delete().eq('id', id);
     if (error) throw error;
   },
+
+  async setShareToken(id: string): Promise<string> {
+    const token = crypto.randomUUID();
+    const { error } = await supabase
+      .from('vehicles')
+      .update({ share_token: token })
+      .eq('id', id);
+    if (error) throw error;
+    return token;
+  },
+
+  async clearShareToken(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('vehicles')
+      .update({ share_token: null })
+      .eq('id', id);
+    if (error) throw error;
+  },
 };

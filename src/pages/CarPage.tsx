@@ -142,7 +142,7 @@ export const CarPage = () => {
       {/* ── 3D Viewer (clean, minimal) ── */}
       <div
         className="relative rounded-[28px] overflow-hidden border border-silver-mist"
-        style={{ height: 'min(70vh, 600px)', background: '#f5f5f7' }}
+        style={{ height: 'min(70vh, 600px)', background: 'var(--color-fog)' }}
       >
         <Suspense fallback={
           <div className="absolute inset-0 flex items-center justify-center">

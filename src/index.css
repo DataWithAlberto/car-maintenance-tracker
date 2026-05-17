@@ -219,6 +219,45 @@
   --animate-shimmer:   shimmer   2s linear infinite;
 }
 
+/* ─── Dark theme ───────────────────────────────────────────────────────────
+ * Overrides the neutral token values. Every Tailwind utility (text-ink,
+ * bg-snow, bg-fog, border-silver-mist, text-graphite…) and every inline
+ * var(--color-*) reference flips automatically. Fixed-dark surfaces
+ * (the hero gradient, .card-dark) intentionally keep their literal colors.
+ * ──────────────────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-ink:         #f5f5f7;
+  --color-graphite:    #98989d;
+  --color-slate:       #c7c7cc;
+  --color-ash:         #d1d1d6;
+  --color-mist:        #6e6e73;
+  --color-fog:         #131315;
+  --color-snow:        #1e1e20;
+  --color-silver-mist: #38383c;
+  --color-silver:      #38383c;
+
+  --surface-canvas:          #131315;
+  --surface-card:            #1e1e20;
+  --surface-recessed:        #0c0c0d;
+  --surface-frosted-control: rgba(60, 60, 66, 0.7);
+
+  --color-bg:        #131315;
+  --color-surface:   #1e1e20;
+  --color-surface-2: #131315;
+  --color-border:    #38383c;
+
+  --color-canvas-white: #131315;
+  --color-canvas-50:    #1a1a1c;
+  --color-canvas-100:   #131315;
+  --color-cloud-white:  #1e1e20;
+  --color-ink-black:    #f5f5f7;
+
+  --color-azure:       #2b8fff;
+  --color-cobalt-link: #5ea8ff;
+}
+
 /* ─── Keyframes ───────────────────────────────────────────────────────────── */
 @keyframes fade-in {
   from { opacity: 0; }

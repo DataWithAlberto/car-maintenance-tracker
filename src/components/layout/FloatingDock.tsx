@@ -25,7 +25,7 @@ export interface FloatingDockProps {
  * - Hover-expands from 60 → 232px (pointer:fine only); permanently expanded on
  *   touch devices (pointer:coarse).
  * - Zero box-shadow (DESIGN.md elevation rule); container relies on the
- *   #ffffff card over #f5f5f7 canvas for separation.
+ *   #ffffff card over var(--color-fog) canvas for separation.
  * - Pure presentational: all data comes via props.
  */
 export const FloatingDock = ({
@@ -48,9 +48,9 @@ export const FloatingDock = ({
         width: open ? 232 : 60,
         maxHeight: 800,
         transition: 'width 320ms cubic-bezier(.4,0,.2,1)',
-        background: '#ffffff',
+        background: 'var(--color-snow)',
         borderRadius: 28,
-        border: '1px solid #e8e8ed',
+        border: '1px solid var(--color-silver-mist)',
         flexDirection: 'column',
         zIndex: 50,
         overflow: 'hidden',
@@ -63,7 +63,7 @@ export const FloatingDock = ({
       }}>
         <span style={{
           width: 36, height: 36, borderRadius: 10,
-          background: '#1d1d1f', color: '#fff',
+          background: 'var(--color-ink)', color: 'var(--color-snow)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <Car size={18} strokeWidth={1.6} />
@@ -73,7 +73,7 @@ export const FloatingDock = ({
             <div style={{
               fontFamily: 'Inter, var(--font-sf-pro-display)',
               fontWeight: 600, fontSize: 14, lineHeight: 1.2,
-              color: '#1d1d1f',
+              color: 'var(--color-ink)',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>
               {vehicle.brand} {vehicle.model}
@@ -82,7 +82,7 @@ export const FloatingDock = ({
               fontFamily: 'var(--font-mono)',
               fontWeight: 500, fontSize: 10, lineHeight: 1,
               letterSpacing: '0.06em',
-              color: '#a1a1a6', marginTop: 4,
+              color: 'var(--color-mist)', marginTop: 4,
             }}>
               {vehicle.plate}
             </div>
@@ -92,7 +92,7 @@ export const FloatingDock = ({
 
       {/* hairline */}
       <div style={{
-        height: 1, background: '#e8e8ed',
+        height: 1, background: 'var(--color-silver-mist)',
         margin: open ? '0 18px' : '0 12px',
       }} />
 
@@ -128,8 +128,8 @@ export const FloatingDock = ({
                 borderRadius: 14,
                 cursor: 'pointer',
                 textDecoration: 'none',
-                background: isActive ? '#1d1d1f' : 'transparent',
-                color: isActive ? '#fff' : '#474747',
+                background: isActive ? 'var(--color-ink)' : 'transparent',
+                color: isActive ? 'var(--color-snow)' : 'var(--color-slate)',
                 fontFamily: 'Inter, var(--font-sf-pro-text)',
                 fontWeight: isActive ? 600 : 400,
                 fontSize: 14, lineHeight: 1,
@@ -141,7 +141,7 @@ export const FloatingDock = ({
                 width: 24, height: 24,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
-                color: isActive ? '#fff' : '#1d1d1f',
+                color: isActive ? 'var(--color-snow)' : 'var(--color-ink)',
               }}>
                 <Icon size={18} strokeWidth={1.6} />
               </span>
@@ -156,8 +156,8 @@ export const FloatingDock = ({
                 <span style={{
                   minWidth: 18, height: 18, padding: '0 6px',
                   borderRadius: 999,
-                  background: isActive ? '#fff' : '#b64400',
-                  color: isActive ? '#1d1d1f' : '#fff',
+                  background: isActive ? 'var(--color-snow)' : '#b64400',
+                  color: isActive ? 'var(--color-ink)' : 'var(--color-snow)',
                   fontFamily: 'Inter, var(--font-sf-pro-text)',
                   fontWeight: 600, fontSize: 10, lineHeight: '18px',
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -181,7 +181,7 @@ export const FloatingDock = ({
 
       {/* hairline */}
       <div style={{
-        height: 1, background: '#e8e8ed',
+        height: 1, background: 'var(--color-silver-mist)',
         margin: open ? '0 18px' : '0 12px',
       }} />
 
@@ -193,7 +193,7 @@ export const FloatingDock = ({
       }}>
         <span style={{
           width: 32, height: 32, borderRadius: 999,
-          background: '#1d1d1f', color: '#fff',
+          background: 'var(--color-ink)', color: 'var(--color-snow)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           fontFamily: 'Inter, var(--font-sf-pro-text)',
           fontWeight: 600, fontSize: 11, lineHeight: 1,
@@ -206,7 +206,7 @@ export const FloatingDock = ({
             <div style={{
               fontFamily: 'Inter, var(--font-sf-pro-text)',
               fontWeight: 500, fontSize: 13, lineHeight: 1.2,
-              color: '#1d1d1f',
+              color: 'var(--color-ink)',
               overflow: 'hidden', textOverflow: 'ellipsis',
             }}>
               {user.name}
@@ -217,7 +217,7 @@ export const FloatingDock = ({
                 display: 'block',
                 fontFamily: 'Inter, var(--font-sf-pro-text)',
                 fontWeight: 400, fontSize: 11, lineHeight: 1,
-                color: '#707070', marginTop: 3,
+                color: 'var(--color-graphite)', marginTop: 3,
                 textDecoration: 'none',
               }}
             >

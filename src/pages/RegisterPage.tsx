@@ -200,7 +200,7 @@ function AuthCard({ form, setForm, errors, loading, handleSubmit, style }: AuthC
         WebkitBackdropFilter: 'saturate(180%) blur(28px)',
         borderRadius: 28,
         border: '1px solid rgba(255,255,255,.5)',
-        color: '#1d1d1f',
+        color: 'var(--color-ink)',
         ...style,
       }}
     >
@@ -214,7 +214,7 @@ function AuthCard({ form, setForm, errors, loading, handleSubmit, style }: AuthC
             display: 'inline-block', flexShrink: 0,
           }}
         />
-        <span style={{ fontSize: 12, fontWeight: 500, color: '#474747', letterSpacing: '-0.04px' }}>
+        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-slate)', letterSpacing: '-0.04px' }}>
           Nuevo · Gratis
         </span>
       </div>
@@ -222,7 +222,7 @@ function AuthCard({ form, setForm, errors, loading, handleSubmit, style }: AuthC
       <h2 style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.6px', margin: '0 0 6px' }}>
         Crear cuenta
       </h2>
-      <p style={{ fontSize: 15, lineHeight: 1.43, color: '#474747', margin: '0 0 22px' }}>
+      <p style={{ fontSize: 15, lineHeight: 1.43, color: 'var(--color-slate)', margin: '0 0 22px' }}>
         Tarda 30 segundos. No pedimos tarjeta ni dirección.
       </p>
 
@@ -276,7 +276,7 @@ function AuthCard({ form, setForm, errors, loading, handleSubmit, style }: AuthC
           {loading ? 'Creando cuenta...' : 'Crear cuenta'}
         </button>
 
-        <p style={{ textAlign: 'center', fontSize: 14, color: '#474747', marginTop: 6 }}>
+        <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--color-slate)', marginTop: 6 }}>
           ¿Ya tienes cuenta?{' '}
           <Link to="/login" style={{ color: '#0066cc', fontWeight: 500, textDecoration: 'none' }}>
             Inicia sesión →

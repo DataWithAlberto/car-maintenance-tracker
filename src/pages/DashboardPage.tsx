@@ -10,6 +10,8 @@ import { expensesService } from '../services/expenses.service';
 import { tripsService } from '../services/trips.service';
 import { documentsService } from '../services/documents.service';
 import { calculateAlerts, calculateDocumentAlerts } from '../utils/calculations';
+import { sendAlertNotifications } from '../utils/notifications';
+import { useSettingsStore } from '../store/settingsStore';
 import { OIL_CHANGE_KM_INTERVAL } from '../utils/constants';
 import type {
   VehicleWithAccess, MaintenanceRecord, Expense, Trip, Alert, Document,
@@ -37,6 +39,7 @@ export const DashboardPage = () => {
   const { vehicles, loading, fetchVehicles, createVehicle } = useVehicle();
   const { setSelectedVehicle: storeSet } = useVehicleStore();
   const { user } = useAuthStore();
+  const { pushEnabled } = useSettingsStore();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [stats, setStats] = useState<Record<string, VehicleStats>>({});
@@ -74,8 +77,11 @@ export const DashboardPage = () => {
       results.forEach((r) => { map[r.id] = r.data; });
       setStats(map);
       setLoadedAt(new Date());
+      if (pushEnabled) {
+        sendAlertNotifications(results.flatMap((r) => r.data.alerts));
+      }
     });
-  }, [vehicles]);
+  }, [vehicles, pushEnabled]);
 
   // Primary vehicle = first owned, else first available
   const primary = useMemo(
@@ -301,7 +307,7 @@ export const DashboardPage = () => {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="page-enter" style={{ background: '#f5f5f7', minHeight: '100%' }}>
+    <div className="page-enter" style={{ background: 'var(--color-fog)', minHeight: '100%' }}>
       {/* ═══ BLOCK 1 · INDIGO HERO ═══════════════════════════════════════════ */}
       <section
         className="indigo-hero mx-5 md:mx-10 mt-6"
@@ -576,15 +582,15 @@ export const DashboardPage = () => {
                   lineHeight: 1,
                   letterSpacing: '-2.11px',
                   margin: '12px 0 0',
-                  color: '#1d1d1f',
+                  color: 'var(--color-ink)',
                 }}>
                   {fmtN(primary.current_km)}<br />
-                  <span style={{ color: '#707070' }}>kilómetros.</span>
+                  <span style={{ color: 'var(--color-graphite)' }}>kilómetros.</span>
                 </h1>
                 <p style={{
                   fontFamily: 'Inter, var(--font-sf-pro-text)',
                   fontWeight: 300, fontSize: 22, lineHeight: 1.4,
-                  letterSpacing: '-0.2px', color: '#474747',
+                  letterSpacing: '-0.2px', color: 'var(--color-slate)',
                   maxWidth: 480, margin: '24px 0 0',
                 }}>
                   +{fmtN(thisMonthKm)} este mes.{' '}
@@ -595,12 +601,12 @@ export const DashboardPage = () => {
               </div>
 
               <div className="card" style={{
-                padding: 32, background: '#fff',
-                borderRadius: 20, border: '1px solid #e8e8ed',
+                padding: 32, background: 'var(--color-snow)',
+                borderRadius: 20, border: '1px solid var(--color-silver-mist)',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="eyebrow">Uso diario · 30 días</span>
-                  <span className="mono" style={{ fontSize: 11, color: '#a1a1a6' }}>
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--color-mist)' }}>
                     {avgPerDay.toFixed(1).replace('.', ',')} KM/DÍA
                   </span>
                 </div>
@@ -609,7 +615,7 @@ export const DashboardPage = () => {
                 </div>
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', marginTop: 8,
-                  fontFamily: 'var(--font-mono)', fontSize: 11, color: '#a1a1a6',
+                  fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-mist)',
                 }}>
                   {axisDates.map((d) => <span key={d}>{d}</span>)}
                 </div>
@@ -620,7 +626,7 @@ export const DashboardPage = () => {
             <section className="editorial-grid-3">
               {/* Card A — Alerta crítica */}
               <div className="card" style={{
-                background: '#fff', borderRadius: 20, border: '1px solid #e8e8ed',
+                background: 'var(--color-snow)', borderRadius: 20, border: '1px solid var(--color-silver-mist)',
                 padding: 28, minHeight: 280,
                 display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
               }}>
@@ -629,20 +635,20 @@ export const DashboardPage = () => {
                   <div style={{
                     fontFamily: 'Inter, var(--font-sf-pro-display)',
                     fontWeight: 700, fontSize: 56, lineHeight: 1,
-                    letterSpacing: '-0.9px', color: '#1d1d1f',
+                    letterSpacing: '-0.9px', color: 'var(--color-ink)',
                   }}>
                     {nextMaintenance ? fmtN(nextMaintenance.kmRemaining) : '—'}
                     {nextMaintenance && (
                       <span style={{
                         fontFamily: 'Inter, var(--font-sf-pro-text)',
-                        fontWeight: 300, fontSize: 24, color: '#707070',
+                        fontWeight: 300, fontSize: 24, color: 'var(--color-graphite)',
                       }}> km</span>
                     )}
                   </div>
                   <p style={{
                     fontFamily: 'Inter, var(--font-sf-pro-text)',
                     fontWeight: 400, fontSize: 17, lineHeight: 1.45,
-                    color: '#1d1d1f', margin: '12px 0 0',
+                    color: 'var(--color-ink)', margin: '12px 0 0',
                   }}>
                     {nextMaintenance
                       ? <>hasta el {nextMaintenance.label} recomendado.</>
@@ -651,11 +657,11 @@ export const DashboardPage = () => {
                   {nextMaintenance && (() => {
                     const used = nextMaintenance.intervalKm - nextMaintenance.kmRemaining;
                     const pct = Math.min(100, Math.max(0, (used / nextMaintenance.intervalKm) * 100));
-                    const barColor = pct >= 90 ? '#b64400' : pct >= 70 ? '#c77700' : '#1d1d1f';
+                    const barColor = pct >= 90 ? '#b64400' : pct >= 70 ? '#c77700' : 'var(--color-ink)';
                     return (
                       <div style={{ marginTop: 16 }}>
                         <div style={{
-                          height: 6, background: '#e8e8ed',
+                          height: 6, background: 'var(--color-silver-mist)',
                           borderRadius: 999, overflow: 'hidden',
                         }}>
                           <div style={{
@@ -668,7 +674,7 @@ export const DashboardPage = () => {
                           display: 'flex', justifyContent: 'space-between',
                           marginTop: 6,
                           fontFamily: 'var(--font-mono)', fontSize: 10,
-                          letterSpacing: '0.06em', color: '#a1a1a6',
+                          letterSpacing: '0.06em', color: 'var(--color-mist)',
                         }}>
                           <span>{Math.round(pct)}% DEL INTERVALO</span>
                           <span>{fmtN(nextMaintenance.intervalKm)} KM</span>
@@ -688,7 +694,7 @@ export const DashboardPage = () => {
 
               {/* Card B — Salud general */}
               <div className="card-fog" style={{
-                background: '#f5f5f7', borderRadius: 20,
+                background: 'var(--color-fog)', borderRadius: 20,
                 padding: 28, minHeight: 280,
                 display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
               }}>
@@ -697,12 +703,12 @@ export const DashboardPage = () => {
                   <div style={{
                     fontFamily: 'Inter, var(--font-sf-pro-display)',
                     fontWeight: 700, fontSize: 'clamp(64px, 8vw, 96px)',
-                    lineHeight: 1, letterSpacing: '-2.11px', color: '#1d1d1f',
+                    lineHeight: 1, letterSpacing: '-2.11px', color: 'var(--color-ink)',
                   }}>{healthScore}</div>
                   <p style={{
                     fontFamily: 'Inter, var(--font-sf-pro-text)',
                     fontWeight: 300, fontSize: 17, lineHeight: 1.45,
-                    color: '#474747', margin: '4px 0 0',
+                    color: 'var(--color-slate)', margin: '4px 0 0',
                   }}>
                     sobre 100. {healthDetail}
                   </p>
@@ -778,7 +784,7 @@ export const DashboardPage = () => {
               <style>{`
                 .gastos-row {
                   display: flex; justify-content: space-between; align-items: flex-end;
-                  border-top: 1px solid #e8e8ed; padding-top: 36px;
+                  border-top: 1px solid var(--color-silver-mist); padding-top: 36px;
                   flex-wrap: wrap; gap: 32px;
                 }
                 .gastos-meta {
@@ -794,9 +800,9 @@ export const DashboardPage = () => {
                   lineHeight: 1,
                   letterSpacing: '-1.7px',
                   margin: '10px 0 0',
-                  color: '#1d1d1f',
+                  color: 'var(--color-ink)',
                 }}>
-                  {fmtN(totalYtdPrimary)} <span style={{ color: '#707070' }}>€</span>
+                  {fmtN(totalYtdPrimary)} <span style={{ color: 'var(--color-graphite)' }}>€</span>
                 </h2>
               </div>
               <div className="gastos-meta">
@@ -806,11 +812,11 @@ export const DashboardPage = () => {
                   ['SEGURO',        expensesByCat.seguro],
                 ].map(([lbl, val]) => (
                   <div key={lbl as string}>
-                    <span className="label" style={{ color: '#707070' }}>{lbl}</span>
+                    <span className="label" style={{ color: 'var(--color-graphite)' }}>{lbl}</span>
                     <div style={{
                       fontFamily: 'Inter, var(--font-sf-pro-display)',
                       fontWeight: 600, fontSize: 28, lineHeight: 1,
-                      color: '#1d1d1f', marginTop: 8,
+                      color: 'var(--color-ink)', marginTop: 8,
                     }}>{fmtEur(val as number)}</div>
                   </div>
                 ))}
@@ -821,12 +827,12 @@ export const DashboardPage = () => {
             </section>
 
             {/* ── Flota registrada ──────────────────────────────────────── */}
-            <section style={{ borderTop: '1px solid #e8e8ed', paddingTop: 36 }}>
+            <section style={{ borderTop: '1px solid var(--color-silver-mist)', paddingTop: 36 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16 }}>
                 <span className="eyebrow">
                   Flota registrada · {vehicles.length} vehículo{vehicles.length === 1 ? '' : 's'}
                 </span>
-                <span className="mono" style={{ fontSize: 11, color: '#a1a1a6' }}>
+                <span className="mono" style={{ fontSize: 11, color: 'var(--color-mist)' }}>
                   CLIC PARA SELECCIONAR
                 </span>
               </div>
@@ -877,7 +883,7 @@ const Sparkline = ({ data, width = 460, height = 120 }: {
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} preserveAspectRatio="none">
       <path d={area} fill="rgba(29,29,31,0.06)" />
-      <path d={line} fill="none" stroke="#1d1d1f" strokeWidth={1.5} />
+      <path d={line} fill="none" stroke="var(--color-ink)" strokeWidth={1.5} />
     </svg>
   );
 };
@@ -908,8 +914,8 @@ const BodySkeleton = () => (
   }}>
     {[0, 1, 2].map((i) => (
       <div key={i} style={{
-        height: 220, borderRadius: 20, background: '#fff',
-        border: '1px solid #e8e8ed',
+        height: 220, borderRadius: 20, background: 'var(--color-snow)',
+        border: '1px solid var(--color-silver-mist)',
       }} className="skeleton" />
     ))}
   </div>
@@ -942,8 +948,8 @@ const VehicleGridCard = ({
         flexDirection: 'column',
         justifyContent: 'space-between',
         textAlign: 'left',
-        background: '#fff',
-        border: isPrimary ? '2px solid #0071e3' : '1px solid #e8e8ed',
+        background: 'var(--color-snow)',
+        border: isPrimary ? '2px solid #0071e3' : '1px solid var(--color-silver-mist)',
         borderRadius: 20,
         padding: 20,
         minHeight: 200,
@@ -956,7 +962,7 @@ const VehicleGridCard = ({
         (e.currentTarget as HTMLElement).style.opacity = '1';
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = isPrimary ? '#0071e3' : '#e8e8ed';
+        (e.currentTarget as HTMLElement).style.borderColor = isPrimary ? '#0071e3' : 'var(--color-silver-mist)';
         (e.currentTarget as HTMLElement).style.opacity = isPrimary ? '1' : '0.8';
       }}
     >
@@ -968,7 +974,7 @@ const VehicleGridCard = ({
               fontWeight: 600,
               fontSize: 18,
               letterSpacing: '-0.2px',
-              color: '#1d1d1f',
+              color: 'var(--color-ink)',
               margin: '0 0 4px',
             }}>
               {vehicle.brand} {vehicle.model}
@@ -976,7 +982,7 @@ const VehicleGridCard = ({
             <div style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
-              color: '#a1a1a6',
+              color: 'var(--color-mist)',
               letterSpacing: '0.08em',
               marginBottom: 8,
             }}>
@@ -1023,23 +1029,23 @@ const VehicleGridCard = ({
           marginTop: 12,
         }}>
           <div>
-            <div style={{ fontSize: 11, color: '#a1a1a6', marginBottom: 4 }}>KM</div>
+            <div style={{ fontSize: 11, color: 'var(--color-mist)', marginBottom: 4 }}>KM</div>
             <div style={{
               fontFamily: 'Inter, var(--font-sf-pro-display)',
               fontWeight: 600,
               fontSize: 20,
-              color: '#1d1d1f',
+              color: 'var(--color-ink)',
             }}>
               {fmtN(vehicle.current_km)}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: '#a1a1a6', marginBottom: 4 }}>SVC</div>
+            <div style={{ fontSize: 11, color: 'var(--color-mist)', marginBottom: 4 }}>SVC</div>
             <div style={{
               fontFamily: 'Inter, var(--font-sf-pro-display)',
               fontWeight: 600,
               fontSize: 20,
-              color: '#1d1d1f',
+              color: 'var(--color-ink)',
             }}>
               {recordCount}
             </div>
@@ -1049,7 +1055,7 @@ const VehicleGridCard = ({
       <div style={{
         fontFamily: 'var(--font-mono)',
         fontSize: 10,
-        color: '#a1a1a6',
+        color: 'var(--color-mist)',
         marginTop: 12,
       }}>
         {isPrimary ? '✓ Vehículo principal' : 'Haz click para seleccionar'}
@@ -1068,15 +1074,15 @@ const EditorialEmpty = ({ onAdd }: { onAdd: () => void }) => (
       fontFamily: 'Inter, var(--font-sf-pro-display)',
       fontWeight: 700, fontSize: 'clamp(40px, 6vw, 64px)',
       lineHeight: 1.04, letterSpacing: '-1.4px',
-      margin: 0, color: '#1d1d1f',
+      margin: 0, color: 'var(--color-ink)',
     }}>
       Empieza añadiendo<br />
-      <span style={{ color: '#707070' }}>tu primer vehículo.</span>
+      <span style={{ color: 'var(--color-graphite)' }}>tu primer vehículo.</span>
     </h2>
     <p style={{
       fontFamily: 'Inter, var(--font-sf-pro-text)',
       fontWeight: 300, fontSize: 20, lineHeight: 1.4,
-      letterSpacing: '-0.2px', color: '#474747', maxWidth: 520, margin: 0,
+      letterSpacing: '-0.2px', color: 'var(--color-slate)', maxWidth: 520, margin: 0,
     }}>
       Registra marca, modelo y kilometraje. A partir de ahí, FocusHub te avisará
       de mantenimientos y agrupará gastos y trayectos.

@@ -79,7 +79,7 @@ export const TripCard = ({ trip, selected, onClick, onDelete, onShare, className
           {hasCoords && (
             <span
               className="rounded-full inline-block"
-              style={{ width: 5, height: 5, background: '#a1a1a6' }}
+              style={{ width: 5, height: 5, background: 'var(--color-mist)' }}
               title="Tiene coordenadas"
             />
           )}

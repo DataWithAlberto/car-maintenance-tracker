@@ -91,7 +91,7 @@ export const InvitePage = () => {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-6"
-      style={{ background: '#f5f5f7' }}
+      style={{ background: 'var(--color-fog)' }}
     >
       <div className="w-full max-w-md">
         {/* Mark */}

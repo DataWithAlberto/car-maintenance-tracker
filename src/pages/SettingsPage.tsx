@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, AlertTriangle, Car, LogOut, KeyRound, Sparkles, Check, FileDown } from 'lucide-react';
+import { Pencil, Trash2, AlertTriangle, Car, LogOut, KeyRound, Sparkles, Check, FileDown, Bell, Wrench, Copy, Moon, Sun } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { useThemeStore } from '../store/themeStore';
 import { useVehicle } from '../hooks/useVehicle';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { maintenanceService } from '../services/maintenance.service';
+import { vehicleService } from '../services/vehicle.service';
 import { expensesService } from '../services/expenses.service';
 import { documentsService } from '../services/documents.service';
 import { exportService } from '../services/export.service';
@@ -15,13 +17,17 @@ import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FloatingInput } from '../components/ui/FloatingInput';
 import { formatKm } from '../utils/formatters';
+import { cn } from '../utils/cn';
+import { requestNotificationPermission, notificationsSupported } from '../utils/notifications';
 import toast from 'react-hot-toast';
 
 export const SettingsPage = () => {
   const { selectedVehicle } = useVehicleStore();
+  const updateVehicleStore = useVehicleStore((s) => s.updateVehicle);
+  const { theme, setTheme } = useThemeStore();
   const { updateVehicle, deleteVehicle } = useVehicle();
   const { logout, user } = useAuth();
-  const { anthropicApiKey, setAnthropicApiKey, clearAnthropicApiKey } = useSettingsStore();
+  const { anthropicApiKey, setAnthropicApiKey, clearAnthropicApiKey, pushEnabled, setPushEnabled } = useSettingsStore();
   const navigate = useNavigate();
   const [showEditForm, setShowEditForm] = useState(false);
   const [apiKeyDraft, setApiKeyDraft] = useState(anthropicApiKey);
@@ -31,6 +37,47 @@ export const SettingsPage = () => {
   const [savingName, setSavingName] = useState(false);
 
   const [exporting, setExporting] = useState(false);
+  const [exportingTax, setExportingTax] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+  const taxYear = new Date().getFullYear();
+
+  const shareUrl = selectedVehicle?.share_token
+    ? `${window.location.origin}/taller/${selectedVehicle.share_token}`
+    : null;
+
+  const handleGenerateShare = async () => {
+    if (!selectedVehicle) return;
+    setShareBusy(true);
+    try {
+      const token = await vehicleService.setShareToken(selectedVehicle.id);
+      updateVehicleStore(selectedVehicle.id, { share_token: token });
+      toast.success('Enlace de taller generado');
+    } catch {
+      toast.error('No se pudo generar el enlace');
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
+  const handleDisableShare = async () => {
+    if (!selectedVehicle) return;
+    setShareBusy(true);
+    try {
+      await vehicleService.clearShareToken(selectedVehicle.id);
+      updateVehicleStore(selectedVehicle.id, { share_token: null });
+      toast.success('Acceso de taller desactivado');
+    } catch {
+      toast.error('No se pudo desactivar el acceso');
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
+  const handleCopyShare = () => {
+    if (shareUrl) {
+      navigator.clipboard.writeText(shareUrl).then(() => toast.success('Enlace copiado'));
+    }
+  };
 
   const handleSaveName = async () => {
     setSavingName(true);
@@ -54,6 +101,37 @@ export const SettingsPage = () => {
       toast.error(err instanceof Error ? err.message : 'No se pudo generar el informe');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleExportTaxReport = async () => {
+    if (!selectedVehicle) return;
+    setExportingTax(true);
+    try {
+      const [records, expenses] = await Promise.all([
+        maintenanceService.getByVehicle(selectedVehicle.id),
+        expensesService.getByVehicle(selectedVehicle.id),
+      ]);
+      exportService.exportTaxReport(selectedVehicle, expenses, records, taxYear);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo generar el informe fiscal');
+    } finally {
+      setExportingTax(false);
+    }
+  };
+
+  const handleTogglePush = async () => {
+    if (pushEnabled) {
+      setPushEnabled(false);
+      toast.success('Recordatorios desactivados');
+      return;
+    }
+    const perm = await requestNotificationPermission();
+    if (perm === 'granted') {
+      setPushEnabled(true);
+      toast.success('Recordatorios activados');
+    } else {
+      toast.error('El navegador denegó el permiso de notificaciones');
     }
   };
 
@@ -265,6 +343,170 @@ export const SettingsPage = () => {
         </div>
       </section>
 
+      {/* Appearance */}
+      <section className="bg-snow border border-silver-mist rounded-[28px] p-7">
+        <h2
+          className="font-mono uppercase text-graphite mb-4"
+          style={{ fontSize: 11, letterSpacing: '0.14em' }}
+        >
+          Apariencia
+        </h2>
+        <div className="flex items-center gap-4">
+          <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
+            {theme === 'dark'
+              ? <Moon className="h-5 w-5 text-graphite" strokeWidth={1.6} />
+              : <Sun className="h-5 w-5 text-graphite" strokeWidth={1.6} />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p
+              className="font-display text-ink"
+              style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px' }}
+            >
+              Tema de la interfaz
+            </p>
+            <p className="font-text text-graphite mt-1" style={{ fontSize: 14 }}>
+              Elige entre modo claro y modo oscuro.
+            </p>
+          </div>
+          <div className="flex bg-fog rounded-full p-1 gap-0.5 select-none">
+            {([['light', 'Claro'], ['dark', 'Oscuro']] as const).map(([v, label]) => (
+              <button
+                key={v}
+                onClick={() => setTheme(v)}
+                className={cn(
+                  'focus-ring px-4 h-9 rounded-full font-text font-medium transition-colors text-sm',
+                  theme === v
+                    ? 'bg-snow text-ink border border-silver-mist'
+                    : 'text-graphite hover:text-ink',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Notifications */}
+      <section className="bg-snow border border-silver-mist rounded-[28px] p-7">
+        <h2
+          className="font-mono uppercase text-graphite mb-4"
+          style={{ fontSize: 11, letterSpacing: '0.14em' }}
+        >
+          Recordatorios
+        </h2>
+        <div className="flex items-center gap-4">
+          <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
+            <Bell className="h-5 w-5 text-graphite" strokeWidth={1.6} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p
+              className="font-display text-ink"
+              style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px' }}
+            >
+              Avisos del navegador
+            </p>
+            <p
+              className="font-text text-graphite mt-1"
+              style={{ fontSize: 14, lineHeight: 1.45 }}
+            >
+              {notificationsSupported()
+                ? 'Recibe alertas de mantenimiento y documentos al abrir el panel.'
+                : 'Este navegador no admite notificaciones.'}
+            </p>
+          </div>
+          <Button
+            variant={pushEnabled ? 'secondary' : 'accent'}
+            size="sm"
+            onClick={handleTogglePush}
+            disabled={!notificationsSupported()}
+          >
+            {pushEnabled ? 'Desactivar' : 'Activar'}
+          </Button>
+        </div>
+      </section>
+
+      {/* Workshop mode */}
+      {selectedVehicle.role === 'owner' && (
+        <section className="bg-snow border border-silver-mist rounded-[28px] p-7">
+          <h2
+            className="font-mono uppercase text-graphite mb-4"
+            style={{ fontSize: 11, letterSpacing: '0.14em' }}
+          >
+            Modo taller
+          </h2>
+          <div className="flex items-start gap-4">
+            <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
+              <Wrench className="h-5 w-5 text-graphite" strokeWidth={1.6} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className="font-display text-ink"
+                style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px' }}
+              >
+                Compartir ficha con el taller
+              </p>
+              <p
+                className="font-text text-graphite mt-2 mb-4 max-w-xl"
+                style={{ fontSize: 15, lineHeight: 1.45 }}
+              >
+                Genera un enlace de solo lectura con el historial de mantenimiento,
+                gastos y documentos. El taller lo abre sin cuenta ni contraseña.
+              </p>
+
+              {shareUrl ? (
+                <>
+                  <div className="flex items-center gap-2 max-w-xl">
+                    <input
+                      readOnly
+                      value={shareUrl}
+                      onFocus={(e) => e.currentTarget.select()}
+                      className="flex-1 min-w-0 bg-fog border border-silver-mist rounded-[12px] px-3 h-10 font-mono text-ink"
+                      style={{ fontSize: 12 }}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleCopyShare}
+                      iconLeft={<Copy className="h-3.5 w-3.5" strokeWidth={1.7} />}
+                    >
+                      Copiar
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-3 mt-4 flex-wrap">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleDisableShare}
+                      loading={shareBusy}
+                    >
+                      Desactivar acceso
+                    </Button>
+                    <span
+                      className="inline-flex items-center gap-1.5 font-text"
+                      style={{ fontSize: 13, color: '#2f6b34' }}
+                    >
+                      <Check className="h-3.5 w-3.5" strokeWidth={2} />
+                      Enlace activo
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <Button
+                  variant="accent"
+                  size="sm"
+                  onClick={handleGenerateShare}
+                  loading={shareBusy}
+                  iconLeft={<Wrench className="h-4 w-4" strokeWidth={1.7} />}
+                >
+                  Generar enlace de taller
+                </Button>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Vehicle data */}
       <section className="bg-snow border border-silver-mist rounded-[28px] p-7">
         <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
@@ -336,8 +578,17 @@ export const SettingsPage = () => {
           >
             Exportar informe (PDF)
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportTaxReport}
+            loading={exportingTax}
+            iconLeft={<FileDown className="h-4 w-4" strokeWidth={1.7} />}
+          >
+            Informe fiscal {taxYear}
+          </Button>
           <span className="font-text text-graphite" style={{ fontSize: 13 }}>
-            Mantenimiento, gastos y documentos en un solo archivo.
+            Historial completo o resumen de gastos deducibles del año.
           </span>
         </div>
       </section>

@@ -23,6 +23,7 @@ export interface Vehicle {
   current_km: number;
   vin?: string;
   model_3d_url?: string;
+  share_token?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -174,6 +175,32 @@ export interface Diagnosis {
   urgency: AlertSeverity;     // urgencia general
   estimatedService: string;   // servicio que necesita el coche
   recommendations: MechanicRecommendation[]; // talleres ordenados por idoneidad
+}
+
+export interface ReceiptScan {
+  amount?: number;
+  date?: string;
+  category?: string;
+  description?: string;
+}
+
+export interface MaintenanceInsight {
+  title: string;
+  detail: string;
+  severity: AlertSeverity;
+}
+
+export type FailureStatus = 'ok' | 'soon' | 'overdue';
+
+export interface FailurePrediction {
+  key: string;
+  label: string;
+  lifespanKm: number;
+  lastServiceKm: number | null;
+  predictedKm: number;
+  kmRemaining: number;
+  lifeUsedPct: number;
+  status: FailureStatus;
 }
 
 export interface CreateTripInput {

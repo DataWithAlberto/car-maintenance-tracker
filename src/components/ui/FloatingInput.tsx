@@ -21,10 +21,10 @@ type SelectProps   = BaseProps & Omit<SelectHTMLAttributes<HTMLSelectElement>, '
 
 /* ─── Apple-style fields ──────────────────────────────────────────────────────
  *
- * - Surface: #ffffff (snow) over #f5f5f7 canvas
- * - Border: 1px #e8e8ed (silver-mist); focus → 1px #0071e3 (azure)
+ * - Surface: #ffffff (snow) over var(--color-fog) canvas
+ * - Border: 1px var(--color-silver-mist) (silver-mist); focus → 1px #0071e3 (azure)
  * - Radius: 14px (between buttons and cards)
- * - Floating label uses graphite (#707070) → ink (#1d1d1f) on focus / fill
+ * - Floating label uses graphite (var(--color-graphite)) → ink (var(--color-ink)) on focus / fill
  * - Error: 1px #b64400 (caution) border + helper text
  * - Zero box-shadows.
  * ──────────────────────────────────────────────────────────────────────────── */

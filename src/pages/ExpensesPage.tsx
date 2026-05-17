@@ -20,6 +20,7 @@ const toInput = (e: Expense): Partial<ExpenseInput> => ({
   date: e.date,
   amount: e.amount,
   description: e.description ?? undefined,
+  receipt_url: e.receipt_url ?? undefined,
 });
 
 export const ExpensesPage = () => {
@@ -200,6 +201,7 @@ export const ExpensesPage = () => {
 
       {(showForm || editing) && (
         <ExpenseForm
+          vehicleId={selectedVehicle.id}
           initialData={editing ? toInput(editing) : undefined}
           onSubmit={handleSubmit}
           onClose={() => { setShowForm(false); setEditing(null); }}

@@ -30,7 +30,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   const map: Record<string, { label: string; bg: string; fg: string; dot: string }> = {
     connected:    { label: 'Conectado',    bg: '#e3f0e3', fg: '#2f6b34', dot: '#1a9e3f' },
     connecting:   { label: 'Conectando…', bg: '#fdf1d9', fg: '#9a6700', dot: '#c77700' },
-    disconnected: { label: 'Desconectado', bg: '#f5f5f7', fg: '#707070', dot: '#a1a1a6' },
+    disconnected: { label: 'Desconectado', bg: 'var(--color-fog)', fg: 'var(--color-graphite)', dot: 'var(--color-mist)' },
     error:        { label: 'Error',        bg: '#fce8e0', fg: '#b64400', dot: '#d70015' },
   };
   const s = map[status] ?? map.disconnected;
@@ -231,7 +231,7 @@ export const OBD2Page = () => {
         <div className="flex items-center gap-4 flex-wrap">
           <div
             className="h-14 w-14 rounded-[16px] flex items-center justify-center shrink-0"
-            style={{ background: connected ? '#e3f0e3' : '#f5f5f7' }}
+            style={{ background: connected ? '#e3f0e3' : 'var(--color-fog)' }}
           >
             {connected
               ? <Bluetooth className="h-6 w-6" style={{ color: '#2f6b34' }} strokeWidth={1.6} />
@@ -522,12 +522,12 @@ export const OBD2Page = () => {
                   <div
                     key={dtc.code}
                     className="flex items-start gap-3 rounded-[14px] px-4 py-3"
-                    style={{ background: isCritical ? '#fce8e0' : '#f5f5f7', border: `1px solid ${isCritical ? '#f5c6b0' : '#e8e8ed'}` }}
+                    style={{ background: isCritical ? '#fce8e0' : 'var(--color-fog)', border: `1px solid ${isCritical ? '#f5c6b0' : 'var(--color-silver-mist)'}` }}
                   >
                     <div className="shrink-0 mt-0.5">
                       <span
                         className="font-mono font-bold"
-                        style={{ fontSize: 13, color: isCritical ? '#b64400' : '#1d1d1f' }}
+                        style={{ fontSize: 13, color: isCritical ? '#b64400' : 'var(--color-ink)' }}
                       >
                         {dtc.code}
                       </span>
