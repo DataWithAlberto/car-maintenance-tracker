@@ -289,6 +289,21 @@ CREATE POLICY "documents_write" ON documents FOR ALL
         )
       )
     )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM vehicles WHERE vehicles.id = documents.vehicle_id
+      AND (
+        vehicles.owner_id = auth.uid()
+        OR EXISTS (
+          SELECT 1 FROM shared_access
+          WHERE shared_access.vehicle_id = vehicles.id
+          AND shared_access.user_id = auth.uid()
+          AND shared_access.status = 'accepted'
+          AND shared_access.role = 'editor'
+        )
+      )
+    )
   );
 
 -- Shared access: owner manages, user views their own invites
