@@ -855,8 +855,7 @@ const VehicleRender = () => (
         width: '100%',
         height: 'auto',
         objectFit: 'contain',
-        filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.5)) brightness(1.05)',
-        borderRadius: 16,
+        filter: 'drop-shadow(0 12px 32px rgba(0,0,0,0.4))',
       }}
     />
   </div>
