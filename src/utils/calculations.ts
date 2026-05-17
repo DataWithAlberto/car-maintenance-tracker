@@ -1,5 +1,5 @@
-import { addMonths, parseISO, isBefore } from 'date-fns';
-import type { MaintenanceRecord, Vehicle, Alert } from '../types';
+import { addMonths, addDays, parseISO, isBefore } from 'date-fns';
+import type { MaintenanceRecord, Vehicle, Alert, Document } from '../types';
 import { OIL_CHANGE_KM_INTERVAL, OIL_CHANGE_MONTH_INTERVAL, GENERAL_SERVICE_KM_INTERVAL } from './constants';
 
 export const calculateAlerts = (vehicle: Vehicle, records: MaintenanceRecord[]): Alert[] => {
@@ -73,6 +73,44 @@ export const calculateAlerts = (vehicle: Vehicle, records: MaintenanceRecord[]):
           created_at: now.toISOString(),
         });
       }
+    }
+  });
+
+  return alerts;
+};
+
+export const DOCUMENT_EXPIRY_WARN_DAYS = 30;
+
+export const calculateDocumentAlerts = (vehicleId: string, documents: Document[]): Alert[] => {
+  const alerts: Alert[] = [];
+  const now = new Date();
+  const soon = addDays(now, DOCUMENT_EXPIRY_WARN_DAYS);
+
+  documents.forEach((doc) => {
+    if (!doc.expiry_date) return;
+    const expiry = parseISO(doc.expiry_date);
+    const dateLabel = expiry.toLocaleDateString('es-ES');
+
+    if (isBefore(expiry, now)) {
+      alerts.push({
+        id: `doc-expired-${doc.id}`,
+        vehicle_id: vehicleId,
+        type: 'document_expired',
+        description: `${doc.doc_type} caducado (venció el ${dateLabel})`,
+        severity: 'high',
+        is_dismissed: false,
+        created_at: now.toISOString(),
+      });
+    } else if (isBefore(expiry, soon)) {
+      alerts.push({
+        id: `doc-soon-${doc.id}`,
+        vehicle_id: vehicleId,
+        type: 'document_expiring',
+        description: `${doc.doc_type} vence pronto (${dateLabel})`,
+        severity: 'medium',
+        is_dismissed: false,
+        created_at: now.toISOString(),
+      });
     }
   });
 

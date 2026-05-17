@@ -11,6 +11,7 @@ import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import { useTrips } from '../hooks/useTrips';
+import { useVehicle } from '../hooks/useVehicle';
 import { tripsService } from '../services/trips.service';
 import { formatKm } from '../utils/formatters';
 import { cn } from '../utils/cn';
@@ -36,6 +37,7 @@ export const TripsPage = () => {
   const { user }            = useAuthStore();
   const navigate            = useNavigate();
   const { trips, loading, fetchTrips, createTrip, deleteTrip } = useTrips(selectedVehicle?.id);
+  const { updateVehicle } = useVehicle();
 
   const [showForm, setShowForm]     = useState(false);
   const [view, setView]             = useState<ViewMode>('list');
@@ -85,6 +87,14 @@ export const TripsPage = () => {
   const handleCreate = async (data: CreateTripInput) => {
     await createTrip(user.id, data);
     toast.success('Viaje registrado');
+    if (data.end_km != null && data.end_km > selectedVehicle.current_km) {
+      try {
+        await updateVehicle(selectedVehicle.id, { current_km: data.end_km });
+        toast.success(`Odómetro actualizado a ${formatKm(data.end_km)}`);
+      } catch {
+        toast.error('No se pudo actualizar el odómetro');
+      }
+    }
   };
 
   const handleDelete = async (id: string) => {

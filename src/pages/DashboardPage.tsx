@@ -8,10 +8,11 @@ import { VehicleForm } from '../components/vehicle/VehicleForm';
 import { maintenanceService } from '../services/maintenance.service';
 import { expensesService } from '../services/expenses.service';
 import { tripsService } from '../services/trips.service';
-import { calculateAlerts } from '../utils/calculations';
+import { documentsService } from '../services/documents.service';
+import { calculateAlerts, calculateDocumentAlerts } from '../utils/calculations';
 import { OIL_CHANGE_KM_INTERVAL } from '../utils/constants';
 import type {
-  VehicleWithAccess, MaintenanceRecord, Expense, Trip, Alert,
+  VehicleWithAccess, MaintenanceRecord, Expense, Trip, Alert, Document,
 } from '../types';
 import toast from 'react-hot-toast';
 
@@ -28,6 +29,7 @@ interface VehicleStats {
   records: MaintenanceRecord[];
   expenses: Expense[];
   trips: Trip[];
+  documents: Document[];
   alerts: Alert[];
 }
 
@@ -46,10 +48,11 @@ export const DashboardPage = () => {
     if (vehicles.length === 0) return;
     Promise.all(
       vehicles.map(async (v) => {
-        const [records, expenses, trips] = await Promise.all([
+        const [records, expenses, trips, documents] = await Promise.all([
           maintenanceService.getByVehicle(v.id).catch(() => []),
           expensesService.getByVehicle(v.id).catch(() => []),
           tripsService.getByVehicle(v.id).catch(() => []),
+          documentsService.getByVehicle(v.id).catch(() => []),
         ]);
         return {
           id: v.id,
@@ -58,7 +61,11 @@ export const DashboardPage = () => {
             records,
             expenses,
             trips,
-            alerts: calculateAlerts(v, records).filter((a) => !a.is_dismissed),
+            documents,
+            alerts: [
+              ...calculateAlerts(v, records),
+              ...calculateDocumentAlerts(v.id, documents),
+            ].filter((a) => !a.is_dismissed),
           } satisfies VehicleStats,
         };
       }),
@@ -104,12 +111,13 @@ export const DashboardPage = () => {
   // ─── Per-primary-vehicle derived data ─────────────────────────────────────
   const nextMaintenance = useMemo(() => {
     if (!primary || !primaryStats) return null;
-    const candidates: { label: string; kmRemaining: number }[] = [];
+    const candidates: { label: string; kmRemaining: number; intervalKm: number }[] = [];
     primaryStats.records.forEach((r) => {
       if (r.next_service_km && r.next_service_km > primary.current_km) {
         candidates.push({
           label: r.type.toLowerCase(),
           kmRemaining: r.next_service_km - primary.current_km,
+          intervalKm: Math.max(1, r.next_service_km - r.km_at_service),
         });
       }
     });
@@ -118,7 +126,11 @@ export const DashboardPage = () => {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
     if (lastOil) {
       const rem = OIL_CHANGE_KM_INTERVAL - (primary.current_km - lastOil.km_at_service);
-      if (rem > 0) candidates.push({ label: 'cambio de aceite', kmRemaining: rem });
+      if (rem > 0) candidates.push({
+        label: 'cambio de aceite',
+        kmRemaining: rem,
+        intervalKm: OIL_CHANGE_KM_INTERVAL,
+      });
     }
     candidates.sort((a, b) => a.kmRemaining - b.kmRemaining);
     return candidates[0] ?? null;
@@ -636,6 +648,34 @@ export const DashboardPage = () => {
                       ? <>hasta el {nextMaintenance.label} recomendado.</>
                       : <>sin mantenimientos pendientes a la vista.</>}
                   </p>
+                  {nextMaintenance && (() => {
+                    const used = nextMaintenance.intervalKm - nextMaintenance.kmRemaining;
+                    const pct = Math.min(100, Math.max(0, (used / nextMaintenance.intervalKm) * 100));
+                    const barColor = pct >= 90 ? '#b64400' : pct >= 70 ? '#c77700' : '#1d1d1f';
+                    return (
+                      <div style={{ marginTop: 16 }}>
+                        <div style={{
+                          height: 6, background: '#e8e8ed',
+                          borderRadius: 999, overflow: 'hidden',
+                        }}>
+                          <div style={{
+                            height: '100%', width: `${pct}%`,
+                            background: barColor, borderRadius: 999,
+                            transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)',
+                          }} />
+                        </div>
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between',
+                          marginTop: 6,
+                          fontFamily: 'var(--font-mono)', fontSize: 10,
+                          letterSpacing: '0.06em', color: '#a1a1a6',
+                        }}>
+                          <span>{Math.round(pct)}% DEL INTERVALO</span>
+                          <span>{fmtN(nextMaintenance.intervalKm)} KM</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <button
                   className="pill-dark"

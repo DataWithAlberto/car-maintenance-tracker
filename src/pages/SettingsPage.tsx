@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, AlertTriangle, Car, LogOut, KeyRound, Sparkles, Check } from 'lucide-react';
+import { Pencil, Trash2, AlertTriangle, Car, LogOut, KeyRound, Sparkles, Check, FileDown } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useVehicle } from '../hooks/useVehicle';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
+import { maintenanceService } from '../services/maintenance.service';
+import { expensesService } from '../services/expenses.service';
+import { documentsService } from '../services/documents.service';
+import { exportService } from '../services/export.service';
 import { VehicleForm } from '../components/vehicle/VehicleForm';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -26,12 +30,31 @@ export const SettingsPage = () => {
   );
   const [savingName, setSavingName] = useState(false);
 
+  const [exporting, setExporting] = useState(false);
+
   const handleSaveName = async () => {
     setSavingName(true);
     const { error } = await supabase.auth.updateUser({ data: { full_name: nameDraft.trim() } });
     setSavingName(false);
     if (error) { toast.error('No se pudo guardar el nombre'); return; }
     toast.success('Nombre actualizado');
+  };
+
+  const handleExportReport = async () => {
+    if (!selectedVehicle) return;
+    setExporting(true);
+    try {
+      const [records, expenses, documents] = await Promise.all([
+        maintenanceService.getByVehicle(selectedVehicle.id),
+        expensesService.getByVehicle(selectedVehicle.id),
+        documentsService.getByVehicle(selectedVehicle.id),
+      ]);
+      exportService.exportVehicleReport(selectedVehicle, records, expenses, documents);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo generar el informe');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleSaveApiKey = () => {
@@ -116,14 +139,20 @@ export const SettingsPage = () => {
             className="h-12 w-12 rounded-full bg-ink text-snow flex items-center justify-center font-text font-semibold"
             style={{ fontSize: 15 }}
           >
-            {(user?.email?.[0] ?? 'U').toUpperCase()}
+            {(
+              (user?.user_metadata?.full_name as string | undefined)?.trim()?.[0]
+              ?? user?.email?.[0]
+              ?? 'U'
+            ).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-text text-ink font-medium truncate" style={{ fontSize: 15 }}>
-              {user?.email}
+              {(user?.user_metadata?.full_name as string | undefined)?.trim() || user?.email}
             </p>
-            <p className="font-text text-graphite" style={{ fontSize: 13 }}>
-              Sesión iniciada
+            <p className="font-text text-graphite truncate" style={{ fontSize: 13 }}>
+              {(user?.user_metadata?.full_name as string | undefined)?.trim()
+                ? user?.email
+                : 'Sesión iniciada'}
             </p>
           </div>
           <Button
@@ -295,6 +324,21 @@ export const SettingsPage = () => {
               </p>
             </div>
           ))}
+        </div>
+
+        <div className="flex items-center gap-3 mt-5 pt-5 border-t border-silver-mist flex-wrap">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportReport}
+            loading={exporting}
+            iconLeft={<FileDown className="h-4 w-4" strokeWidth={1.7} />}
+          >
+            Exportar informe (PDF)
+          </Button>
+          <span className="font-text text-graphite" style={{ fontSize: 13 }}>
+            Mantenimiento, gastos y documentos en un solo archivo.
+          </span>
         </div>
       </section>
 

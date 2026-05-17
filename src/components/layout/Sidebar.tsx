@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Car, Wrench, Receipt, FileText, Settings, Share2, Route, Sparkles, Cpu } from 'lucide-react';
 import { useVehicleStore } from '../../store/vehicleStore';
+import { documentsService } from '../../services/documents.service';
+import { calculateDocumentAlerts } from '../../utils/calculations';
 import { cn } from '../../utils/cn';
 import { formatKm } from '../../utils/formatters';
 
@@ -19,6 +22,18 @@ const links = [
 
 export const Sidebar = () => {
   const { selectedVehicle } = useVehicleStore();
+  const [docAlertCount, setDocAlertCount] = useState(0);
+
+  useEffect(() => {
+    if (!selectedVehicle) { setDocAlertCount(0); return; }
+    let active = true;
+    documentsService.getByVehicle(selectedVehicle.id)
+      .then((docs) => {
+        if (active) setDocAlertCount(calculateDocumentAlerts(selectedVehicle.id, docs).length);
+      })
+      .catch(() => { if (active) setDocAlertCount(0); });
+    return () => { active = false; };
+  }, [selectedVehicle?.id]);
 
   return (
     <aside className="hidden md:flex w-56 lg:w-60 bg-canvas-white border-r border-sky-blueprint/20 flex-col shrink-0 sticky top-14 self-start h-[calc(100vh-3.5rem)]">
@@ -78,9 +93,23 @@ export const Sidebar = () => {
                   strokeWidth={isActive ? 2 : 1.7}
                 />
                 <span className={cn('flex-1 font-manrope', isActive ? 'font-medium' : 'font-normal')}>{label}</span>
-                <span className={cn('font-manrope text-caption tabular-nums', isActive ? 'text-sky-dark/60' : 'text-ink-charcoal/40 group-hover:text-ink-charcoal/60')}>
-                  {code}
-                </span>
+                {to === '/documents' && docAlertCount > 0 ? (
+                  <span
+                    className="inline-flex items-center justify-center tabular-nums"
+                    style={{
+                      minWidth: 18, height: 18, padding: '0 5px',
+                      borderRadius: 999, background: '#b64400', color: '#fff',
+                      fontSize: 10, fontWeight: 600,
+                    }}
+                    aria-label={`${docAlertCount} documentos requieren atención`}
+                  >
+                    {docAlertCount}
+                  </span>
+                ) : (
+                  <span className={cn('font-manrope text-caption tabular-nums', isActive ? 'text-sky-dark/60' : 'text-ink-charcoal/40 group-hover:text-ink-charcoal/60')}>
+                    {code}
+                  </span>
+                )}
               </>
             )}
           </NavLink>

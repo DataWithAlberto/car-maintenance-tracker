@@ -217,6 +217,21 @@ CREATE POLICY "maintenance_write" ON maintenance_records FOR ALL
         )
       )
     )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM vehicles WHERE vehicles.id = maintenance_records.vehicle_id
+      AND (
+        vehicles.owner_id = auth.uid()
+        OR EXISTS (
+          SELECT 1 FROM shared_access
+          WHERE shared_access.vehicle_id = vehicles.id
+          AND shared_access.user_id = auth.uid()
+          AND shared_access.status = 'accepted'
+          AND shared_access.role = 'editor'
+        )
+      )
+    )
   );
 
 -- Expenses: same access pattern
@@ -240,6 +255,21 @@ CREATE POLICY "expenses_select" ON expenses FOR SELECT
 DROP POLICY IF EXISTS "expenses_write" ON expenses;
 CREATE POLICY "expenses_write" ON expenses FOR ALL
   USING (
+    EXISTS (
+      SELECT 1 FROM vehicles WHERE vehicles.id = expenses.vehicle_id
+      AND (
+        vehicles.owner_id = auth.uid()
+        OR EXISTS (
+          SELECT 1 FROM shared_access
+          WHERE shared_access.vehicle_id = vehicles.id
+          AND shared_access.user_id = auth.uid()
+          AND shared_access.status = 'accepted'
+          AND shared_access.role = 'editor'
+        )
+      )
+    )
+  )
+  WITH CHECK (
     EXISTS (
       SELECT 1 FROM vehicles WHERE vehicles.id = expenses.vehicle_id
       AND (

@@ -107,7 +107,7 @@ export const ExpenseChart = ({ expenses }: Props) => {
               tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
             />
             <Tooltip
-              formatter={(val: number) => [formatCurrency(val), 'Gasto']}
+              formatter={(val) => [formatCurrency(Number(val)), 'Gasto']}
               contentStyle={{
                 background: '#fff', border: '1px solid #e8e8ed',
                 borderRadius: 12, boxShadow: 'none',
