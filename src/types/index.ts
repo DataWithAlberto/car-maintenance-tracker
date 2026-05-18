@@ -77,6 +77,37 @@ export interface Document {
   created_at: string;
 }
 
+export type InsuranceCoverage =
+  | 'terceros'
+  | 'terceros_ampliado'
+  | 'todo_riesgo'
+  | 'todo_riesgo_franquicia';
+
+export type InsurancePaymentFrequency =
+  | 'mensual'
+  | 'trimestral'
+  | 'semestral'
+  | 'anual';
+
+export interface InsurancePolicy {
+  id: string;
+  vehicle_id: string;
+  created_by: string;
+  provider: string;
+  policy_number?: string;
+  coverage_type: InsuranceCoverage;
+  premium_amount?: number;
+  payment_frequency?: InsurancePaymentFrequency;
+  start_date: string;
+  end_date: string;
+  deductible?: number;
+  contact_phone?: string;
+  document_url?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SharedAccess {
   id: string;
   vehicle_id: string;

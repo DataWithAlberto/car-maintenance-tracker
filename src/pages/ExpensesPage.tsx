@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Receipt, Calendar } from 'lucide-react';
+import { Plus, Receipt, Calendar, FileBarChart } from 'lucide-react';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
 import { ExpenseChart } from '../components/expenses/ExpenseChart';
 import { Button } from '../components/ui/Button';
@@ -9,7 +9,9 @@ import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import { expensesService } from '../services/expenses.service';
-import type { Expense } from '../types';
+import { maintenanceService } from '../services/maintenance.service';
+import { exportService } from '../services/export.service';
+import type { Expense, MaintenanceRecord } from '../types';
 import type { ExpenseInput } from '../utils/validators';
 import { formatDate, formatCurrency } from '../utils/formatters';
 import { cn } from '../utils/cn';
@@ -29,6 +31,7 @@ export const ExpensesPage = () => {
   const navigate = useNavigate();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [records, setRecords] = useState<MaintenanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
@@ -37,8 +40,11 @@ export const ExpensesPage = () => {
   useEffect(() => {
     if (!selectedVehicle) { navigate('/dashboard'); return; }
     setLoading(true);
-    expensesService.getByVehicle(selectedVehicle.id)
-      .then(setExpenses)
+    Promise.all([
+      expensesService.getByVehicle(selectedVehicle.id),
+      maintenanceService.getByVehicle(selectedVehicle.id).catch(() => [] as MaintenanceRecord[]),
+    ])
+      .then(([exp, rec]) => { setExpenses(exp); setRecords(rec); })
       .finally(() => setLoading(false));
   }, [selectedVehicle?.id]);
 
@@ -125,6 +131,13 @@ export const ExpensesPage = () => {
               </button>
             ))}
           </div>
+          <Button
+            variant="secondary"
+            onClick={() => exportService.exportDetailedReport(selectedVehicle, expenses, records)}
+            iconLeft={<FileBarChart className="h-4 w-4" strokeWidth={1.8} />}
+          >
+            Informe
+          </Button>
           <Button variant="accent" onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
             Añadir
           </Button>

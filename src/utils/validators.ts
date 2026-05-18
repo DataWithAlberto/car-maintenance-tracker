@@ -42,8 +42,33 @@ export const expenseSchema = z.object({
   receipt_url: z.string().optional(),
 });
 
+export const insuranceSchema = z
+  .object({
+    provider: z.string().min(1, 'Aseguradora requerida'),
+    policy_number: z.string().optional(),
+    coverage_type: z.enum(
+      ['terceros', 'terceros_ampliado', 'todo_riesgo', 'todo_riesgo_franquicia'],
+      { message: 'Cobertura requerida' },
+    ),
+    premium_amount: z.number().min(0, 'Importe inválido').optional(),
+    payment_frequency: z
+      .enum(['mensual', 'trimestral', 'semestral', 'anual'])
+      .optional(),
+    start_date: z.string().min(1, 'Fecha de inicio requerida'),
+    end_date: z.string().min(1, 'Fecha de fin requerida'),
+    deductible: z.number().min(0, 'Importe inválido').optional(),
+    contact_phone: z.string().optional(),
+    document_url: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .refine((d) => d.end_date >= d.start_date, {
+    message: 'La fecha de fin debe ser posterior al inicio',
+    path: ['end_date'],
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type VehicleInput = z.infer<typeof vehicleSchema>;
 export type MaintenanceInput = z.infer<typeof maintenanceSchema>;
 export type ExpenseInput = z.infer<typeof expenseSchema>;
+export type InsuranceInput = z.infer<typeof insuranceSchema>;

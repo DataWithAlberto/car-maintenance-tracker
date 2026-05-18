@@ -8,8 +8,10 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { CarPage } from './pages/CarPage';
 import { MaintenancePage } from './pages/MaintenancePage';
+import { MaintenancePlanPage } from './pages/MaintenancePlanPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { DocumentsPage } from './pages/DocumentsPage';
+import { InsurancePage } from './pages/InsurancePage';
 import { SharingPage } from './pages/SharingPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TripsPage } from './pages/TripsPage';
@@ -69,8 +71,10 @@ function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="car" element={<CarPage />} />
           <Route path="maintenance" element={<MaintenancePage />} />
+          <Route path="maintenance-plan" element={<MaintenancePlanPage />} />
           <Route path="expenses" element={<ExpensesPage />} />
           <Route path="documents" element={<DocumentsPage />} />
+          <Route path="insurance" element={<InsurancePage />} />
           <Route path="trips" element={<TripsPage />} />
           <Route path="mechanics" element={<MechanicsPage />} />
           <Route path="mechanics/detail" element={<MechanicDetailPage />} />

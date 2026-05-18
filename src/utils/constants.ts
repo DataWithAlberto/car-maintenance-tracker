@@ -89,6 +89,20 @@ export const CAR_PARTS: Record<string, { label: string; maintenanceTypes: string
   },
 };
 
+export const INSURANCE_COVERAGE_LABELS: Record<string, string> = {
+  terceros: 'Terceros',
+  terceros_ampliado: 'Terceros ampliado',
+  todo_riesgo: 'Todo riesgo',
+  todo_riesgo_franquicia: 'Todo riesgo con franquicia',
+};
+
+export const INSURANCE_PAYMENT_LABELS: Record<string, string> = {
+  mensual: 'Mensual',
+  trimestral: 'Trimestral',
+  semestral: 'Semestral',
+  anual: 'Anual',
+};
+
 export const OIL_CHANGE_KM_INTERVAL = 10000;
 export const OIL_CHANGE_MONTH_INTERVAL = 12;
 export const GENERAL_SERVICE_KM_INTERVAL = 20000;
