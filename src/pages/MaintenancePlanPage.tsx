@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarClock, Wrench } from 'lucide-react';
+import { CalendarClock, Wrench, Sparkles } from 'lucide-react';
 import { EmptyState } from '../components/ui/EmptyState';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { maintenanceService } from '../services/maintenance.service';
-import { buildMaintenancePlan, estimateKmPerDay, type PlanStatus } from '../utils/maintenancePlan';
+import {
+  buildMaintenancePlan,
+  estimateKmPerDay,
+  describePlanAdaptations,
+  detectEngineProfile,
+  type PlanStatus,
+} from '../utils/maintenancePlan';
 import type { MaintenanceRecord } from '../types';
 import { formatDate, formatKm } from '../utils/formatters';
 
@@ -39,8 +45,22 @@ export const MaintenancePlanPage = () => {
     () => Math.round(estimateKmPerDay(records) * 365),
     [records],
   );
+  const adaptations = useMemo(
+    () => (selectedVehicle ? describePlanAdaptations(selectedVehicle) : []),
+    [selectedVehicle],
+  );
+  const engineProfile = useMemo(
+    () => (selectedVehicle ? detectEngineProfile(selectedVehicle) : null),
+    [selectedVehicle],
+  );
 
   if (!selectedVehicle) return null;
+
+  const traits = [
+    selectedVehicle.fuel_type,
+    selectedVehicle.transmission,
+    `${selectedVehicle.year}`,
+  ].filter(Boolean);
 
   const attention = plan.filter((p) => p.status === 'overdue' || p.status === 'soon').length;
 
@@ -75,6 +95,53 @@ export const MaintenancePlanPage = () => {
         </div>
       </header>
 
+      {adaptations.length > 0 && (
+        <div className="bg-snow border border-silver-mist rounded-[28px] p-6 mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="h-3.5 w-3.5 text-graphite" strokeWidth={1.7} />
+            <span
+              className="font-mono uppercase text-graphite"
+              style={{ fontSize: 11, letterSpacing: '0.14em' }}
+            >
+              Plan adaptado a este vehículo
+            </span>
+          </div>
+          {(traits.length > 0 || engineProfile) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {engineProfile && (
+                <span
+                  className="font-text text-snow bg-ink rounded-full px-3 py-1"
+                  style={{ fontSize: 12, fontWeight: 600 }}
+                >
+                  Perfil de motor: {engineProfile.label}
+                </span>
+              )}
+              {traits.map((t) => (
+                <span
+                  key={t}
+                  className="font-text text-ink bg-fog rounded-full px-3 py-1"
+                  style={{ fontSize: 12, fontWeight: 500 }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
+          <ul className="space-y-1.5">
+            {adaptations.map((note) => (
+              <li
+                key={note}
+                className="font-text text-graphite flex gap-2"
+                style={{ fontSize: 13, lineHeight: 1.5 }}
+              >
+                <span className="text-ink shrink-0">·</span>
+                <span>{note}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => <SkeletonRow key={i} />)}
@@ -90,7 +157,7 @@ export const MaintenancePlanPage = () => {
           <ul className="space-y-2">
             {plan.map((item, i) => {
               const meta = STATUS_META[item.status];
-              const timeOnly = item.intervalKm >= 999999;
+              const timeOnly = item.timeBased;
               return (
                 <li
                   key={item.key}
