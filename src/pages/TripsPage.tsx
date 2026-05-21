@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Map, { Source, Layer, Marker, NavigationControl } from 'react-map-gl';
-import type { LineLayer } from 'react-map-gl';
+import Map, { Source, Layer, Marker, NavigationControl } from 'react-map-gl/mapbox';
+import type { LayerProps } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Route } from 'lucide-react';
 import { TripForm } from '../components/trips/TripForm';
@@ -71,7 +71,7 @@ interface Row {
 }
 
 /* ─── Capa de líneas Mapbox ──────────────────────────────────────────────── */
-const ROUTE_LAYER: LineLayer = {
+const ROUTE_LAYER = {
   id: 'routes',
   type: 'line',
   layout: { 'line-join': 'round', 'line-cap': 'round' },
@@ -80,19 +80,19 @@ const ROUTE_LAYER: LineLayer = {
       ['boolean', ['get', 'isLongest'], false], '#b64400',
       ['boolean', ['get', 'isSelected'], false], '#1d1d1f',
       '#c4c4cc',
-    ] as LineLayer['paint']['line-color'],
+    ],
     'line-width': ['case',
       ['boolean', ['get', 'isLongest'], false], 3.5,
       ['boolean', ['get', 'isSelected'], false], 2.5,
       1.5,
-    ] as LineLayer['paint']['line-width'],
+    ],
     'line-opacity': ['case',
       ['boolean', ['get', 'isLongest'], false], 1,
       ['boolean', ['get', 'isSelected'], false], 0.9,
       0.55,
-    ] as LineLayer['paint']['line-opacity'],
+    ],
   },
-};
+} as unknown as LayerProps;
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
