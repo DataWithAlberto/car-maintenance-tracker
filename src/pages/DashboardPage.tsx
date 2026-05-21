@@ -11,6 +11,7 @@ import { tripsService } from '../services/trips.service';
 import { documentsService } from '../services/documents.service';
 import { calculateAlerts, calculateDocumentAlerts } from '../utils/calculations';
 import { sendAlertNotifications } from '../utils/notifications';
+import { getErrorMessage } from '../utils/errors';
 import { useSettingsStore } from '../store/settingsStore';
 import { OIL_CHANGE_KM_INTERVAL } from '../utils/constants';
 import type {
@@ -286,7 +287,8 @@ export const DashboardPage = () => {
       storeSet({ ...v, role: 'owner' });
       navigate('/car');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Error al crear vehículo');
+      console.error('Error al crear vehículo:', err);
+      toast.error(getErrorMessage(err, 'Error al crear vehículo'));
     }
   };
 
