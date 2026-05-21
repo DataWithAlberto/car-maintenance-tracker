@@ -84,6 +84,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.15)
+      '@types/three':
+        specifier: ^0.184.1
+        version: 0.184.1
       '@types/web-bluetooth':
         specifier: ^0.0.21
         version: 0.0.21
