@@ -109,21 +109,29 @@ export const AnalyticsPage = () => {
   const avgMonthlyExp = Math.round(monthlyExpenses.filter((m) => m.total > 0).reduce((s, m) => s + m.total, 0) / Math.max(1, monthlyExpenses.filter((m) => m.total > 0).length));
 
   return (
-    <div style={{ padding: '32px 24px 80px', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: '20px 12px 80px', maxWidth: 960, margin: '0 auto' }}>
+      <style>{`
+        @media (min-width: 640px) {
+          .analytics-container { padding: 28px 20px 80px; }
+        }
+        @media (min-width: 768px) {
+          .analytics-container { padding: 32px 24px 80px; }
+        }
+      `}</style>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: 'var(--color-graphite)', textTransform: 'uppercase', marginBottom: 8 }}>
+          <p style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--color-graphite)', textTransform: 'uppercase', marginBottom: 6 }}>
             {selectedVehicle.brand} {selectedVehicle.model}
           </p>
-          <h1 style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 'clamp(32px,5vw,48px)', letterSpacing: '-1px', lineHeight: 1, margin: 0, color: 'var(--color-ink)' }}>
+          <h1 style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 'clamp(24px, 5vw, 48px)', letterSpacing: '-0.8px', lineHeight: 1.1, margin: 0, color: 'var(--color-ink)' }}>
             Análisis
           </h1>
         </div>
         <select
           value={yearFilter}
           onChange={(e) => setYearFilter(Number(e.target.value))}
-          style={{ padding: '8px 14px', borderRadius: 10, border: '1px solid var(--color-silver-mist)', background: 'var(--color-snow)', fontSize: 14, fontWeight: 600 }}
+          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--color-silver-mist)', background: 'var(--color-snow)', fontSize: '12px', fontWeight: 600, minHeight: 40 }}
         >
           {availableYears.map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
@@ -136,37 +144,37 @@ export const AnalyticsPage = () => {
       ) : (
         <>
           {/* KPIs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 32 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 28 }}>
             {[
-              { label: 'Gasto total', value: formatCurrency(totalExpYtd), sub: String(yearFilter) },
-              { label: 'Km registrados', value: `${totalKmYtd.toLocaleString('es-ES')} km`, sub: 'en viajes' },
-              { label: 'Coste por km', value: costPerKm ? `${costPerKm} €/km` : '—', sub: 'estimado' },
-              { label: 'Gasto mensual', value: avgMonthlyExp ? formatCurrency(avgMonthlyExp) : '—', sub: 'media meses activos' },
-              { label: 'Servicios', value: String(totalServicesYtd), sub: 'este año' },
+              { label: 'Gasto', value: formatCurrency(totalExpYtd), sub: String(yearFilter) },
+              { label: 'Km', value: `${totalKmYtd.toLocaleString('es-ES')}`, sub: 'viajes' },
+              { label: 'Coste/km', value: costPerKm ? `${costPerKm}` : '—', sub: '€/km' },
+              { label: 'Gasto mes', value: avgMonthlyExp ? formatCurrency(avgMonthlyExp) : '—', sub: 'media' },
+              { label: 'Servicios', value: String(totalServicesYtd), sub: yearFilter },
             ].map(({ label, value, sub }) => (
-              <div key={label} style={{ background: 'var(--color-snow)', border: '1px solid var(--color-silver-mist)', borderRadius: 16, padding: '16px 20px' }}>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', marginBottom: 8 }}>{label}</div>
-                <div style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 22, letterSpacing: '-0.3px', color: 'var(--color-ink)' }}>{value}</div>
-                <div style={{ fontSize: 12, color: 'var(--color-mist)', marginTop: 4 }}>{sub}</div>
+              <div key={label} style={{ background: 'var(--color-snow)', border: '1px solid var(--color-silver-mist)', borderRadius: 14, padding: '12px 12px' }}>
+                <div style={{ fontSize: '8px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', marginBottom: 6 }}>{label}</div>
+                <div style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 'clamp(14px, 3vw, 22px)', letterSpacing: '-0.2px', color: 'var(--color-ink)' }}>{value}</div>
+                <div style={{ fontSize: '11px', color: 'var(--color-mist)', marginTop: 3 }}>{sub}</div>
               </div>
             ))}
           </div>
 
           {/* View selector */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
             {([
-              { key: 'gastos', label: 'Gastos mensuales' },
-              { key: 'km', label: 'Km mensuales' },
+              { key: 'gastos', label: 'Gastos' },
+              { key: 'km', label: 'Km' },
               { key: 'servicios', label: 'Servicios' },
             ] as const).map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setView(key)}
                 style={{
-                  padding: '8px 16px', borderRadius: 999, border: '1px solid var(--color-silver-mist)',
+                  padding: '6px 12px', borderRadius: 999, border: '1px solid var(--color-silver-mist)',
                   background: view === key ? 'var(--color-ink)' : 'transparent',
                   color: view === key ? '#fff' : 'var(--color-graphite)',
-                  fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
+                  fontWeight: 600, fontSize: '12px', cursor: 'pointer', transition: 'all 0.15s', minHeight: 32,
                 }}
               >
                 {label}
@@ -175,13 +183,13 @@ export const AnalyticsPage = () => {
           </div>
 
           {/* Main chart */}
-          <div style={{ background: 'var(--color-snow)', border: '1px solid var(--color-silver-mist)', borderRadius: 20, padding: '24px 16px', marginBottom: 32 }}>
+          <div style={{ background: 'var(--color-snow)', border: '1px solid var(--color-silver-mist)', borderRadius: 16, padding: '16px 12px', marginBottom: 28 }}>
             {view === 'gastos' && (
               <>
-                <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', margin: '0 0 20px 8px' }}>
-                  Gastos por mes ({yearFilter})
+                <p style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', margin: '0 0 14px 6px' }}>
+                  Gastos por mes — {yearFilter}
                 </p>
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={monthlyExpenses}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-silver-mist)" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} />
@@ -196,10 +204,10 @@ export const AnalyticsPage = () => {
             )}
             {view === 'km' && (
               <>
-                <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', margin: '0 0 20px 8px' }}>
-                  Kilómetros por mes ({yearFilter})
+                <p style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', margin: '0 0 14px 6px' }}>
+                  Kilómetros por mes — {yearFilter}
                 </p>
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={monthlyKm}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-silver-mist)" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} />
@@ -212,10 +220,10 @@ export const AnalyticsPage = () => {
             )}
             {view === 'servicios' && (
               <>
-                <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', margin: '0 0 20px 8px' }}>
-                  Servicios por mes ({yearFilter})
+                <p style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', margin: '0 0 14px 6px' }}>
+                  Servicios por mes — {yearFilter}
                 </p>
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={monthlyServices}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-silver-mist)" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} />
@@ -230,14 +238,14 @@ export const AnalyticsPage = () => {
 
           {/* Cost by type pie */}
           {costByType.length > 0 && (
-            <div style={{ background: 'var(--color-snow)', border: '1px solid var(--color-silver-mist)', borderRadius: 20, padding: 24 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', margin: '0 0 24px' }}>
-                Gasto por tipo de servicio (histórico)
+            <div style={{ background: 'var(--color-snow)', border: '1px solid var(--color-silver-mist)', borderRadius: 16, padding: '16px 12px' }}>
+              <p style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-graphite)', margin: '0 0 16px' }}>
+                Gasto por tipo de servicio
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'center' }}>
-                <ResponsiveContainer width="100%" height={220}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, alignItems: 'flex-start' }}>
+                <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
-                    <Pie data={costByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={false}>
+                    <Pie data={costByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={false}>
                       {costByType.map((_, idx) => (
                         <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
                       ))}
@@ -245,12 +253,12 @@ export const AnalyticsPage = () => {
                     <Tooltip formatter={(v) => [formatCurrency(Number(v)), '']} />
                   </PieChart>
                 </ResponsiveContainer>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {costByType.map(({ name, value }, idx) => (
-                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: 3, background: COLORS[idx % COLORS.length], flexShrink: 0 }} />
-                      <span style={{ fontSize: 13, flex: 1, color: 'var(--color-ink)' }}>{name}</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-graphite)' }}>{formatCurrency(value)}</span>
+                    <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: 2, background: COLORS[idx % COLORS.length], flexShrink: 0 }} />
+                      <span style={{ fontSize: '12px', flex: 1, color: 'var(--color-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-graphite)', flexShrink: 0 }}>{formatCurrency(value)}</span>
                     </div>
                   ))}
                 </div>
