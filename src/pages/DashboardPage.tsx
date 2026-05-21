@@ -353,18 +353,18 @@ export const DashboardPage = () => {
     <div className="page-enter" style={{ background: 'var(--color-fog)', minHeight: '100%' }}>
       {/* ═══ BLOCK 1 · INDIGO HERO ═══════════════════════════════════════════ */}
       <section
-        className="indigo-hero mx-5 md:mx-10 mt-6"
+        className="indigo-hero mx-3 md:mx-5 lg:mx-10 mt-3 md:mt-6"
         style={{
           position: 'relative',
           color: '#fff',
-          borderRadius: 28,
+          borderRadius: 20,
           overflow: 'hidden',
           background:
             'linear-gradient(184deg, rgb(29,29,31) 18%, rgb(168,211,251) 45%, rgb(0,18,249) 78%, rgb(37,53,224) 98%)',
-          padding: 24,
-          minHeight: 440,
+          padding: '16px 16px 20px',
+          minHeight: 'auto',
           display: 'grid',
-          gap: 40,
+          gap: 24,
           gridTemplateColumns: '1fr',
         }}
       >
@@ -411,20 +411,20 @@ export const DashboardPage = () => {
               <h1 style={{
                 fontFamily: 'Inter, var(--font-sf-pro-display)',
                 fontWeight: 700,
-                fontSize: 'clamp(40px, 6vw, 64px)',
-                lineHeight: 1.04,
-                letterSpacing: '-1.4px',
+                fontSize: 'clamp(28px, 5vw, 56px)',
+                lineHeight: 1.1,
+                letterSpacing: '-0.8px',
                 color: '#fff',
-                margin: '14px 0 6px',
+                margin: '8px 0 4px',
               }}>
                 Hola, {firstName}.
               </h1>
               <p style={{
                 fontFamily: 'Inter, var(--font-sf-pro-text)',
                 fontWeight: 300,
-                fontSize: 20,
-                lineHeight: 1.4,
-                letterSpacing: '-0.2px',
+                fontSize: 'clamp(14px, 3.5vw, 18px)',
+                lineHeight: 1.45,
+                letterSpacing: '-0.1px',
                 color: 'rgba(255,255,255,0.82)',
                 maxWidth: 520,
                 margin: 0,
@@ -460,18 +460,18 @@ export const DashboardPage = () => {
                 ['GASTO YTD',      fmtEur(aggregate.totalSpentYtd), String(aggregate.ytd)],
                 ['ALERTAS',        String(aggregate.totalAlerts),  'requieren atención'],
               ].map(([l, v, s]) => (
-                <div key={l} style={{ padding: '18px 22px' }}>
-                  <div className="label" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, letterSpacing: '0.08em' }}>{l}</div>
+                <div key={l} style={{ padding: '12px 14px' }}>
+                  <div className="label" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '9px', letterSpacing: '0.08em' }}>{l}</div>
                   <div style={{
                     fontFamily: 'Inter, var(--font-sf-pro-display)',
-                    fontWeight: 700, fontSize: 28, lineHeight: 1,
-                    letterSpacing: '-0.3px', marginTop: 6, color: '#fff',
+                    fontWeight: 700, fontSize: 'clamp(18px, 4vw, 28px)', lineHeight: 1,
+                    letterSpacing: '-0.3px', marginTop: 4, color: '#fff',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{v}</div>
                   <div style={{
                     fontFamily: 'Inter, var(--font-sf-pro-text)',
-                    fontWeight: 400, fontSize: 12, lineHeight: 1.4,
-                    color: 'rgba(255,255,255,0.7)', marginTop: 4,
+                    fontWeight: 400, fontSize: '11px', lineHeight: 1.3,
+                    color: 'rgba(255,255,255,0.7)', marginTop: 2,
                   }}>{s}</div>
                 </div>
               ))}
@@ -483,14 +483,14 @@ export const DashboardPage = () => {
             display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
             alignItems: 'stretch', gap: 16,
           }}>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', flexBasis: '100%', order: -1, marginBottom: 12 }}>
               <button
                 className="pill-dark"
                 onClick={handleAdd}
-                style={{ background: '#000', color: '#fff' }}
+                style={{ background: '#000', color: '#fff', minHeight: 44, minWidth: 44, fontSize: '13px', padding: '10px 14px' }}
               >
                 <Plus size={14} strokeWidth={2.2} style={{ marginRight: 2 }} />
-                Añadir vehículo
+                Añadir
               </button>
               {primary?.model_3d_url && (
                 <button
@@ -498,9 +498,10 @@ export const DashboardPage = () => {
                   style={{
                     borderColor: 'rgba(255,255,255,0.4)',
                     color: '#fff', background: 'rgba(255,255,255,0.08)',
+                    minHeight: 44, minWidth: 44, fontSize: '13px', padding: '10px 12px',
                   }}
                 >
-                  Ver modelo 3D
+                  3D
                 </button>
               )}
             </div>
@@ -519,60 +520,52 @@ export const DashboardPage = () => {
                   color: 'inherit',
                   textAlign: 'left',
                   width: '100%',
+                  minHeight: 56,
                   cursor: 'pointer',
                   background: 'rgba(255,255,255,0.10)',
                   border: '1px solid rgba(255,255,255,0.22)',
-                  borderRadius: 16,
-                  padding: '14px 18px',
+                  borderRadius: 14,
+                  padding: '12px 14px',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  gap: 12,
+                  gap: 10,
                   backdropFilter: 'blur(20px)',
                   WebkitBackdropFilter: 'blur(20px)',
                   transition: 'background 180ms ease, border-color 180ms ease',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)';
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.34)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)';
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.22)';
                 }}
               >
                 <div>
                   <div style={{
                     fontFamily: 'Inter, var(--font-sf-pro-display)',
-                    fontWeight: 600, fontSize: 18, lineHeight: 1.1,
+                    fontWeight: 600, fontSize: 'clamp(14px, 3vw, 18px)', lineHeight: 1.1,
                     letterSpacing: '-0.2px', color: '#fff',
                   }}>{primary.brand} {primary.model}</div>
                   <div className="mono" style={{
-                    fontSize: 11, color: 'rgba(255,255,255,0.7)',
-                    marginTop: 6, letterSpacing: '0.06em',
+                    fontSize: '9px', color: 'rgba(255,255,255,0.7)',
+                    marginTop: 3, letterSpacing: '0.05em',
                   }}>
                     {primary.year}
-                    {primary.fuel_type && ` · ${primary.fuel_type.toUpperCase()}`}
+                    {primary.fuel_type && ` · ${primary.fuel_type.slice(0,4).toUpperCase()}`}
                     {primary.license_plate && ` · ${primary.license_plate}`}
-                    {` · ${primary.role === 'owner' ? 'PROPIETARIO' : primary.role.toUpperCase()}`}
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   {primaryStats && primaryStats.alerts.length > 0 && (
                     <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '6px 12px', borderRadius: 999,
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      padding: '4px 8px', borderRadius: 999,
                       background: 'rgba(255,255,255,0.18)',
                       border: '1px solid rgba(255,255,255,0.3)',
                       fontFamily: 'Inter, var(--font-sf-pro-text)',
-                      fontWeight: 600, fontSize: 12, color: '#fff',
+                      fontWeight: 600, fontSize: '10px', color: '#fff',
                       whiteSpace: 'nowrap',
                     }}>
-                      ⚠ {primaryStats.alerts.length} alerta{primaryStats.alerts.length === 1 ? '' : 's'}
+                      ⚠ {primaryStats.alerts.length}
                     </span>
                   )}
                   <span style={{
                     fontFamily: 'Inter, var(--font-sf-pro-text)',
-                    fontSize: 18, color: '#fff', lineHeight: 1,
-                  }}>→</span>
+                    fontSize: 14, color: '#fff', lineHeight: 1,
+                  }}>›</span>
                 </div>
               </button>
             )}
@@ -585,9 +578,12 @@ export const DashboardPage = () => {
         style={{ display: 'flex', flexDirection: 'column' }}
       >
         <style>{`
-          .dashboard-body { padding: 40px 20px 80px; gap: 40px; }
+          .dashboard-body { padding: 20px 12px 80px; gap: 28px; }
+          @media (min-width: 640px) {
+            .dashboard-body { padding: 28px 20px 80px; gap: 36px; }
+          }
           @media (min-width: 768px) {
-            .dashboard-body { padding: 60px 40px 80px; gap: 60px; }
+            .dashboard-body { padding: 40px 32px 80px; gap: 48px; }
           }
         `}</style>
         {loading && !primary ? (
@@ -621,20 +617,20 @@ export const DashboardPage = () => {
                 <h1 style={{
                   fontFamily: 'Inter, var(--font-sf-pro-display)',
                   fontWeight: 700,
-                  fontSize: 'clamp(56px, 9vw, 96px)',
-                  lineHeight: 1,
-                  letterSpacing: '-2.11px',
-                  margin: '12px 0 0',
+                  fontSize: 'clamp(32px, 8vw, 80px)',
+                  lineHeight: 1.05,
+                  letterSpacing: '-1px',
+                  margin: '8px 0 0',
                   color: 'var(--color-ink)',
                 }}>
                   {fmtN(primary.current_km)}<br />
-                  <span style={{ color: 'var(--color-graphite)' }}>kilómetros.</span>
+                  <span style={{ color: 'var(--color-graphite)', fontSize: '0.5em' }}>km</span>
                 </h1>
                 <p style={{
                   fontFamily: 'Inter, var(--font-sf-pro-text)',
-                  fontWeight: 300, fontSize: 22, lineHeight: 1.4,
-                  letterSpacing: '-0.2px', color: 'var(--color-slate)',
-                  maxWidth: 480, margin: '24px 0 0',
+                  fontWeight: 300, fontSize: 'clamp(13px, 3.5vw, 16px)', lineHeight: 1.5,
+                  letterSpacing: '-0.1px', color: 'var(--color-slate)',
+                  maxWidth: 480, margin: '16px 0 0',
                 }}>
                   +{fmtN(thisMonthKm)} este mes.{' '}
                   {pctVsAvg > 0
@@ -669,29 +665,29 @@ export const DashboardPage = () => {
             <section className="editorial-grid-3">
               {/* Card A — Alerta crítica */}
               <div className="card" style={{
-                background: 'var(--color-snow)', borderRadius: 20, border: '1px solid var(--color-silver-mist)',
-                padding: 28, minHeight: 280,
+                background: 'var(--color-snow)', borderRadius: 16, border: '1px solid var(--color-silver-mist)',
+                padding: '18px 16px', minHeight: 'auto',
                 display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
               }}>
-                <span className="eyebrow" style={{ color: '#b64400' }}>● Alerta crítica</span>
+                <span className="eyebrow" style={{ color: '#b64400', fontSize: '10px' }}>● Alerta crítica</span>
                 <div>
                   <div style={{
                     fontFamily: 'Inter, var(--font-sf-pro-display)',
-                    fontWeight: 700, fontSize: 56, lineHeight: 1,
-                    letterSpacing: '-0.9px', color: 'var(--color-ink)',
+                    fontWeight: 700, fontSize: 'clamp(32px, 7vw, 56px)', lineHeight: 1,
+                    letterSpacing: '-0.8px', color: 'var(--color-ink)',
                   }}>
                     {nextMaintenance ? fmtN(nextMaintenance.kmRemaining) : '—'}
                     {nextMaintenance && (
                       <span style={{
                         fontFamily: 'Inter, var(--font-sf-pro-text)',
-                        fontWeight: 300, fontSize: 24, color: 'var(--color-graphite)',
+                        fontWeight: 300, fontSize: '0.5em', color: 'var(--color-graphite)',
                       }}> km</span>
                     )}
                   </div>
                   <p style={{
                     fontFamily: 'Inter, var(--font-sf-pro-text)',
-                    fontWeight: 400, fontSize: 17, lineHeight: 1.45,
-                    color: 'var(--color-ink)', margin: '12px 0 0',
+                    fontWeight: 400, fontSize: 'clamp(13px, 3vw, 15px)', lineHeight: 1.45,
+                    color: 'var(--color-ink)', margin: '8px 0 0',
                   }}>
                     {nextMaintenance
                       ? <>hasta el {nextMaintenance.label} recomendado.</>
@@ -737,20 +733,20 @@ export const DashboardPage = () => {
 
               {/* Card B — Salud general */}
               <div className="card-fog" style={{
-                background: 'var(--color-fog)', borderRadius: 20,
-                padding: 28, minHeight: 280,
+                background: 'var(--color-fog)', borderRadius: 16,
+                padding: '18px 16px', minHeight: 'auto',
                 display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
               }}>
-                <span className="eyebrow">Salud general</span>
+                <span className="eyebrow" style={{ fontSize: '10px' }}>Salud general</span>
                 <div>
                   <div style={{
                     fontFamily: 'Inter, var(--font-sf-pro-display)',
-                    fontWeight: 700, fontSize: 'clamp(64px, 8vw, 96px)',
-                    lineHeight: 1, letterSpacing: '-2.11px', color: 'var(--color-ink)',
+                    fontWeight: 700, fontSize: 'clamp(40px, 10vw, 80px)',
+                    lineHeight: 1, letterSpacing: '-1.5px', color: 'var(--color-ink)',
                   }}>{healthScore}</div>
                   <p style={{
                     fontFamily: 'Inter, var(--font-sf-pro-text)',
-                    fontWeight: 300, fontSize: 17, lineHeight: 1.45,
+                    fontWeight: 300, fontSize: 'clamp(12px, 2.5vw, 14px)', lineHeight: 1.45,
                     color: 'var(--color-slate)', margin: '4px 0 0',
                   }}>
                     sobre 100. {healthDetail}
@@ -759,19 +755,19 @@ export const DashboardPage = () => {
                 <button
                   className="pill-ghost"
                   onClick={openPrimary}
-                  style={{ alignSelf: 'flex-start' }}
+                  style={{ alignSelf: 'flex-start', minHeight: 40, minWidth: 40, fontSize: '12px', padding: '8px 12px' }}
                 >
-                  Ver desglose
+                  Ver
                 </button>
               </div>
 
               {/* Card C — Próximo taller */}
               <div style={{
                 background: '#000', color: '#fff',
-                borderRadius: 20, padding: 28, minHeight: 280,
+                borderRadius: 16, padding: '18px 16px', minHeight: 'auto',
                 display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
               }}>
-                <span className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                <span className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px' }}>
                   Próximo taller
                 </span>
                 <div>
@@ -779,16 +775,16 @@ export const DashboardPage = () => {
                     <>
                       <div style={{
                         fontFamily: 'Inter, var(--font-sf-pro-display)',
-                        fontWeight: 700, fontSize: 32, lineHeight: 1.1,
-                        letterSpacing: '-0.4px',
+                        fontWeight: 700, fontSize: 'clamp(18px, 4.5vw, 26px)', lineHeight: 1.2,
+                        letterSpacing: '-0.3px',
                         textTransform: 'capitalize',
                       }}>
                         {nextAppointment.dayLabel}<br />{nextAppointment.time}
                       </div>
                       <p style={{
                         fontFamily: 'Inter, var(--font-sf-pro-text)',
-                        fontWeight: 400, fontSize: 15, lineHeight: 1.45,
-                        color: 'rgba(255,255,255,0.7)', margin: '12px 0 0',
+                        fontWeight: 400, fontSize: '12px', lineHeight: 1.4,
+                        color: 'rgba(255,255,255,0.7)', margin: '8px 0 0',
                       }}>
                         {primary.brand} {primary.model} · {nextAppointment.type}.
                       </p>
@@ -797,17 +793,17 @@ export const DashboardPage = () => {
                     <>
                       <div style={{
                         fontFamily: 'Inter, var(--font-sf-pro-display)',
-                        fontWeight: 700, fontSize: 32, lineHeight: 1.1,
-                        letterSpacing: '-0.4px',
+                        fontWeight: 700, fontSize: 'clamp(16px, 4vw, 24px)', lineHeight: 1.2,
+                        letterSpacing: '-0.3px',
                       }}>
                         Sin cita<br />programada
                       </div>
                       <p style={{
                         fontFamily: 'Inter, var(--font-sf-pro-text)',
-                        fontWeight: 400, fontSize: 15, lineHeight: 1.45,
-                        color: 'rgba(255,255,255,0.7)', margin: '12px 0 0',
+                        fontWeight: 400, fontSize: '12px', lineHeight: 1.4,
+                        color: 'rgba(255,255,255,0.7)', margin: '8px 0 0',
                       }}>
-                        Añade una fecha al próximo mantenimiento para reservar tu hueco.
+                        Añade una fecha al próximo mantenimiento para reservar.
                       </p>
                     </>
                   )}
@@ -815,9 +811,9 @@ export const DashboardPage = () => {
                 <button
                   className="pill"
                   onClick={() => navigate('/maintenance')}
-                  style={{ background: '#fff', color: '#000', alignSelf: 'flex-start' }}
+                  style={{ background: '#fff', color: '#000', alignSelf: 'flex-start', minHeight: 40, minWidth: 40, fontSize: '12px', padding: '8px 12px' }}
                 >
-                  {nextAppointment ? 'Ver cita →' : 'Programar →'}
+                  {nextAppointment ? 'Ver →' : 'Programar →'}
                 </button>
               </div>
             </section>
