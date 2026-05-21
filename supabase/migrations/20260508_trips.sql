@@ -57,7 +57,7 @@ CREATE POLICY "trips_select" ON trips FOR SELECT
   USING (
     created_by = auth.uid()
     OR vehicle_id IN (
-      SELECT vehicle_id FROM vehicle_access WHERE user_id = auth.uid() AND status = 'accepted'
+      SELECT vehicle_id FROM shared_access WHERE user_id = auth.uid() AND status = 'accepted'
     )
   );
 
@@ -67,7 +67,7 @@ CREATE POLICY "trips_insert" ON trips FOR INSERT
     AND vehicle_id IN (
       SELECT id FROM vehicles WHERE owner_id = auth.uid()
       UNION
-      SELECT vehicle_id FROM vehicle_access
+      SELECT vehicle_id FROM shared_access
         WHERE user_id = auth.uid() AND status = 'accepted' AND role IN ('owner', 'editor')
     )
   );
