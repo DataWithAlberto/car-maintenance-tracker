@@ -1,5 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+// ── TEST: quitar cuando elijas proveedor definitivo ──────────────────────────
+const RouteLeaflet = lazy(() =>
+  import('../examples/RouteLeaflet').then(m => ({ default: m.RouteLeaflet }))
+);
+// ─────────────────────────────────────────────────────────────────────────────
 import { Route } from 'lucide-react';
 import { TripForm } from '../components/trips/TripForm';
 import { SkeletonCard } from '../components/ui/Skeleton';
@@ -855,6 +861,21 @@ export const TripsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* ── TEST mapa: quitar cuando elijas proveedor definitivo ──────── */}
+      <div style={{ padding: '0 24px 30px' }}>
+        <p className="font-mono uppercase" style={{ fontSize: 10, letterSpacing: '.18em', color: '#a1a1a6', marginBottom: 12 }}>
+          § Test · Leaflet — ruta Gijón → Oviedo
+        </p>
+        <Suspense fallback={
+          <div style={{ height: 420, borderRadius: 18, background: '#f5f5f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#a1a1a6' }}>Cargando mapa…</span>
+          </div>
+        }>
+          <RouteLeaflet />
+        </Suspense>
+      </div>
+      {/* ─────────────────────────────────────────────────────────────── */}
 
       {showForm && (
         <TripForm
