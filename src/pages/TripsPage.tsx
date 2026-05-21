@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Map, { Source, Layer, Marker, NavigationControl } from 'react-map-gl/mapbox';
+import MapGL, { Source, Layer, Marker, NavigationControl } from 'react-map-gl/mapbox';
 import type { LayerProps } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Route } from 'lucide-react';
@@ -380,7 +380,7 @@ export const TripsPage = () => {
                   </a>
                 </div>
               ) : (
-                <Map
+                <MapGL
                   mapboxAccessToken={MAPBOX_TOKEN}
                   initialViewState={mapInitial}
                   style={{ width: '100%', height: '100%' }}
@@ -427,7 +427,7 @@ export const TripsPage = () => {
                       </p>
                     </div>
                   )}
-                </Map>
+                </MapGL>
               )}
             </div>
 
