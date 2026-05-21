@@ -69,30 +69,38 @@ export const NotificationsPage = () => {
   const dismissAll = () => setDismissed(new Set(visible.map((a) => a.id)));
 
   return (
-    <div style={{ padding: '32px 24px 80px', maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ padding: '20px 12px 80px', maxWidth: 800, margin: '0 auto' }}>
+      <style>{`
+        @media (min-width: 640px) {
+          .notif-container { padding: 28px 20px 80px; }
+        }
+        @media (min-width: 768px) {
+          .notif-container { padding: 32px 24px 80px; }
+        }
+      `}</style>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: 'var(--color-graphite)', textTransform: 'uppercase', marginBottom: 8 }}>
+          <p style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.1em', color: 'var(--color-graphite)', textTransform: 'uppercase', marginBottom: 6 }}>
             Centro de alertas
           </p>
-          <h1 style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 'clamp(32px,5vw,48px)', letterSpacing: '-1px', lineHeight: 1, margin: 0, color: 'var(--color-ink)' }}>
+          <h1 style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 'clamp(24px, 5vw, 48px)', letterSpacing: '-0.8px', lineHeight: 1.1, margin: 0, color: 'var(--color-ink)' }}>
             Notificaciones
           </h1>
         </div>
         {visible.length > 0 && (
           <button
             onClick={dismissAll}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1px solid var(--color-silver-mist)', background: 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--color-graphite)' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 12px', minHeight: 40, borderRadius: 8, border: '1px solid var(--color-silver-mist)', background: 'transparent', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: 'var(--color-graphite)' }}
           >
             <CheckCircle size={14} />
-            Marcar todas leídas
+            Leídas
           </button>
         )}
       </div>
 
       {/* Severity summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
         {(['high', 'medium', 'low'] as const).map((s) => {
           const meta = SEVERITY_META[s];
           const Icon = meta.icon;
@@ -103,17 +111,17 @@ export const NotificationsPage = () => {
               style={{
                 background: filter === s ? meta.bg : 'var(--color-snow)',
                 border: `1px solid ${filter === s ? meta.color + '40' : 'var(--color-silver-mist)'}`,
-                borderRadius: 14,
-                padding: '14px 16px',
+                borderRadius: 12,
+                padding: '12px 12px',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <Icon size={16} color={meta.color} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: meta.color }}>{meta.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <Icon size={14} color={meta.color} />
+                <span style={{ fontSize: '11px', fontWeight: 600, color: meta.color }}>{meta.label}</span>
               </div>
-              <div style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 28, color: 'var(--color-ink)' }}>
+              <div style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 'clamp(20px, 4vw, 28px)', color: 'var(--color-ink)' }}>
                 {counts[s]}
               </div>
             </div>
@@ -127,17 +135,17 @@ export const NotificationsPage = () => {
           {[1, 2, 3].map((i) => <SkeletonRow key={i} />)}
         </div>
       ) : visible.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-mist)' }}>
-          <CheckCircle size={48} style={{ marginBottom: 16, opacity: 0.4 }} />
-          <h3 style={{ fontWeight: 700, fontSize: 20, color: 'var(--color-ink)', marginBottom: 8 }}>Todo en orden</h3>
-          <p style={{ fontSize: 15 }}>
+        <div style={{ textAlign: 'center', padding: '40px 12px', color: 'var(--color-mist)' }}>
+          <CheckCircle size={36} style={{ marginBottom: 12, opacity: 0.4 }} />
+          <h3 style={{ fontWeight: 700, fontSize: 'clamp(16px, 4vw, 20px)', color: 'var(--color-ink)', marginBottom: 6 }}>Todo en orden</h3>
+          <p style={{ fontSize: 'clamp(13px, 3vw, 15px)' }}>
             {allAlerts.length === 0
               ? 'No hay alertas activas para tus vehículos.'
               : 'Has revisado todas las alertas. ¡Buen trabajo!'}
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {visible.map((alert) => {
             const meta = SEVERITY_META[alert.severity ?? 'low'];
             const Icon = meta.icon;
@@ -147,40 +155,40 @@ export const NotificationsPage = () => {
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
-                  gap: 14,
-                  padding: '16px 18px',
-                  borderRadius: 16,
+                  gap: 10,
+                  padding: '12px 12px',
+                  borderRadius: 14,
                   background: 'var(--color-snow)',
                   border: '1px solid var(--color-silver-mist)',
                   borderLeft: `3px solid ${meta.color}`,
                   transition: 'all 0.15s',
                 }}
               >
-                <div style={{ flexShrink: 0, width: 32, height: 32, borderRadius: '50%', background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
-                  <Icon size={16} color={meta.color} />
+                <div style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
+                  <Icon size={14} color={meta.color} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                    <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--color-ink)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                    <span style={{ fontWeight: 600, fontSize: 'clamp(13px, 3vw, 14px)', color: 'var(--color-ink)' }}>
                       {alert.vehicleName}
                     </span>
-                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: meta.bg, color: meta.color, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: 999, background: meta.bg, color: meta.color, fontWeight: 600, whiteSpace: 'nowrap' }}>
                       {meta.label}
                     </span>
                   </div>
-                  <p style={{ fontSize: 14, color: 'var(--color-slate)', margin: 0, lineHeight: 1.45 }}>
+                  <p style={{ fontSize: 'clamp(12px, 2.5vw, 14px)', color: 'var(--color-slate)', margin: 0, lineHeight: 1.4 }}>
                     {alert.description}
                   </p>
-                  <p style={{ fontSize: 11, color: 'var(--color-mist)', margin: '6px 0 0' }}>
+                  <p style={{ fontSize: '10px', color: 'var(--color-mist)', margin: '4px 0 0' }}>
                     {formatRelative(alert.created_at)}
                   </p>
                 </div>
                 <button
                   onClick={() => dismissOne(alert.id)}
-                  style={{ flexShrink: 0, padding: 6, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-mist)', marginTop: 2 }}
+                  style={{ flexShrink: 0, padding: 6, minHeight: 40, minWidth: 40, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-mist)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   aria-label="Descartar alerta"
                 >
-                  <Trash2 size={15} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             );
