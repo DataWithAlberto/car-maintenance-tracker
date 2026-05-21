@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Car, Wrench, Receipt, FileText, Settings, Share2, Route, Sparkles, Cpu, ShieldCheck, CalendarClock } from 'lucide-react';
+import { LayoutDashboard, Car, Wrench, Receipt, FileText, Settings, Share2, Route, Sparkles, Cpu, ShieldCheck, CalendarClock, Fuel, Trophy, BarChart3, Bell } from 'lucide-react';
 import { useVehicleStore } from '../../store/vehicleStore';
 import { documentsService } from '../../services/documents.service';
 import { calculateDocumentAlerts } from '../../utils/calculations';
@@ -8,18 +8,22 @@ import { cn } from '../../utils/cn';
 import { formatKm } from '../../utils/formatters';
 
 const links = [
-  { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard',     code: '01' },
-  { to: '/car',            icon: Car,             label: 'Mi coche',      code: '02' },
-  { to: '/maintenance',    icon: Wrench,          label: 'Mantenimiento', code: '03' },
-  { to: '/maintenance-plan', icon: CalendarClock, label: 'Plan predictivo', code: '04' },
-  { to: '/trips',          icon: Route,           label: 'Viajes',        code: '05' },
-  { to: '/mechanics',      icon: Sparkles,        label: 'Talleres IA',   code: '06' },
-  { to: '/obd2',           icon: Cpu,             label: 'OBD-II',        code: '07' },
-  { to: '/expenses',       icon: Receipt,         label: 'Gastos',        code: '08' },
-  { to: '/documents',      icon: FileText,        label: 'Documentos',    code: '09' },
-  { to: '/insurance',      icon: ShieldCheck,     label: 'Seguro',        code: '10' },
-  { to: '/sharing',        icon: Share2,          label: 'Compartir',     code: '11' },
-  { to: '/settings',       icon: Settings,        label: 'Ajustes',       code: '12' },
+  { to: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard',      code: '01' },
+  { to: '/car',             icon: Car,             label: 'Mi coche',       code: '02' },
+  { to: '/maintenance',     icon: Wrench,          label: 'Mantenimiento',  code: '03' },
+  { to: '/maintenance-plan',icon: CalendarClock,   label: 'Plan predictivo',code: '04' },
+  { to: '/trips',           icon: Route,           label: 'Viajes',         code: '05' },
+  { to: '/fuel',            icon: Fuel,            label: 'Combustible',    code: '06' },
+  { to: '/mechanics',       icon: Sparkles,        label: 'Talleres IA',    code: '07' },
+  { to: '/obd2',            icon: Cpu,             label: 'OBD-II',         code: '08' },
+  { to: '/analytics',       icon: BarChart3,       label: 'Análisis',       code: '09' },
+  { to: '/expenses',        icon: Receipt,         label: 'Gastos',         code: '10' },
+  { to: '/documents',       icon: FileText,        label: 'Documentos',     code: '11' },
+  { to: '/insurance',       icon: ShieldCheck,     label: 'Seguro',         code: '12' },
+  { to: '/notifications',   icon: Bell,            label: 'Alertas',        code: '13' },
+  { to: '/achievements',    icon: Trophy,          label: 'Logros',         code: '14' },
+  { to: '/sharing',         icon: Share2,          label: 'Compartir',      code: '15' },
+  { to: '/settings',        icon: Settings,        label: 'Ajustes',        code: '16' },
 ];
 
 export const Sidebar = () => {

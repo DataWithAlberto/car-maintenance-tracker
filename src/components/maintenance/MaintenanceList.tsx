@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Wrench, Trash2, ChevronRight, Calendar, Gauge, Receipt } from 'lucide-react';
+import { Wrench, Trash2, ChevronRight, Calendar, Gauge, Receipt, MessageSquare } from 'lucide-react';
 import type { MaintenanceRecord } from '../../types';
 import { formatDate, formatCurrency, formatKm } from '../../utils/formatters';
 import { EmptyState } from '../ui/EmptyState';
@@ -9,9 +9,10 @@ interface Props {
   records: MaintenanceRecord[];
   onDelete?: (id: string) => void;
   onSelect?: (record: MaintenanceRecord) => void;
+  onComments?: (record: MaintenanceRecord) => void;
 }
 
-export const MaintenanceList = ({ records, onDelete, onSelect }: Props) => {
+export const MaintenanceList = ({ records, onDelete, onSelect, onComments }: Props) => {
   if (records.length === 0) {
     return (
       <EmptyState
@@ -96,6 +97,15 @@ export const MaintenanceList = ({ records, onDelete, onSelect }: Props) => {
               className="h-4 w-4 text-graphite group-hover:translate-x-0.5 transition-transform"
               strokeWidth={1.6}
             />
+            {onComments && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onComments(record); }}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-full text-graphite hover:text-ink hover:bg-fog transition-colors"
+                aria-label="Ver comentarios"
+              >
+                <MessageSquare className="h-4 w-4" strokeWidth={1.6} />
+              </button>
+            )}
             {onDelete && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(record.id); }}

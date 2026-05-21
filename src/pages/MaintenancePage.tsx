@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Filter, X, Sparkles, Loader2 } from 'lucide-react';
 import { MaintenanceList } from '../components/maintenance/MaintenanceList';
 import { MaintenanceForm } from '../components/maintenance/MaintenanceForm';
+import { MaintenanceCommentsModal } from '../components/maintenance/MaintenanceCommentsModal';
 import { FailureForecast } from '../components/maintenance/FailureForecast';
 import { Button } from '../components/ui/Button';
 import { SkeletonRow } from '../components/ui/Skeleton';
@@ -48,6 +49,7 @@ export const MaintenancePage = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<MaintenanceRecord | null>(null);
+  const [showComments, setShowComments] = useState<MaintenanceRecord | null>(null);
   const [filterType, setFilterType] = useState('');
   const [insights, setInsights] = useState<MaintenanceInsight[] | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -270,7 +272,7 @@ export const MaintenancePage = () => {
           {[0, 1, 2, 3].map((i) => <SkeletonRow key={i} />)}
         </div>
       ) : (
-        <MaintenanceList records={filtered} onDelete={handleDelete} onSelect={setEditing} />
+        <MaintenanceList records={filtered} onDelete={handleDelete} onSelect={setEditing} onComments={setShowComments} />
       )}
 
       {(showForm || editing) && (
@@ -279,6 +281,13 @@ export const MaintenancePage = () => {
           initialData={editing ? toInput(editing) : undefined}
           onSubmit={handleSubmit}
           onClose={() => { setShowForm(false); setEditing(null); }}
+        />
+      )}
+
+      {showComments && (
+        <MaintenanceCommentsModal
+          record={showComments}
+          onClose={() => setShowComments(null)}
         />
       )}
     </div>

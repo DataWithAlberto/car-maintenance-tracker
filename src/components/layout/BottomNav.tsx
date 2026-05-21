@@ -1,13 +1,13 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Car, Wrench, Route, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Car, Wrench, Fuel, Trophy } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 const tabs = [
-  { to: '/dashboard',  icon: LayoutDashboard, label: 'Inicio'   },
-  { to: '/car',        icon: Car,             label: 'Coche'    },
-  { to: '/maintenance',icon: Wrench,          label: 'Servicio' },
-  { to: '/trips',      icon: Route,           label: 'Viajes'   },
-  { to: '/settings',   icon: MoreHorizontal,  label: 'Más'      },
+  { to: '/dashboard',    icon: LayoutDashboard, label: 'Inicio'   },
+  { to: '/car',          icon: Car,             label: 'Coche'    },
+  { to: '/maintenance',  icon: Wrench,          label: 'Servicio' },
+  { to: '/fuel',         icon: Fuel,            label: 'Fuel'     },
+  { to: '/achievements', icon: Trophy,          label: 'Logros'   },
 ];
 
 export const BottomNav = () => (

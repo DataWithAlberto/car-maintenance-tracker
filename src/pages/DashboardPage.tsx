@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, CalendarCheck, AlertTriangle } from 'lucide-react';
+import { buildMaintenancePlan } from '../utils/maintenancePlan';
 import { useVehicle } from '../hooks/useVehicle';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
@@ -259,6 +260,42 @@ export const DashboardPage = () => {
 
   const totalYtdPrimary =
     expensesByCat.combustible + expensesByCat.mantenimiento + expensesByCat.seguro;
+
+  // ─── Timeline — próximas tareas (60 días) ────────────────────────────────
+  const timeline = useMemo(() => {
+    if (!primary || !primaryStats) return [];
+    const HORIZON_DAYS = 60;
+    const items: { label: string; daysRemaining: number; type: 'maintenance' | 'document'; urgent: boolean }[] = [];
+
+    // Upcoming maintenance from plan
+    const plan = buildMaintenancePlan(primary, primaryStats.records);
+    plan.forEach((item) => {
+      if (item.daysRemaining <= HORIZON_DAYS) {
+        items.push({
+          label: item.label,
+          daysRemaining: item.daysRemaining,
+          type: 'maintenance',
+          urgent: item.status === 'overdue' || item.status === 'soon',
+        });
+      }
+    });
+
+    // Upcoming document expirations
+    primaryStats.documents.forEach((doc) => {
+      if (!doc.expiry_date) return;
+      const days = Math.ceil((new Date(doc.expiry_date).getTime() - Date.now()) / 86_400_000);
+      if (days <= HORIZON_DAYS) {
+        items.push({
+          label: doc.doc_type,
+          daysRemaining: days,
+          type: 'document',
+          urgent: days <= 7,
+        });
+      }
+    });
+
+    return items.sort((a, b) => a.daysRemaining - b.daysRemaining).slice(0, 8);
+  }, [primary, primaryStats]);
 
   // First name & last-sync copy
   const firstName = useMemo(() => {
@@ -831,6 +868,63 @@ export const DashboardPage = () => {
                 </button>
               </div>
             </section>
+
+            {/* ── Timeline · Próximas tareas ────────────────────────────── */}
+            {timeline.length > 0 && (
+              <section style={{ borderTop: '1px solid var(--color-silver-mist)', paddingTop: 36 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, marginBottom: 24 }}>
+                  <span className="eyebrow">Próximas 8 semanas</span>
+                  <button className="pill-ghost" onClick={() => navigate('/maintenance-plan')} style={{ fontSize: 12 }}>
+                    Ver plan completo →
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: 15, top: 0, bottom: 0, width: 1, background: 'var(--color-silver-mist)' }} />
+                  {timeline.map((item, idx) => {
+                    const overdue = item.daysRemaining < 0;
+                    const urgent = item.urgent || item.daysRemaining <= 7;
+                    const color = overdue ? '#b64400' : urgent ? '#c77700' : '#1cb05c';
+                    const dayLabel = overdue
+                      ? `Vencido hace ${Math.abs(item.daysRemaining)} días`
+                      : item.daysRemaining === 0
+                        ? 'Hoy'
+                        : `En ${item.daysRemaining} días`;
+                    return (
+                      <div key={`${item.label}-${idx}`} style={{
+                        display: 'flex', alignItems: 'center', gap: 16,
+                        padding: '12px 0 12px 36px',
+                        position: 'relative',
+                      }}>
+                        <div style={{
+                          position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)',
+                          width: 13, height: 13, borderRadius: '50%',
+                          background: color, border: '2px solid var(--color-fog)',
+                          boxShadow: `0 0 0 3px ${color}30`,
+                        }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--color-ink)', marginBottom: 2 }}>
+                            {item.label}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--color-mist)' }}>
+                            {item.type === 'document' ? 'Documento' : 'Mantenimiento'}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {urgent && <AlertTriangle size={14} color={color} />}
+                          {!overdue && <CalendarCheck size={14} color={color} />}
+                          <span style={{
+                            fontSize: 13, fontWeight: 600, color,
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {dayLabel}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* ── Flota registrada ──────────────────────────────────────── */}
             <section style={{ borderTop: '1px solid var(--color-silver-mist)', paddingTop: 36 }}>

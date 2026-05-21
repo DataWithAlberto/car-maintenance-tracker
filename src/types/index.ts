@@ -234,6 +234,64 @@ export interface FailurePrediction {
   status: FailureStatus;
 }
 
+// ─── Fuel Logs ────────────────────────────────────────────────────────────────
+
+export interface FuelLog {
+  id: string;
+  vehicle_id: string;
+  created_by: string;
+  date: string;
+  km_at_fillup: number;
+  liters: number;
+  price_per_liter: number;
+  total_cost: number;
+  station?: string;
+  full_tank: boolean;
+  notes?: string;
+  created_at: string;
+}
+
+export interface CreateFuelLogInput {
+  date: string;
+  km_at_fillup: number;
+  liters: number;
+  price_per_liter: number;
+  station?: string;
+  full_tank?: boolean;
+  notes?: string;
+}
+
+// ─── Maintenance Comments ─────────────────────────────────────────────────────
+
+export interface MaintenanceComment {
+  id: string;
+  maintenance_record_id: string;
+  user_id: string;
+  text: string;
+  created_at: string;
+  user?: {
+    email: string;
+    full_name?: string;
+  };
+}
+
+// ─── Achievements ─────────────────────────────────────────────────────────────
+
+export type AchievementCategory = 'mantenimiento' | 'viajes' | 'economia' | 'social' | 'especial';
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: AchievementCategory;
+  unlocked: boolean;
+  unlockedAt?: string;
+  progress?: number;
+  target?: number;
+  xp: number;
+}
+
 export interface CreateTripInput {
   title?: string;
   start_location: string;

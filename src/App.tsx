@@ -28,6 +28,10 @@ const SharingPage = lazy(() => import('./pages/SharingPage').then((m) => ({ defa
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const InvitePage = lazy(() => import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })));
 const WorkshopPage = lazy(() => import('./pages/WorkshopPage').then((m) => ({ default: m.WorkshopPage })));
+const FuelPage = lazy(() => import('./pages/FuelPage').then((m) => ({ default: m.FuelPage })));
+const AchievementsPage = lazy(() => import('./pages/AchievementsPage').then((m) => ({ default: m.AchievementsPage })));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
 
 const PageFallback = () => (
   <div className="px-6 sm:px-10 py-10 space-y-4">
@@ -96,6 +100,10 @@ function App() {
           <Route path="mechanics" element={lazyRoute(<MechanicsPage />)} />
           <Route path="mechanics/detail" element={lazyRoute(<MechanicDetailPage />)} />
           <Route path="obd2" element={lazyRoute(<OBD2Page />)} />
+          <Route path="fuel" element={lazyRoute(<FuelPage />)} />
+          <Route path="achievements" element={lazyRoute(<AchievementsPage />)} />
+          <Route path="analytics" element={lazyRoute(<AnalyticsPage />)} />
+          <Route path="notifications" element={lazyRoute(<NotificationsPage />)} />
           <Route path="sharing" element={lazyRoute(<SharingPage />)} />
           <Route path="settings" element={lazyRoute(<SettingsPage />)} />
         </Route>
