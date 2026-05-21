@@ -5,26 +5,15 @@ import { OrbitControls, Environment, ContactShadows, Html, useGLTF, Center } fro
 import * as THREE from 'three';
 import { CAR_PARTS } from '../../utils/constants';
 
-// Preload the model so it's in cache before the component mounts
-useGLTF.preload('/models/ford_focus.glb');
+// Preload of the model is now delegated to CarPage (resolveModelUrl) so that
+// the right .glb — profesional o genérico — entra en caché solo cuando se
+// haya verificado que existe. Mantener un preload fijo aquí descargaba un
+// archivo que podía no existir.
 
 interface PartClickInfo {
   partKey: string;
   position: [number, number, number];
 }
-
-// ─── Procedural fallback (cajas) ─────────────────────────────────────────────
-const CAR_PART_MESHES: Record<string, { position: [number, number, number]; size: [number, number, number]; color: string }> = {
-  engine: { position: [0, 0.3, 1.2], size: [1.0, 0.5, 0.8], color: '#4a4a6a' },
-  tires_front_left: { position: [-0.95, -0.3, 1.0], size: [0.25, 0.5, 0.5], color: '#1a1a1a' },
-  tires_front_right: { position: [0.95, -0.3, 1.0], size: [0.25, 0.5, 0.5], color: '#1a1a1a' },
-  tires_rear_left: { position: [-0.95, -0.3, -1.0], size: [0.25, 0.5, 0.5], color: '#1a1a1a' },
-  tires_rear_right: { position: [0.95, -0.3, -1.0], size: [0.25, 0.5, 0.5], color: '#1a1a1a' },
-  brakes_front: { position: [0, -0.15, 1.0], size: [1.6, 0.15, 0.2], color: '#c0392b' },
-  brakes_rear: { position: [0, -0.15, -1.0], size: [1.6, 0.15, 0.2], color: '#c0392b' },
-  battery: { position: [0.4, 0.1, 1.0], size: [0.3, 0.25, 0.4], color: '#2563eb' },
-  suspension: { position: [0, -0.1, 0], size: [1.8, 0.1, 2.4], color: '#6b7280' },
-};
 
 // Map mesh name prefixes → part keys for ford_focus.glb (Sketchfab)
 // Mesh names from GLB (lowercased): TIRE_LF_rubber_0, WHEEL_RF_chrome_0, etc.
@@ -106,11 +95,13 @@ interface GLTFCarProps {
   onError?: (url: string, err: unknown) => void;
 }
 
-// GLTFCarSafe: wraps GLTFCar + catches load errors, falls back to procedural
+// GLTFCarSafe: envuelve GLTFCar y, ante un fallo de carga, no devuelve nada
+// dentro del Canvas — el componente padre (CarViewer) muestra el fallback
+// elegante en DOM. No se usa ya ningún coche de primitivas como sustituto.
 const GLTFCarSafe = ({ url, onPartClick, onError }: GLTFCarProps) => {
   const [failed, setFailed] = useState(false);
 
-  if (failed) return <ProceduralCar onPartClick={onPartClick} />;
+  if (failed) return null;
 
   return (
     <GLTFCar
@@ -132,7 +123,7 @@ const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
   useEffect(() => {
     if (!scene) {
       const err = new Error(`Scene is null after loading "${url}"`);
-      console.error('[CarViewer]', err);
+      if (import.meta.env.DEV) console.error('[CarViewer]', err);
       onError?.(url, err);
     }
   }, [scene, url, onError]);
@@ -178,75 +169,6 @@ const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
   );
 };
 
-// ─── Procedural fallback ─────────────────────────────────────────────────────
-const ProceduralCar = ({ onPartClick }: { onPartClick: (info: PartClickInfo) => void }) => {
-  const [hovered, setHovered] = useState<string | null>(null);
-
-  return (
-    <group>
-      {/* Body */}
-      <mesh position={[0, 0.2, 0]} castShadow>
-        <boxGeometry args={[1.9, 0.5, 4.2]} />
-        <meshStandardMaterial color="#1e3a5f" metalness={0.8} roughness={0.2} />
-      </mesh>
-      {/* Cabin */}
-      <mesh position={[0, 0.65, -0.1]} castShadow>
-        <boxGeometry args={[1.7, 0.6, 2.4]} />
-        <meshStandardMaterial color="#1a3050" metalness={0.6} roughness={0.3} />
-      </mesh>
-      {/* Windshield */}
-      <mesh position={[0, 0.7, 0.9]} rotation={[0.35, 0, 0]}>
-        <planeGeometry args={[1.5, 0.7]} />
-        <meshStandardMaterial color="#88bbdd" transparent opacity={0.4} />
-      </mesh>
-      {/* Rear window */}
-      <mesh position={[0, 0.7, -1.1]} rotation={[-0.35, 0, 0]}>
-        <planeGeometry args={[1.5, 0.55]} />
-        <meshStandardMaterial color="#88bbdd" transparent opacity={0.4} />
-      </mesh>
-      {/* Headlights */}
-      {[-0.6, 0.6].map((x) => (
-        <mesh key={x} position={[x, 0.2, 2.1]}>
-          <boxGeometry args={[0.45, 0.2, 0.05]} />
-          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.3} />
-        </mesh>
-      ))}
-      {/* Taillights */}
-      {[-0.6, 0.6].map((x) => (
-        <mesh key={x} position={[x, 0.2, -2.1]}>
-          <boxGeometry args={[0.45, 0.2, 0.05]} />
-          <meshStandardMaterial color="#ff2200" emissive="#ff2200" emissiveIntensity={0.3} />
-        </mesh>
-      ))}
-      {/* Clickable parts */}
-      {Object.entries(CAR_PART_MESHES).map(([key, { position, size, color }]) => (
-        <mesh
-          key={key}
-          position={position}
-          onPointerOver={() => setHovered(key)}
-          onPointerOut={() => setHovered(null)}
-          onClick={(e) => { e.stopPropagation(); onPartClick({ partKey: key, position }); }}
-          castShadow
-        >
-          <boxGeometry args={size} />
-          <meshStandardMaterial
-            color={hovered === key ? '#0071e3' : color}
-            transparent opacity={hovered === key ? 0.85 : 0.7}
-            metalness={0.3} roughness={0.6}
-          />
-          {hovered === key && (
-            <Html distanceFactor={8} position={[0, (size[1] / 2) + 0.3, 0]}>
-              <div className="bg-snow font-text font-medium text-ink px-2 py-1 rounded-full border border-silver-mist whitespace-nowrap pointer-events-none" style={{ fontSize: 13 }}>
-                {CAR_PARTS[key]?.label}
-              </div>
-            </Html>
-          )}
-        </mesh>
-      ))}
-    </group>
-  );
-};
-
 // ─── Loader placeholder ───────────────────────────────────────────────────────
 const CarLoader = () => (
   <Html center>
@@ -268,11 +190,83 @@ const CarLoader = () => (
 // useGLTF throws on 404/parse error, caught by Suspense error boundary.
 // We implement a simple error fallback via state hoisted to CarViewer.
 
+// ─── Fallback elegante explicativo ──────────────────────────────────────────
+// Sustituye la maqueta procedural anterior. NO inventa el coche con
+// primitivas: muestra una foto de referencia + instrucciones claras para
+// añadir el modelo .glb profesional.
+const ModelMissingFallback = ({ url, variant }: { url: string; variant: 'missing' | 'error' }) => (
+  <div className="absolute inset-0 flex flex-col">
+    <div className="relative flex-1 min-h-0">
+      <img
+        src="/ford-focus.png"
+        alt="Ford Focus ST-Line — foto de referencia"
+        draggable={false}
+        className="absolute inset-0 w-full h-full"
+        style={{
+          objectFit: 'contain',
+          padding: 'clamp(14px, 3.5vw, 40px)',
+          filter: 'drop-shadow(0 18px 38px rgba(0,0,0,0.22))',
+        }}
+      />
+      <div
+        className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-silver-mist"
+        style={{
+          background: 'var(--surface-frosted-control, rgba(255,255,255,0.7))',
+          backdropFilter: 'blur(20px)',
+          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 500,
+          letterSpacing: '0.1em', color: 'var(--color-graphite)',
+        }}
+      >
+        VISTA PREVIA · REFERENCIA
+      </div>
+    </div>
+    <div
+      className="shrink-0 border-t border-silver-mist bg-snow"
+      style={{ padding: 'clamp(14px, 2.4vw, 22px)' }}
+    >
+      <div className="inline-flex items-center gap-2 mb-1.5">
+        <span
+          className="inline-block rounded-full"
+          style={{
+            width: 7, height: 7,
+            background: variant === 'error' ? 'var(--color-caution, #b64400)' : 'var(--color-azure, #0071e3)',
+          }}
+        />
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.1em',
+            color: 'var(--color-graphite)', textTransform: 'uppercase',
+          }}
+        >
+          {variant === 'error' ? 'Error al cargar el modelo' : 'Modelo 3D no disponible'}
+        </span>
+      </div>
+      <p
+        className="font-text text-slate m-0"
+        style={{ fontSize: 13.5, lineHeight: 1.5, maxWidth: 620 }}
+      >
+        Coloca un modelo profesional en{' '}
+        <code
+          style={{
+            fontFamily: 'var(--font-mono)', fontSize: '0.86em',
+            background: 'var(--color-silver-mist)', color: 'var(--color-ink)',
+            padding: '1px 6px', borderRadius: 6,
+          }}
+        >
+          {url}
+        </code>{' '}
+        para activar el visor interactivo. La click-detection sobre piezas
+        funcionará automáticamente al cargar el .glb.
+      </p>
+    </div>
+  </div>
+);
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 interface CarViewerProps {
   onPartClick?: (partKey: string) => void;
   autoRotate?: boolean;
-  modelUrl?: string; // e.g. '/models/ford_focus.glb'
+  modelUrl?: string; // e.g. '/models/ford-focus-st-line-2023.glb'
 }
 
 export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarViewerProps) => {
@@ -286,17 +280,28 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
   };
 
   const handleGLTFError = (url: string, err: unknown) => {
-    console.error(`[CarViewer] Failed to load model "${url}":`, err);
+    if (import.meta.env.DEV) console.error(`[CarViewer] Failed to load model "${url}":`, err);
     setLoadError(true);
   };
 
-  const useGLTF3D = modelUrl && !loadError;
+  // Sin modelo o con error: fallback explicativo en DOM (no maqueta procedural).
+  if (!modelUrl || loadError) {
+    return (
+      <div className="w-full h-full relative">
+        <ModelMissingFallback
+          url={modelUrl ?? '/models/ford-focus-st-line-2023.glb'}
+          variant={loadError ? 'error' : 'missing'}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full relative">
       <Canvas
         camera={{ position: [4, 2.5, 6], fov: 42 }}
         shadows
+        dpr={[1, 2]}
         gl={{ antialias: true }}
         style={{ background: 'transparent' }}
       >
@@ -307,15 +312,11 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
         <pointLight position={[0, 6, 0]} intensity={0.4} />
 
         <Suspense fallback={<CarLoader />}>
-          {useGLTF3D ? (
-            <GLTFCarSafe
-              url={modelUrl}
-              onPartClick={handlePartClick}
-              onError={handleGLTFError}
-            />
-          ) : (
-            <ProceduralCar onPartClick={handlePartClick} />
-          )}
+          <GLTFCarSafe
+            url={modelUrl}
+            onPartClick={handlePartClick}
+            onError={handleGLTFError}
+          />
           <ContactShadows position={[0, -0.8, 0]} opacity={0.5} scale={12} blur={2} />
           <Environment preset="city" />
         </Suspense>
@@ -335,13 +336,6 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
       {selectedPart && (
         <div className="absolute top-4 left-4 bg-snow border border-silver-mist text-ink font-text font-medium px-3 py-1.5 rounded-full" style={{ fontSize: 13 }}>
           {CAR_PARTS[selectedPart]?.label ?? selectedPart}
-        </div>
-      )}
-
-      {loadError && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-snow border border-silver-mist font-text px-4 py-2 rounded-full" style={{ fontSize: 13, color: '#b64400' }}>
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#b64400' }} />
-          Usando modelo procedural — GLTF no disponible
         </div>
       )}
     </div>

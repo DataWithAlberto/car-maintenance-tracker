@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useVehicle } from '../hooks/useVehicle';
@@ -17,6 +17,12 @@ import type {
   VehicleWithAccess, MaintenanceRecord, Expense, Trip, Alert, Document,
 } from '../types';
 import toast from 'react-hot-toast';
+
+// Visor 3D — carga diferida: mantiene el bundle de Three.js fuera del chunk
+// inicial del dashboard.
+const FordFocusModel3D = lazy(() =>
+  import('../components/3d/FordFocusModel3D').then((m) => ({ default: m.FordFocusModel3D })),
+);
 
 // ─── Locale-safe formatting (es-ES with space thousands separator) ──────────
 const fmtN = (n: number) =>
@@ -857,6 +863,22 @@ export const DashboardPage = () => {
             </section>
           </>
         )}
+
+        {/* ── Sección · Visor 3D del vehículo ───────────────────────── */}
+        <Suspense
+          fallback={
+            <div
+              className="skeleton"
+              style={{
+                minHeight: 'clamp(470px, 56vw, 760px)',
+                borderRadius: 28,
+                border: '1px solid var(--color-silver-mist)',
+              }}
+            />
+          }
+        >
+          <FordFocusModel3D />
+        </Suspense>
       </div>
 
       {showForm && (

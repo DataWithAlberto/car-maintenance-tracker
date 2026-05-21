@@ -3,6 +3,30 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Plus, AlertTriangle, Gauge } from 'lucide-react';
 const CarViewer = lazy(() => import('../components/3d/CarViewer').then(m => ({ default: m.CarViewer })));
+
+// Resolución del modelo 3D para CarPage:
+//   1) Primero intenta el modelo profesional ST-Line 2023 (definitivo).
+//   2) Si no existe todavía, cae al genérico ya incluido en /public/models —
+//      no es procedural: es un .glb real (Ford Focus, Sketchfab) que mantiene
+//      operativa la click-detection sobre piezas para el flujo de mantenimiento.
+//   3) Si tampoco existe, CarViewer mostrará el fallback elegante en DOM.
+const PRIMARY_MODEL = '/models/ford-focus-st-line-2023.glb';
+const FALLBACK_MODEL = '/models/ford_focus.glb';
+
+async function resolveModelUrl(): Promise<string | undefined> {
+  const head = async (url: string): Promise<boolean> => {
+    try {
+      const res = await fetch(url, { method: 'HEAD' });
+      const isHtml = (res.headers.get('content-type') ?? '').includes('text/html');
+      return res.ok && !isHtml;
+    } catch {
+      return false;
+    }
+  };
+  if (await head(PRIMARY_MODEL)) return PRIMARY_MODEL;
+  if (await head(FALLBACK_MODEL)) return FALLBACK_MODEL;
+  return undefined;
+}
 import { PartInfoOverlay } from '../components/3d/PartInfoOverlay';
 import { MaintenanceForm } from '../components/maintenance/MaintenanceForm';
 import { Button } from '../components/ui/Button';
@@ -23,6 +47,18 @@ export const CarPage = () => {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
   const [prefilledType, setPrefilledType] = useState('');
+  const [modelUrl, setModelUrl] = useState<string | undefined>(undefined);
+  const [modelResolved, setModelResolved] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    resolveModelUrl().then((url) => {
+      if (cancelled) return;
+      setModelUrl(url);
+      setModelResolved(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!selectedVehicle) {
@@ -152,11 +188,13 @@ export const CarPage = () => {
             </div>
           </div>
         }>
-          <CarViewer
-            onPartClick={handlePartClick}
-            autoRotate={false}
-            modelUrl="/models/ford_focus.glb"
-          />
+          {modelResolved && (
+            <CarViewer
+              onPartClick={handlePartClick}
+              autoRotate={false}
+              modelUrl={modelUrl}
+            />
+          )}
         </Suspense>
 
         {/* Alerts indicator — very subtle, top left */}

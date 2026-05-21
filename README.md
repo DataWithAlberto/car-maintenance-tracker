@@ -88,11 +88,84 @@ El backend Express expone una API REST espejo (`/api/vehicles`, `/api/maintenanc
 - **Backend:** Railway / Fly.io / Render. Setea las 3 vars de Supabase + `CORS_ORIGIN`.
 - **DB + Storage + Auth:** Supabase Cloud.
 
+## Modelo 3D del vehículo
+
+El visor 3D del Dashboard y la página `/car` cargan modelos `.glb` desde
+`public/models/`. Hay dos archivos esperados, en orden de preferencia:
+
+| Archivo | Uso |
+|---|---|
+| `public/models/ford-focus-st-line-2023.glb` | Modelo profesional definitivo (Mk4.5 ST-Line, plata metalizado). **No incluido** — añadir manualmente. |
+| `public/models/ford_focus.glb` | Modelo genérico Sketchfab. Ya incluido. Mantiene la click-detection sobre piezas operativa hasta que se añada el definitivo. |
+
+Si ninguno de los dos existe (o ambos fallan), el visor muestra un fallback
+elegante en DOM con foto de referencia y la ruta exacta donde colocar el
+archivo. **No se renderiza ninguna maqueta de primitivas como sustituto.**
+
+### Añadir el modelo profesional
+
+1. Obtener o exportar el `.glb` del Ford Focus Mk4.5 ST-Line 2023 (hatchback
+   5 puertas, plata metalizado, llantas oscuras, paragolpes ST-Line, pilotos
+   traseros rojos, doble escape derecho si lo lleva).
+2. Optimizar antes de subir — recomendado mantener por debajo de 5–8 MB:
+   ```bash
+   npx gltf-transform optimize entrada.glb \
+     public/models/ford-focus-st-line-2023.glb \
+     --compress draco --texture-compress webp
+   ```
+3. `useGLTF` de drei activa el decoder Draco automáticamente. No requiere
+   configuración adicional.
+4. Verificar visualmente que coincide con las imágenes de referencia
+   (parrilla negra, faros finos, llantas oscuras, cristales tintados,
+   spoiler trasero, difusor negro). El visor solo presenta el modelo; toda
+   la fidelidad la aporta el `.glb`.
+
+## Mejoras aplicadas en esta iteración
+
+**FASE 1 — Rápidas y seguras**
+- `.env.example` creado con vars Supabase + Anthropic
+- `console.error` de los componentes 3D gateados con `import.meta.env.DEV`
+- Filtros de `MaintenancePage` con `aria-pressed` + `aria-label`
+- ESLint config: ignora `server/`, permite `_` prefix en unused vars,
+  `react-hooks/set-state-in-effect` como warning (patrones legítimos de
+  guard/init)
+
+**FASE 2 — Visuales medias**
+- Code-splitting por ruta: todas las páginas salvo `Dashboard`, `Login` y
+  `Register` se cargan vía `React.lazy()`. Bundle inicial reducido — Recharts
+  (Expenses 354 KB) y Leaflet (148 KB) ya no están en el chunk principal.
+- `<Suspense>` con `SkeletonCard` como fallback de página.
+
+**FASE 3 — Funcionales**
+- `src/utils/withRetry.ts`: helper de reintentos con backoff exponencial
+  para envolver llamadas de red críticas (Supabase, fetch externos). No
+  reintenta errores 4xx por defecto.
+
+**FASE 4 — Integración 3D profesional**
+- `FordFocusModel3D` ya estaba implementado en el repo y cumple la regla
+  estricta: nunca renderiza primitivas como solución final, solo modelos
+  `.glb` reales o un fallback explicativo en DOM.
+- `CarViewer` refactorizado: eliminada la `ProceduralCar` de cajas. El
+  fallback ante error de carga ahora es la foto de referencia + mensaje con
+  la ruta del archivo esperado, igual que `FordFocusModel3D`.
+- `CarPage` resuelve el modelo con un HEAD check progresivo: primero el
+  profesional ST-Line, después el genérico, después el fallback DOM.
+
+## Validaciones
+
+```bash
+npm run lint    # 0 errores, 24 warnings (set-state-in-effect en guards)
+npm run build   # ✓ pasa
+```
+
 ## Roadmap post-MVP
 
 - Predicción de costes (ML)
 - Exportación PDF/CSV
 - Notificaciones email para alertas
-- Modelo 3D real (GLTF) del Ford Focus en lugar del procedural actual
+- Modelo 3D ST-Line 2023 definitivo (ver sección anterior)
 - Fotogrametría del coche real
 - App móvil nativa (React Native)
+- Suite de tests (Vitest + Testing Library)
+- CI/CD con GitHub Actions
+- PWA + push notifications

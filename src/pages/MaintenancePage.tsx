@@ -219,7 +219,10 @@ export const MaintenancePage = () => {
           <Filter className="h-3 w-3" strokeWidth={1.6} /> Filtros
         </span>
         <button
+          type="button"
           onClick={() => setFilterType('')}
+          aria-pressed={!filterType}
+          aria-label="Mostrar todos los registros"
           className={cn(
             'shrink-0 px-4 py-2 rounded-full font-text font-medium border transition-colors',
             !filterType
@@ -235,7 +238,10 @@ export const MaintenancePage = () => {
           return (
             <button
               key={t}
+              type="button"
               onClick={() => setFilterType(active ? '' : t)}
+              aria-pressed={active}
+              aria-label={`Filtrar por ${t}`}
               className={cn(
                 'shrink-0 px-4 py-2 rounded-full font-text font-medium border transition-colors',
                 active
