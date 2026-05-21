@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import {
-  LayoutGrid, Wrench, Receipt, FileText, Route, Share2, Settings, ShieldCheck, CalendarClock,
+  LayoutGrid, Wrench, Receipt, FileText, Route, Share2, Settings,
+  ShieldCheck, CalendarClock, Wallet, Folder,
 } from 'lucide-react';
-import { FloatingDock, type FloatingDockItem } from './FloatingDock';
+import { FloatingDock, type FloatingDockEntry } from './FloatingDock';
 import { BottomNav } from './BottomNav';
 import { PageTransition } from '../ui/PageTransition';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
@@ -24,16 +25,37 @@ export const Layout = () => {
   /* Vehicle context for the dock: selected → first available. */
   const activeVehicle = selectedVehicle ?? vehicles[0] ?? null;
 
-  const dockItems = useMemo<FloatingDockItem[]>(() => ([
-    { id: 'overview',    label: 'Vista general', icon: LayoutGrid, href: '/car' },
-    { id: 'maintenance', label: 'Mantenimiento', icon: Wrench,     href: '/maintenance' },
-    { id: 'plan',        label: 'Plan predictivo', icon: CalendarClock, href: '/maintenance-plan' },
-    { id: 'expenses',    label: 'Gastos',        icon: Receipt,    href: '/expenses' },
-    { id: 'documents',   label: 'Documentos',    icon: FileText,   href: '/documents' },
-    { id: 'insurance',   label: 'Seguro',        icon: ShieldCheck, href: '/insurance' },
-    { id: 'trips',       label: 'Viajes',        icon: Route,      href: '/trips' },
-    { id: 'sharing',     label: 'Compartir',     icon: Share2,     href: '/sharing' },
-    { id: 'settings',    label: 'Ajustes',       icon: Settings,   href: '/settings' },
+  const dockEntries = useMemo<FloatingDockEntry[]>(() => ([
+    { id: 'overview', label: 'Vista general', icon: LayoutGrid, href: '/car' },
+    {
+      id: 'maintenance-group',
+      label: 'Mantenimiento',
+      icon: Wrench,
+      children: [
+        { id: 'maintenance', label: 'Mantenimiento',    icon: Wrench,        href: '/maintenance' },
+        { id: 'plan',        label: 'Plan predictivo',  icon: CalendarClock, href: '/maintenance-plan' },
+      ],
+    },
+    {
+      id: 'finance-group',
+      label: 'Finanzas',
+      icon: Wallet,
+      children: [
+        { id: 'expenses',  label: 'Gastos', icon: Receipt,     href: '/expenses' },
+        { id: 'insurance', label: 'Seguro', icon: ShieldCheck, href: '/insurance' },
+      ],
+    },
+    { id: 'trips', label: 'Viajes', icon: Route, href: '/trips' },
+    {
+      id: 'management-group',
+      label: 'Gestión',
+      icon: Folder,
+      children: [
+        { id: 'documents', label: 'Documentos', icon: FileText, href: '/documents' },
+        { id: 'sharing',   label: 'Compartir',  icon: Share2,   href: '/sharing' },
+      ],
+    },
+    { id: 'settings', label: 'Ajustes', icon: Settings, href: '/settings' },
   ]), []);
 
   const activeId = useMemo(() => {
@@ -88,7 +110,7 @@ export const Layout = () => {
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-fog)' }}>
       <FloatingDock
-        items={dockItems}
+        entries={dockEntries}
         activeId={activeId}
         vehicle={vehicleMeta}
         user={userMeta}
