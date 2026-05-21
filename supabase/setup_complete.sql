@@ -261,6 +261,30 @@ ALTER TABLE trips               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trip_waypoints      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE insurance_policies  ENABLE ROW LEVEL SECURITY;
 
+-- ─── Funciones helper (SECURITY DEFINER) ─────────────────────────────────────
+-- Rompen la recursión infinita entre las políticas de vehicles y shared_access.
+-- Al ser SECURITY DEFINER, sus consultas internas NO vuelven a disparar RLS.
+
+CREATE OR REPLACE FUNCTION public.is_vehicle_owner(vid UUID)
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM vehicles WHERE id = vid AND owner_id = auth.uid());
+$$;
+
+CREATE OR REPLACE FUNCTION public.can_read_vehicle(vid UUID)
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM vehicles WHERE id = vid AND owner_id = auth.uid())
+      OR EXISTS (SELECT 1 FROM shared_access
+                 WHERE vehicle_id = vid AND user_id = auth.uid() AND status = 'accepted');
+$$;
+
+CREATE OR REPLACE FUNCTION public.can_edit_vehicle(vid UUID)
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM vehicles WHERE id = vid AND owner_id = auth.uid())
+      OR EXISTS (SELECT 1 FROM shared_access
+                 WHERE vehicle_id = vid AND user_id = auth.uid() AND status = 'accepted'
+                   AND role IN ('owner','editor'));
+$$;
+
 -- Users
 DROP POLICY IF EXISTS "users_select"      ON users;
 CREATE POLICY "users_select"      ON users FOR SELECT USING (true);
@@ -270,15 +294,7 @@ CREATE POLICY "users_update_self" ON users FOR UPDATE USING (auth.uid() = id);
 -- Vehicles
 DROP POLICY IF EXISTS "vehicles_select" ON vehicles;
 CREATE POLICY "vehicles_select" ON vehicles FOR SELECT
-  USING (
-    owner_id = auth.uid()
-    OR EXISTS (
-      SELECT 1 FROM shared_access
-      WHERE shared_access.vehicle_id = vehicles.id
-      AND shared_access.user_id = auth.uid()
-      AND shared_access.status = 'accepted'
-    )
-  );
+  USING (public.can_read_vehicle(id));
 
 DROP POLICY IF EXISTS "vehicles_insert" ON vehicles;
 CREATE POLICY "vehicles_insert" ON vehicles FOR INSERT
@@ -286,16 +302,7 @@ CREATE POLICY "vehicles_insert" ON vehicles FOR INSERT
 
 DROP POLICY IF EXISTS "vehicles_update" ON vehicles;
 CREATE POLICY "vehicles_update" ON vehicles FOR UPDATE
-  USING (
-    owner_id = auth.uid()
-    OR EXISTS (
-      SELECT 1 FROM shared_access
-      WHERE shared_access.vehicle_id = vehicles.id
-      AND shared_access.user_id = auth.uid()
-      AND shared_access.status = 'accepted'
-      AND shared_access.role = 'editor'
-    )
-  );
+  USING (public.can_edit_vehicle(id));
 
 DROP POLICY IF EXISTS "vehicles_delete" ON vehicles;
 CREATE POLICY "vehicles_delete" ON vehicles FOR DELETE
@@ -304,103 +311,49 @@ CREATE POLICY "vehicles_delete" ON vehicles FOR DELETE
 -- Maintenance records
 DROP POLICY IF EXISTS "maintenance_select" ON maintenance_records;
 CREATE POLICY "maintenance_select" ON maintenance_records FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = maintenance_records.vehicle_id
-      AND (
-        vehicles.owner_id = auth.uid()
-        OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted')
-      )
-    )
-  );
+  USING (public.can_read_vehicle(vehicle_id));
 
 DROP POLICY IF EXISTS "maintenance_write" ON maintenance_records;
 CREATE POLICY "maintenance_write" ON maintenance_records FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = maintenance_records.vehicle_id
-      AND (
-        vehicles.owner_id = auth.uid()
-        OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted' AND shared_access.role = 'editor')
-      )
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = maintenance_records.vehicle_id
-      AND (
-        vehicles.owner_id = auth.uid()
-        OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted' AND shared_access.role = 'editor')
-      )
-    )
-  );
+  USING (public.can_edit_vehicle(vehicle_id))
+  WITH CHECK (public.can_edit_vehicle(vehicle_id));
 
 -- Expenses
 DROP POLICY IF EXISTS "expenses_select" ON expenses;
 CREATE POLICY "expenses_select" ON expenses FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = expenses.vehicle_id
-      AND (vehicles.owner_id = auth.uid() OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted'))
-    )
-  );
+  USING (public.can_read_vehicle(vehicle_id));
 
 DROP POLICY IF EXISTS "expenses_write" ON expenses;
 CREATE POLICY "expenses_write" ON expenses FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = expenses.vehicle_id
-      AND (vehicles.owner_id = auth.uid() OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted' AND shared_access.role = 'editor'))
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = expenses.vehicle_id
-      AND (vehicles.owner_id = auth.uid() OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted' AND shared_access.role = 'editor'))
-    )
-  );
+  USING (public.can_edit_vehicle(vehicle_id))
+  WITH CHECK (public.can_edit_vehicle(vehicle_id));
 
 -- Documents
 DROP POLICY IF EXISTS "documents_select" ON documents;
 CREATE POLICY "documents_select" ON documents FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = documents.vehicle_id
-      AND (vehicles.owner_id = auth.uid() OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted'))
-    )
-  );
+  USING (public.can_read_vehicle(vehicle_id));
 
 DROP POLICY IF EXISTS "documents_write" ON documents;
 CREATE POLICY "documents_write" ON documents FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = documents.vehicle_id
-      AND (vehicles.owner_id = auth.uid() OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted' AND shared_access.role = 'editor'))
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = documents.vehicle_id
-      AND (vehicles.owner_id = auth.uid() OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted' AND shared_access.role = 'editor'))
-    )
-  );
+  USING (public.can_edit_vehicle(vehicle_id))
+  WITH CHECK (public.can_edit_vehicle(vehicle_id));
 
 -- Shared access
 DROP POLICY IF EXISTS "shared_select" ON shared_access;
 CREATE POLICY "shared_select" ON shared_access FOR SELECT
-  USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM vehicles WHERE vehicles.id = shared_access.vehicle_id AND vehicles.owner_id = auth.uid()));
+  USING (user_id = auth.uid() OR public.is_vehicle_owner(vehicle_id));
 
 DROP POLICY IF EXISTS "shared_insert" ON shared_access;
 CREATE POLICY "shared_insert" ON shared_access FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM vehicles WHERE vehicles.id = shared_access.vehicle_id AND vehicles.owner_id = auth.uid()));
+  WITH CHECK (public.is_vehicle_owner(vehicle_id));
 
 DROP POLICY IF EXISTS "shared_update" ON shared_access;
 CREATE POLICY "shared_update" ON shared_access FOR UPDATE
-  USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM vehicles WHERE vehicles.id = shared_access.vehicle_id AND vehicles.owner_id = auth.uid()));
+  USING (user_id = auth.uid() OR public.is_vehicle_owner(vehicle_id));
 
 DROP POLICY IF EXISTS "shared_delete" ON shared_access;
 CREATE POLICY "shared_delete" ON shared_access FOR DELETE
-  USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM vehicles WHERE vehicles.id = shared_access.vehicle_id AND vehicles.owner_id = auth.uid()));
+  USING (user_id = auth.uid() OR public.is_vehicle_owner(vehicle_id));
 
 -- Trips
 DROP POLICY IF EXISTS "trips_select" ON trips;
@@ -443,27 +396,12 @@ CREATE POLICY "waypoints_delete" ON trip_waypoints FOR DELETE
 -- Insurance
 DROP POLICY IF EXISTS "insurance_select" ON insurance_policies;
 CREATE POLICY "insurance_select" ON insurance_policies FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = insurance_policies.vehicle_id
-      AND (vehicles.owner_id = auth.uid() OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted'))
-    )
-  );
+  USING (public.can_read_vehicle(vehicle_id));
 
 DROP POLICY IF EXISTS "insurance_write" ON insurance_policies;
 CREATE POLICY "insurance_write" ON insurance_policies FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = insurance_policies.vehicle_id
-      AND (vehicles.owner_id = auth.uid() OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted' AND shared_access.role = 'editor'))
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM vehicles WHERE vehicles.id = insurance_policies.vehicle_id
-      AND (vehicles.owner_id = auth.uid() OR EXISTS (SELECT 1 FROM shared_access WHERE shared_access.vehicle_id = vehicles.id AND shared_access.user_id = auth.uid() AND shared_access.status = 'accepted' AND shared_access.role = 'editor'))
-    )
-  );
+  USING (public.can_edit_vehicle(vehicle_id))
+  WITH CHECK (public.can_edit_vehicle(vehicle_id));
 
 
 -- =============================================================================
