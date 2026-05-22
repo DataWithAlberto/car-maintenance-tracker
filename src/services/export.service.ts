@@ -1,4 +1,11 @@
-import type { Vehicle, MaintenanceRecord, Expense, Document } from '../types';
+import type {
+  Vehicle,
+  MaintenanceRecord,
+  Expense,
+  Document,
+  OBD2Reading,
+  OBD2Anomaly,
+} from '../types';
 
 const esc = (s: unknown): string =>
   String(s ?? '').replace(
@@ -370,6 +377,254 @@ export const exportService = {
   ${catList}
 
   <p class="footer">Generado el ${esc(generatedAt)} · FocusHub. Incluye gastos y costes de mantenimiento.</p>
+  <script>window.onload = function () { window.print(); };</script>
+</body>
+</html>`;
+
+    openPrintWindow(html);
+  },
+  exportOBD2Report(vehicle: Vehicle, readings: OBD2Reading[], anomalies: OBD2Anomaly[]): void {
+    const generatedAt = new Date().toLocaleString('es-ES');
+
+    // ── Period covered ────────────────────────────────────────────────────────
+    const withDate = readings.filter((r) => r.created_at);
+    const periodStart = withDate.length
+      ? new Date(withDate[withDate.length - 1].created_at!).toLocaleString('es-ES')
+      : '—';
+    const periodEnd = withDate.length
+      ? new Date(withDate[0].created_at!).toLocaleString('es-ES')
+      : '—';
+
+    // ── Aggregated stats ──────────────────────────────────────────────────────
+    const avg = (key: keyof OBD2Reading) => {
+      const vals = readings
+        .map((r) => r[key] as number | null)
+        .filter((v): v is number => v !== null);
+      return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+    };
+    const max = (key: keyof OBD2Reading) => {
+      const vals = readings
+        .map((r) => r[key] as number | null)
+        .filter((v): v is number => v !== null);
+      return vals.length ? Math.max(...vals) : null;
+    };
+
+    const fmt = (v: number | null, dec = 1) => (v !== null ? v.toFixed(dec) : '—');
+
+    const criticalCount = anomalies.filter((a) => a.severity === 'critical' && !a.dismissed).length;
+    const warnCount = anomalies.filter((a) => a.severity === 'warn' && !a.dismissed).length;
+    const dismissedCount = anomalies.filter((a) => a.dismissed).length;
+
+    // ── Recommendations based on anomaly patterns ──────────────────────────
+    const anomalyTypes = new Set(anomalies.filter((a) => !a.dismissed).map((a) => a.type));
+    const recommendations: string[] = [];
+    if (anomalyTypes.has('overtemp'))
+      recommendations.push('Sistema de refrigeración: revisar nivel de refrigerante y termostato.');
+    if (anomalyTypes.has('low_battery'))
+      recommendations.push('Batería: comprobar voltaje en reposo y estado del alternador.');
+    if (anomalyTypes.has('oil_pressure_low'))
+      recommendations.push('Presión de aceite baja: verificar nivel de aceite y bomba.');
+    if (anomalyTypes.has('engine_load_high'))
+      recommendations.push('Carga de motor alta sostenida: revisar filtro de aire y EGR.');
+    if (anomalyTypes.has('high_rpms'))
+      recommendations.push('RPM elevadas frecuentes: puede acelerar desgaste del motor y aceite.');
+    if (anomalyTypes.has('low_fuel'))
+      recommendations.push(
+        'Combustible bajo recurrente: evitar conducir con menos del 10% para proteger la bomba.',
+      );
+    if (recommendations.length === 0)
+      recommendations.push(
+        'Sin anomalías activas. El vehículo muestra parámetros dentro del rango normal.',
+      );
+
+    // ── Anomaly rows ─────────────────────────────────────────────────────────
+    const anomalyRows = anomalies.length
+      ? [...anomalies]
+          .sort(
+            (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+          )
+          .map((a) => {
+            const severityColor = a.severity === 'critical' ? '#b64400' : '#c77700';
+            const severityLabel = a.severity === 'critical' ? 'Crítico' : 'Advertencia';
+            return `
+        <tr style="opacity: ${a.dismissed ? 0.5 : 1}">
+          <td>${a.created_at ? new Date(a.created_at).toLocaleString('es-ES') : '—'}</td>
+          <td><span style="color: ${severityColor}; font-weight: 600">${esc(severityLabel)}</span></td>
+          <td>${esc(a.message)}</td>
+          <td class="num">${a.value}</td>
+          <td class="num">${a.threshold}</td>
+          <td>${a.dismissed ? 'Revisado' : 'Activo'}</td>
+        </tr>`;
+          })
+          .join('')
+      : '<tr><td colspan="6" class="empty">Sin anomalías registradas</td></tr>';
+
+    // ── Sample readings (last 20) ─────────────────────────────────────────
+    const sample = readings.slice(0, 20);
+    const readingRows = sample.length
+      ? sample
+          .map(
+            (r) => `
+        <tr>
+          <td>${r.created_at ? new Date(r.created_at).toLocaleString('es-ES') : '—'}</td>
+          <td class="num">${r.rpm ?? '—'}</td>
+          <td class="num">${r.speed ?? '—'}</td>
+          <td class="num">${r.coolant_temp ?? '—'}</td>
+          <td class="num">${r.engine_load ?? '—'}</td>
+          <td class="num">${r.battery_voltage ?? '—'}</td>
+          <td class="num">${r.oil_pressure ?? '—'}</td>
+          <td class="num">${r.fuel_level ?? '—'}</td>
+        </tr>`,
+          )
+          .join('')
+      : '<tr><td colspan="8" class="empty">Sin lecturas registradas</td></tr>';
+
+    const recList = recommendations.map((r) => `<li>${esc(r)}</li>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Informe OBD-II · ${esc(vehicle.brand)} ${esc(vehicle.model)}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1d1d1f; padding: 48px; line-height: 1.5; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #707070; }
+  h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.6px; margin: 6px 0 2px; }
+  h2 { font-size: 16px; font-weight: 600; margin: 36px 0 12px; }
+  h3 { font-size: 13px; font-weight: 600; margin: 0 0 8px; color: #3a3a3c; }
+  .meta { font-size: 13px; color: #707070; }
+  .kpis { display: flex; gap: 24px; margin-top: 24px; padding: 20px 0; border-top: 1px solid #e8e8ed; border-bottom: 1px solid #e8e8ed; flex-wrap: wrap; }
+  .kpi .label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #707070; }
+  .kpi .value { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-top: 4px; }
+  .kpi .value.warn { color: #c77700; }
+  .kpi .value.critical { color: #b64400; }
+  .kpi .value.ok { color: #1a9e3f; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 8px; }
+  .stat { background: #f5f5f7; border-radius: 10px; padding: 12px 14px; }
+  .stat .slabel { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #707070; }
+  .stat .svalue { font-size: 18px; font-weight: 700; margin-top: 2px; }
+  .stat .sunit { font-size: 10px; color: #707070; }
+  .recs { background: #f0f8f0; border-radius: 12px; padding: 16px 20px; }
+  .recs ul { padding-left: 18px; }
+  .recs li { font-size: 13px; line-height: 1.6; color: #1d1d1f; }
+  table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  th { text-align: left; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #707070; padding: 8px 10px; border-bottom: 1.5px solid #1d1d1f; }
+  td { padding: 7px 10px; border-bottom: 1px solid #e8e8ed; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .empty { color: #a1a1a6; text-align: center; padding: 16px; }
+  .period { font-size: 12px; color: #707070; margin-bottom: 16px; }
+  .footer { margin-top: 40px; font-size: 11px; color: #a1a1a6; border-top: 1px solid #e8e8ed; padding-top: 16px; }
+  @media print { body { padding: 24px; } @page { margin: 16mm; } }
+</style>
+</head>
+<body>
+  <span class="eyebrow">Informe de diagnóstico OBD-II · FocusHub</span>
+  <h1>${esc(vehicle.brand)} ${esc(vehicle.model)}</h1>
+  <p class="meta">
+    ${esc(vehicle.year)}${vehicle.license_plate ? ` · ${esc(vehicle.license_plate)}` : ''}${vehicle.vin ? ` · VIN ${esc(vehicle.vin)}` : ''}
+  </p>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Lecturas</div>
+      <div class="value">${readings.length}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Alertas críticas</div>
+      <div class="value ${criticalCount > 0 ? 'critical' : 'ok'}">${criticalCount}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Advertencias</div>
+      <div class="value ${warnCount > 0 ? 'warn' : 'ok'}">${warnCount}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Revisadas</div>
+      <div class="value">${dismissedCount}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Km actuales</div>
+      <div class="value">${FMT_KM.format(vehicle.current_km)}</div>
+    </div>
+  </div>
+
+  <h2>Estadísticas de conducción</h2>
+  <p class="period">Período: ${esc(periodStart)} → ${esc(periodEnd)}</p>
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="slabel">RPM media</div>
+      <div class="svalue">${fmt(avg('rpm'), 0)}</div>
+      <div class="sunit">rev/min</div>
+    </div>
+    <div class="stat">
+      <div class="slabel">RPM máx.</div>
+      <div class="svalue">${fmt(max('rpm'), 0)}</div>
+      <div class="sunit">rev/min</div>
+    </div>
+    <div class="stat">
+      <div class="slabel">Temp. media</div>
+      <div class="svalue">${fmt(avg('coolant_temp'))}</div>
+      <div class="sunit">°C</div>
+    </div>
+    <div class="stat">
+      <div class="slabel">Temp. máx.</div>
+      <div class="svalue">${fmt(max('coolant_temp'))}</div>
+      <div class="sunit">°C</div>
+    </div>
+    <div class="stat">
+      <div class="slabel">Carga media</div>
+      <div class="svalue">${fmt(avg('engine_load'))}</div>
+      <div class="sunit">%</div>
+    </div>
+    <div class="stat">
+      <div class="slabel">Batería media</div>
+      <div class="svalue">${fmt(avg('battery_voltage'))}</div>
+      <div class="sunit">V</div>
+    </div>
+    <div class="stat">
+      <div class="slabel">Vel. media</div>
+      <div class="svalue">${fmt(avg('speed'), 0)}</div>
+      <div class="sunit">km/h</div>
+    </div>
+    <div class="stat">
+      <div class="slabel">Vel. máx.</div>
+      <div class="svalue">${fmt(max('speed'), 0)}</div>
+      <div class="sunit">km/h</div>
+    </div>
+  </div>
+
+  <h2>Recomendaciones</h2>
+  <div class="recs">
+    <ul>${recList}</ul>
+  </div>
+
+  <h2>Registro de anomalías</h2>
+  <table>
+    <thead><tr>
+      <th>Fecha</th><th>Severidad</th><th>Descripción</th><th class="num">Valor</th><th class="num">Umbral</th><th>Estado</th>
+    </tr></thead>
+    <tbody>${anomalyRows}</tbody>
+  </table>
+
+  <h2>Últimas lecturas (muestra)</h2>
+  <table>
+    <thead><tr>
+      <th>Fecha</th>
+      <th class="num">RPM</th>
+      <th class="num">Vel.</th>
+      <th class="num">Temp.</th>
+      <th class="num">Carga%</th>
+      <th class="num">Bat.V</th>
+      <th class="num">Aceite</th>
+      <th class="num">Comb.%</th>
+    </tr></thead>
+    <tbody>${readingRows}</tbody>
+  </table>
+
+  <p class="footer">
+    Generado el ${esc(generatedAt)} · FocusHub.<br>
+    Informe orientativo basado en datos del adaptador OBD-II. No sustituye el diagnóstico de un técnico certificado.
+  </p>
   <script>window.onload = function () { window.print(); };</script>
 </body>
 </html>`;

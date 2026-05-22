@@ -24,12 +24,14 @@ import {
   Wind,
   Activity,
   LineChart,
+  FileText,
 } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useOBD2Store } from '../store/obd2Store';
 import { useVehicle } from '../hooks/useVehicle';
 import { obd2Service } from '../services/obd2.service';
 import { obd2PersistenceService } from '../services/obd2Persistence.service';
+import { exportService } from '../services/export.service';
 import { getDtcDescription } from '../utils/dtcCodes';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -384,6 +386,15 @@ export const OBD2Page = () => {
     if (!vin) return;
     await updateVehicle(selectedVehicle.id, { vin });
     toast.success('VIN guardado en el vehículo');
+  };
+
+  const handleExportOBD2 = () => {
+    if (historyReadings.length === 0 && readings.length === 0) {
+      toast.error('Sin datos para exportar. Conecta el OBD2 y graba algunas lecturas primero.');
+      return;
+    }
+    const exportReadings = historyReadings.length > 0 ? historyReadings : chartReadings;
+    exportService.exportOBD2Report(selectedVehicle, exportReadings, anomalies);
   };
 
   const handleImportKm = async () => {
@@ -903,15 +914,25 @@ export const OBD2Page = () => {
       {/* Registro de anomalías */}
       {selectedVehicle && (
         <section className="bg-snow border border-silver-mist rounded-[28px] p-7 space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <AlertTriangle className="h-4 w-4 text-graphite" strokeWidth={1.6} />
-            <h2
-              className="font-mono uppercase text-graphite"
-              style={{ fontSize: 11, letterSpacing: '0.14em' }}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-4 w-4 text-graphite" strokeWidth={1.6} />
+              <h2
+                className="font-mono uppercase text-graphite"
+                style={{ fontSize: 11, letterSpacing: '0.14em' }}
+              >
+                Registro de anomalías
+              </h2>
+              <span className="font-text text-graphite text-xs">{anomalies.length} total</span>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportOBD2}
+              iconLeft={<FileText className="h-3.5 w-3.5" strokeWidth={1.7} />}
             >
-              Registro de anomalías
-            </h2>
-            <span className="font-text text-graphite text-xs">{anomalies.length} total</span>
+              Exportar informe
+            </Button>
           </div>
           <OBD2AnomalyLog anomalies={anomalies} onDismiss={handleDismissAnomaly} />
         </section>
