@@ -3,10 +3,11 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
+import prettier from 'eslint-config-prettier'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'server', 'node_modules', 'public']),
+  globalIgnores(['dist', 'coverage', 'server', 'node_modules', 'public']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -14,6 +15,8 @@ export default defineConfig([
       tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
+      // Debe ir el último: desactiva las reglas de estilo que choquen con Prettier.
+      prettier,
     ],
     languageOptions: {
       globals: globals.browser,

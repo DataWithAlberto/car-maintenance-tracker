@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { MAX_ROWS_PER_QUERY } from '../utils/constants';
 import type { Expense } from '../types';
 import type { ExpenseInput } from '../utils/validators';
 
@@ -8,7 +9,8 @@ export const expensesService = {
       .from('expenses')
       .select('*')
       .eq('vehicle_id', vehicleId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(MAX_ROWS_PER_QUERY);
     if (error) throw error;
     return data ?? [];
   },

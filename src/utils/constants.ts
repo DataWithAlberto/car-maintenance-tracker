@@ -106,3 +106,8 @@ export const INSURANCE_PAYMENT_LABELS: Record<string, string> = {
 export const OIL_CHANGE_KM_INTERVAL = 10000;
 export const OIL_CHANGE_MONTH_INTERVAL = 12;
 export const GENERAL_SERVICE_KM_INTERVAL = 20000;
+
+// Tope de filas por consulta de listado. Un vehículo personal nunca se
+// acerca a este volumen; actúa como salvaguarda para que una consulta no
+// pueda traer un número patológico de registros al navegador de una vez.
+export const MAX_ROWS_PER_QUERY = 1000;

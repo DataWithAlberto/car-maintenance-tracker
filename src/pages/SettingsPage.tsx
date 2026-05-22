@@ -3,17 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2, AlertTriangle, Car, LogOut, KeyRound, Sparkles, Check, FileDown, Bell, Wrench, Copy, Moon, Sun } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { useApiKeyStore } from '../store/apiKeyStore';
 import { useThemeStore } from '../store/themeStore';
 import { useVehicle } from '../hooks/useVehicle';
 import { useAuth } from '../hooks/useAuth';
+import { useVehicleExport } from '../hooks/useVehicleExport';
+import { useWorkshopShare } from '../hooks/useWorkshopShare';
 import { supabase } from '../services/supabase';
-import { maintenanceService } from '../services/maintenance.service';
-import { vehicleService } from '../services/vehicle.service';
-import { expensesService } from '../services/expenses.service';
-import { documentsService } from '../services/documents.service';
-import { exportService } from '../services/export.service';
 import { VehicleForm } from '../components/vehicle/VehicleForm';
 import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FloatingInput } from '../components/ui/FloatingInput';
 import { formatKm } from '../utils/formatters';
@@ -23,61 +22,22 @@ import toast from 'react-hot-toast';
 
 export const SettingsPage = () => {
   const { selectedVehicle } = useVehicleStore();
-  const updateVehicleStore = useVehicleStore((s) => s.updateVehicle);
   const { theme, setTheme } = useThemeStore();
   const { updateVehicle, deleteVehicle } = useVehicle();
   const { logout, user } = useAuth();
-  const { anthropicApiKey, setAnthropicApiKey, clearAnthropicApiKey, pushEnabled, setPushEnabled } = useSettingsStore();
+  const { pushEnabled, setPushEnabled } = useSettingsStore();
+  const { anthropicApiKey, setAnthropicApiKey, clearAnthropicApiKey } = useApiKeyStore();
+  const { exporting, exportingTax, exportReport, exportTaxReport } = useVehicleExport(selectedVehicle);
+  const { shareUrl, shareBusy, generateShare, disableShare, copyShare } = useWorkshopShare(selectedVehicle);
   const navigate = useNavigate();
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [apiKeyDraft, setApiKeyDraft] = useState(anthropicApiKey);
   const [nameDraft, setNameDraft] = useState(
     (user?.user_metadata?.full_name as string | undefined) ?? ''
   );
   const [savingName, setSavingName] = useState(false);
-
-  const [exporting, setExporting] = useState(false);
-  const [exportingTax, setExportingTax] = useState(false);
-  const [shareBusy, setShareBusy] = useState(false);
   const taxYear = new Date().getFullYear();
-
-  const shareUrl = selectedVehicle?.share_token
-    ? `${window.location.origin}/taller/${selectedVehicle.share_token}`
-    : null;
-
-  const handleGenerateShare = async () => {
-    if (!selectedVehicle) return;
-    setShareBusy(true);
-    try {
-      const token = await vehicleService.setShareToken(selectedVehicle.id);
-      updateVehicleStore(selectedVehicle.id, { share_token: token });
-      toast.success('Enlace de taller generado');
-    } catch {
-      toast.error('No se pudo generar el enlace');
-    } finally {
-      setShareBusy(false);
-    }
-  };
-
-  const handleDisableShare = async () => {
-    if (!selectedVehicle) return;
-    setShareBusy(true);
-    try {
-      await vehicleService.clearShareToken(selectedVehicle.id);
-      updateVehicleStore(selectedVehicle.id, { share_token: null });
-      toast.success('Acceso de taller desactivado');
-    } catch {
-      toast.error('No se pudo desactivar el acceso');
-    } finally {
-      setShareBusy(false);
-    }
-  };
-
-  const handleCopyShare = () => {
-    if (shareUrl) {
-      navigator.clipboard.writeText(shareUrl).then(() => toast.success('Enlace copiado'));
-    }
-  };
 
   const handleSaveName = async () => {
     setSavingName(true);
@@ -85,39 +45,6 @@ export const SettingsPage = () => {
     setSavingName(false);
     if (error) { toast.error('No se pudo guardar el nombre'); return; }
     toast.success('Nombre actualizado');
-  };
-
-  const handleExportReport = async () => {
-    if (!selectedVehicle) return;
-    setExporting(true);
-    try {
-      const [records, expenses, documents] = await Promise.all([
-        maintenanceService.getByVehicle(selectedVehicle.id),
-        expensesService.getByVehicle(selectedVehicle.id),
-        documentsService.getByVehicle(selectedVehicle.id),
-      ]);
-      exportService.exportVehicleReport(selectedVehicle, records, expenses, documents);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo generar el informe');
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleExportTaxReport = async () => {
-    if (!selectedVehicle) return;
-    setExportingTax(true);
-    try {
-      const [records, expenses] = await Promise.all([
-        maintenanceService.getByVehicle(selectedVehicle.id),
-        expensesService.getByVehicle(selectedVehicle.id),
-      ]);
-      exportService.exportTaxReport(selectedVehicle, expenses, records, taxYear);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo generar el informe fiscal');
-    } finally {
-      setExportingTax(false);
-    }
   };
 
   const handleTogglePush = async () => {
@@ -169,9 +96,9 @@ export const SettingsPage = () => {
     setShowEditForm(false);
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`¿Eliminar ${selectedVehicle.brand} ${selectedVehicle.model}? Esta acción no se puede deshacer.`)) return;
+  const confirmDelete = async () => {
     await deleteVehicle(selectedVehicle.id);
+    setShowDeleteConfirm(false);
     toast.success('Vehículo eliminado');
     navigate('/dashboard');
   };
@@ -467,7 +394,7 @@ export const SettingsPage = () => {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={handleCopyShare}
+                      onClick={copyShare}
                       iconLeft={<Copy className="h-3.5 w-3.5" strokeWidth={1.7} />}
                     >
                       Copiar
@@ -477,7 +404,7 @@ export const SettingsPage = () => {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={handleDisableShare}
+                      onClick={disableShare}
                       loading={shareBusy}
                     >
                       Desactivar acceso
@@ -495,7 +422,7 @@ export const SettingsPage = () => {
                 <Button
                   variant="accent"
                   size="sm"
-                  onClick={handleGenerateShare}
+                  onClick={generateShare}
                   loading={shareBusy}
                   iconLeft={<Wrench className="h-4 w-4" strokeWidth={1.7} />}
                 >
@@ -572,7 +499,7 @@ export const SettingsPage = () => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={handleExportReport}
+            onClick={exportReport}
             loading={exporting}
             iconLeft={<FileDown className="h-4 w-4" strokeWidth={1.7} />}
           >
@@ -581,7 +508,7 @@ export const SettingsPage = () => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={handleExportTaxReport}
+            onClick={() => exportTaxReport(taxYear)}
             loading={exportingTax}
             iconLeft={<FileDown className="h-4 w-4" strokeWidth={1.7} />}
           >
@@ -619,7 +546,7 @@ export const SettingsPage = () => {
               <Button
                 variant="danger"
                 size="sm"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteConfirm(true)}
                 iconLeft={<Trash2 className="h-4 w-4" strokeWidth={1.8} />}
               >
                 Eliminar vehículo
@@ -635,6 +562,31 @@ export const SettingsPage = () => {
           onSubmit={handleUpdate}
           onClose={() => setShowEditForm(false)}
         />
+      )}
+
+      {showDeleteConfirm && (
+        <Modal
+          open
+          onClose={() => setShowDeleteConfirm(false)}
+          title="Eliminar vehículo"
+          description={`¿Eliminar ${selectedVehicle.brand} ${selectedVehicle.model}? Esta acción no se puede deshacer.`}
+          size="sm"
+          footer={
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)} fullWidth>
+                Cancelar
+              </Button>
+              <Button variant="danger" onClick={confirmDelete} fullWidth>
+                Eliminar vehículo
+              </Button>
+            </div>
+          }
+        >
+          <p className="font-text text-graphite" style={{ fontSize: 15, lineHeight: 1.5 }}>
+            Se borrarán permanentemente todos los registros de mantenimiento, gastos,
+            documentos y accesos compartidos de este vehículo.
+          </p>
+        </Modal>
       )}
     </div>
   );

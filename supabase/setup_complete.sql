@@ -1,10 +1,15 @@
 -- =============================================================================
--- FOCUSHUB · Setup completo de base de datos
+-- Car Maintenance Tracker · Setup completo de base de datos
 -- =============================================================================
+-- Este archivo es la ÚNICA fuente de verdad del esquema. Refleja el estado
+-- final tras aplicar todas las migraciones de supabase/migrations/.
+--
 -- Instrucciones:
 --   1. Ve a supabase.com → tu proyecto → SQL Editor → New query
 --   2. Copia TODO este archivo y pégalo
 --   3. Pulsa RUN
+--
+-- Es idempotente: se puede ejecutar varias veces sin problema.
 -- =============================================================================
 
 
@@ -33,6 +38,8 @@ CREATE TABLE IF NOT EXISTS vehicles (
   current_km INTEGER NOT NULL,
   vin VARCHAR(50),
   model_3d_url TEXT,
+  -- Token de "modo taller": enlace público de solo lectura de la ficha.
+  share_token TEXT UNIQUE,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -57,6 +64,8 @@ CREATE TABLE IF NOT EXISTS maintenance_records (
 );
 
 CREATE INDEX IF NOT EXISTS idx_maintenance_vehicle ON maintenance_records(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_maintenance_vehicle_date
+  ON maintenance_records(vehicle_id, date DESC);
 
 -- MAINTENANCE_ATTACHMENTS
 CREATE TABLE IF NOT EXISTS maintenance_attachments (
@@ -81,6 +90,8 @@ CREATE TABLE IF NOT EXISTS expenses (
 );
 
 CREATE INDEX IF NOT EXISTS idx_expenses_vehicle ON expenses(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_vehicle_date
+  ON expenses(vehicle_id, date DESC);
 
 -- DOCUMENTS
 CREATE TABLE IF NOT EXISTS documents (
@@ -96,20 +107,28 @@ CREATE TABLE IF NOT EXISTS documents (
 );
 
 CREATE INDEX IF NOT EXISTS idx_documents_vehicle ON documents(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_documents_vehicle_created
+  ON documents(vehicle_id, created_at DESC);
 
 -- SHARED_ACCESS
+-- user_id es NULLABLE a propósito: una invitación por email a alguien que aún
+-- no tiene cuenta se guarda solo con `invited_email`, y `user_id` se rellena
+-- cuando esa persona acepta la invitación.
 CREATE TABLE IF NOT EXISTS shared_access (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  invited_email VARCHAR(255),
+  invite_token TEXT UNIQUE DEFAULT encode(gen_random_bytes(16), 'hex'),
   role VARCHAR(50) NOT NULL CHECK (role IN ('owner', 'editor', 'viewer')),
   status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(vehicle_id, user_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_shared_user ON shared_access(user_id);
+CREATE INDEX IF NOT EXISTS idx_shared_user  ON shared_access(user_id);
 CREATE INDEX IF NOT EXISTS idx_shared_vehicle ON shared_access(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_shared_token ON shared_access(invite_token);
 
 -- ALERTS
 CREATE TABLE IF NOT EXISTS alerts (
@@ -285,9 +304,33 @@ RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS
                    AND role IN ('owner','editor'));
 $$;
 
+-- ¿auth.uid() comparte algún vehículo con `other_user`, en cualquier sentido?
+-- Permite que un propietario vea los datos de las personas con las que ha
+-- compartido un vehículo (y viceversa) sin abrir la tabla `users` entera.
+CREATE OR REPLACE FUNCTION public.shares_vehicle_with(other_user UUID)
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM shared_access sa
+    JOIN vehicles v ON v.id = sa.vehicle_id
+    WHERE (v.owner_id = auth.uid() AND sa.user_id = other_user)
+       OR (v.owner_id = other_user AND sa.user_id = auth.uid())
+  );
+$$;
+
+-- Localiza un usuario por email devolviendo SOLO su id. La usa el flujo de
+-- invitación: la tabla `users` ya no es legible en bloque.
+CREATE OR REPLACE FUNCTION public.find_user_id_by_email(lookup_email TEXT)
+RETURNS UUID LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT id FROM users WHERE email = lookup_email LIMIT 1;
+$$;
+
 -- Users
+-- Cada usuario solo ve su propia fila y la de quienes comparten un vehículo
+-- con él. (Antes USING (true) exponía el email de TODOS los usuarios.)
 DROP POLICY IF EXISTS "users_select"      ON users;
-CREATE POLICY "users_select"      ON users FOR SELECT USING (true);
+CREATE POLICY "users_select"      ON users FOR SELECT
+  USING (id = auth.uid() OR public.shares_vehicle_with(id));
 DROP POLICY IF EXISTS "users_update_self" ON users;
 CREATE POLICY "users_update_self" ON users FOR UPDATE USING (auth.uid() = id);
 

@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Car, Wrench, Sparkles, MapPin, Phone, Globe, Navigation, AlertTriangle, KeyRound,
   ChevronRight,
 } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
-import { useSettingsStore } from '../store/settingsStore';
+import { useApiKeyStore } from '../store/apiKeyStore';
 import { useMechanicsStore } from '../store/mechanicsStore';
 import { useMechanicRatingsStore } from '../store/mechanicRatingsStore';
 import { maintenanceService } from '../services/maintenance.service';
@@ -26,7 +26,7 @@ const URGENCY: Record<AlertSeverity, { label: string; bg: string; fg: string }> 
 
 export const MechanicsPage = () => {
   const { selectedVehicle } = useVehicleStore();
-  const { anthropicApiKey } = useSettingsStore();
+  const { anthropicApiKey } = useApiKeyStore();
   const {
     symptom, origin, mechanics, diagnosis, selectedId,
     setSymptom, setSearchResult, setSelectedId,
@@ -36,6 +36,10 @@ export const MechanicsPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Cancela cualquier diagnóstico en vuelo si el usuario abandona la página.
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   if (!selectedVehicle) {
     return (
@@ -72,6 +76,10 @@ export const MechanicsPage = () => {
       return;
     }
 
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setSearchResult({ origin: null, mechanics: [], diagnosis: null });
     setSelectedId(undefined);
@@ -97,14 +105,20 @@ export const MechanicsPage = () => {
         records,
         symptom: symptom.trim(),
         mechanics: found,
+        signal: controller.signal,
       });
       setSearchResult({ origin: loc, mechanics: found, diagnosis: result });
       toast.success('Diagnóstico listo');
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       toast.error(err instanceof Error ? err.message : 'Algo salió mal');
     } finally {
-      setLoading(false);
-      setStatusMsg('');
+      // Solo el diagnóstico vigente toca el estado compartido: uno superado
+      // por otra llamada no debe apagar el loading del nuevo.
+      if (abortRef.current === controller) {
+        setLoading(false);
+        setStatusMsg('');
+      }
     }
   };
 

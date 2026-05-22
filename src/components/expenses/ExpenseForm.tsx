@@ -8,7 +8,7 @@ import { Button } from '../ui/Button';
 import { FloatingInput, FloatingTextarea, FloatingSelect } from '../ui/FloatingInput';
 import { storageService } from '../../services/storage.service';
 import { claudeService } from '../../services/claude.service';
-import { useSettingsStore } from '../../store/settingsStore';
+import { useApiKeyStore } from '../../store/apiKeyStore';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -31,7 +31,7 @@ const fileToBase64 = (file: File): Promise<{ base64: string; mediaType: string }
 
 export const ExpenseForm = ({ vehicleId, initialData, onSubmit, onClose }: Props) => {
   const isEdit = initialData != null;
-  const { anthropicApiKey } = useSettingsStore();
+  const { anthropicApiKey } = useApiKeyStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<Partial<ExpenseInput>>(
     initialData ?? {

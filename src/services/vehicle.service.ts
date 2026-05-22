@@ -4,23 +4,26 @@ import type { VehicleInput } from '../utils/validators';
 
 export const vehicleService = {
   async getAll(userId: string): Promise<VehicleWithAccess[]> {
-    const { data: owned, error: e1 } = await supabase
-      .from('vehicles')
-      .select('*')
-      .eq('owner_id', userId)
-      .order('created_at', { ascending: false });
-    if (e1) throw e1;
+    // Las dos consultas son independientes: se lanzan en paralelo para no
+    // sumar latencias de red.
+    const [ownedRes, sharedRes] = await Promise.all([
+      supabase
+        .from('vehicles')
+        .select('*')
+        .eq('owner_id', userId)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('shared_access')
+        .select('*, vehicles(*)')
+        .eq('user_id', userId)
+        .eq('status', 'accepted'),
+    ]);
+    if (ownedRes.error) throw ownedRes.error;
+    if (sharedRes.error) throw sharedRes.error;
 
-    const { data: shared, error: e2 } = await supabase
-      .from('shared_access')
-      .select('*, vehicles(*)')
-      .eq('user_id', userId)
-      .eq('status', 'accepted');
-    if (e2) throw e2;
+    const ownedWithRole = (ownedRes.data ?? []).map((v) => ({ ...v, role: 'owner' as const }));
 
-    const ownedWithRole = (owned ?? []).map((v) => ({ ...v, role: 'owner' as const }));
-
-    const sharedWithRole = (shared ?? [])
+    const sharedWithRole = (sharedRes.data ?? [])
       .filter((s) => s.vehicles)
       .map((s) => ({ ...(s.vehicles as Vehicle), role: s.role as 'editor' | 'viewer' }));
 

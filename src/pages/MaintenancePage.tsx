@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Filter, X, Sparkles, Loader2 } from 'lucide-react';
 import { MaintenanceList } from '../components/maintenance/MaintenanceList';
@@ -8,7 +8,7 @@ import { Button } from '../components/ui/Button';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useMaintenance } from '../hooks/useMaintenance';
-import { useSettingsStore } from '../store/settingsStore';
+import { useApiKeyStore } from '../store/apiKeyStore';
 import { expensesService } from '../services/expenses.service';
 import { claudeService } from '../services/claude.service';
 import { MAINTENANCE_TYPES } from '../utils/constants';
@@ -43,7 +43,7 @@ const toInput = (r: MaintenanceRecord): Partial<MaintenanceInput> => ({
 export const MaintenancePage = () => {
   const { selectedVehicle } = useVehicleStore();
   const { records, loading, fetchRecords, createRecord, updateRecord, deleteRecord } = useMaintenance(selectedVehicle?.id);
-  const { anthropicApiKey } = useSettingsStore();
+  const { anthropicApiKey } = useApiKeyStore();
   const navigate = useNavigate();
 
   const [showForm, setShowForm] = useState(false);
@@ -51,11 +51,15 @@ export const MaintenancePage = () => {
   const [filterType, setFilterType] = useState('');
   const [insights, setInsights] = useState<MaintenanceInsight[] | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!selectedVehicle) { navigate('/dashboard'); return; }
     fetchRecords();
   }, [selectedVehicle?.id]);
+
+  // Cancela cualquier análisis IA en vuelo al desmontar la página.
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   if (!selectedVehicle) return null;
 
@@ -85,6 +89,10 @@ export const MaintenancePage = () => {
       navigate('/settings');
       return;
     }
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setAnalyzing(true);
     try {
       const expenses = await expensesService.getByVehicle(selectedVehicle.id).catch(() => []);
@@ -93,13 +101,15 @@ export const MaintenancePage = () => {
         vehicle: selectedVehicle,
         records,
         expenses,
+        signal: controller.signal,
       });
       setInsights(result);
       if (result.length === 0) toast('Sin observaciones relevantes');
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       toast.error(err instanceof Error ? err.message : 'No se pudo completar el análisis');
     } finally {
-      setAnalyzing(false);
+      if (abortRef.current === controller) setAnalyzing(false);
     }
   };
 

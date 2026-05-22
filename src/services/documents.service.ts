@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { MAX_ROWS_PER_QUERY } from '../utils/constants';
 import type { Document } from '../types';
 
 export const documentsService = {
@@ -7,7 +8,8 @@ export const documentsService = {
       .from('documents')
       .select('*')
       .eq('vehicle_id', vehicleId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(MAX_ROWS_PER_QUERY);
     if (error) throw error;
     return data ?? [];
   },

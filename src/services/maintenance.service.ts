@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { MAX_ROWS_PER_QUERY } from '../utils/constants';
 import type { MaintenanceRecord } from '../types';
 import type { MaintenanceInput } from '../utils/validators';
 
@@ -8,7 +9,8 @@ export const maintenanceService = {
       .from('maintenance_records')
       .select('*, maintenance_attachments(*)')
       .eq('vehicle_id', vehicleId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(MAX_ROWS_PER_QUERY);
     if (error) throw error;
     return (data ?? []).map((r) => ({ ...r, attachments: r.maintenance_attachments }));
   },

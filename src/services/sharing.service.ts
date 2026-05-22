@@ -13,19 +13,18 @@ export const sharingService = {
   },
 
   async invite(vehicleId: string, email: string, role: UserRole): Promise<{ token: string; existing: boolean }> {
-    // Check if user exists
-    const { data: user } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
+    // Localiza al usuario por email vía RPC: la tabla `users` ya no es
+    // legible en bloque (migración 20260522_harden_rls_and_indexes).
+    const { data: existingUserId, error: lookupError } = await supabase
+      .rpc('find_user_id_by_email', { lookup_email: email });
+    if (lookupError) throw lookupError;
 
-    if (user) {
+    if (existingUserId) {
       // User exists — invite directly
       const { data, error } = await supabase
         .from('shared_access')
         .upsert(
-          { vehicle_id: vehicleId, user_id: user.id, role, status: 'pending', invited_email: email },
+          { vehicle_id: vehicleId, user_id: existingUserId, role, status: 'pending', invited_email: email },
           { onConflict: 'vehicle_id,user_id' },
         )
         .select()
@@ -34,7 +33,6 @@ export const sharingService = {
       return { token: data.invite_token, existing: true };
     } else {
       // User not registered — create pending invite with email only
-      // Need a placeholder user_id — we'll use a dummy lookup or store email-only invite
       const { data, error } = await supabase
         .from('shared_access')
         .insert({

@@ -8,9 +8,9 @@ App multiusuario para gestionar el mantenimiento del coche con visualización 3D
 
 ```
 car-maintenance-tracker/
-├── src/                  # Frontend React
-├── server/               # Backend Express
-└── supabase/schema.sql   # Schema + RLS policies
+├── src/                         # Frontend React
+├── server/                      # Backend Express
+└── supabase/setup_complete.sql  # Esquema + RLS + funciones
 ```
 
 ## Setup
@@ -18,7 +18,7 @@ car-maintenance-tracker/
 ### 1. Supabase
 
 1. Crea proyecto en [supabase.com](https://supabase.com)
-2. SQL Editor → pega el contenido de `supabase/schema.sql` y ejecuta
+2. SQL Editor → pega el contenido de `supabase/setup_complete.sql` y ejecuta
 3. Storage → crea bucket público `car-maintenance`
 4. Auth → activa email + password (desactiva confirmación de email para desarrollo)
 5. Project Settings → API → copia `URL`, `anon key` y `service_role key`
@@ -69,7 +69,7 @@ El backend Express expone una API REST espejo (`/api/vehicles`, `/api/maintenanc
 ## Arquitectura
 
 - **Auth:** Supabase Auth → JWT en localStorage → cliente Supabase usa el token automáticamente para RLS
-- **Permisos:** Row Level Security en Postgres (ver `supabase/schema.sql`). Owner ve y modifica todo. Editor lee y escribe registros pero no borra el vehículo. Viewer solo lee.
+- **Permisos:** Row Level Security en Postgres (ver `supabase/setup_complete.sql`). Owner ve y modifica todo. Editor lee y escribe registros pero no borra el vehículo. Viewer solo lee.
 - **Storage:** bucket `car-maintenance` para documentos (PDF, imágenes de facturas).
 - **3D:** componente `CarBody` procedural en R3F. En v2 sustituir por GLTF real (carga con `useGLTF` de drei).
 
