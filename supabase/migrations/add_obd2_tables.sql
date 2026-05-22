@@ -66,7 +66,7 @@ CREATE POLICY "Users can read own vehicle readings"
       WHERE v.id = obd2_readings.vehicle_id
       AND (v.owner_id = auth.uid() OR
            EXISTS (
-             SELECT 1 FROM public.shared_accesses sa
+             SELECT 1 FROM public.shared_access sa
              WHERE sa.vehicle_id = v.id
              AND sa.user_id = auth.uid()
              AND sa.status = 'accepted'
@@ -96,7 +96,7 @@ CREATE POLICY "Users can read own vehicle anomalies"
       WHERE v.id = obd2_anomalies.vehicle_id
       AND (v.owner_id = auth.uid() OR
            EXISTS (
-             SELECT 1 FROM public.shared_accesses sa
+             SELECT 1 FROM public.shared_access sa
              WHERE sa.vehicle_id = v.id
              AND sa.user_id = auth.uid()
              AND sa.status = 'accepted'
