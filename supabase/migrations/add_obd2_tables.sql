@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.obd2_readings (
 );
 
 -- Index for efficient queries by vehicle and time
-CREATE INDEX idx_obd2_readings_vehicle_timestamp
+CREATE INDEX IF NOT EXISTS idx_obd2_readings_vehicle_timestamp
 ON public.obd2_readings(vehicle_id, created_at DESC);
 
 -- OBD2 Anomalies table
@@ -49,85 +49,100 @@ CREATE TABLE IF NOT EXISTS public.obd2_anomalies (
 );
 
 -- Index for efficient queries
-CREATE INDEX idx_obd2_anomalies_vehicle_created
+CREATE INDEX IF NOT EXISTS idx_obd2_anomalies_vehicle_created
 ON public.obd2_anomalies(vehicle_id, created_at DESC);
 
-CREATE INDEX idx_obd2_anomalies_type
+CREATE INDEX IF NOT EXISTS idx_obd2_anomalies_type
 ON public.obd2_anomalies(vehicle_id, type);
 
 -- RLS Policies for obd2_readings
 ALTER TABLE public.obd2_readings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can read own vehicle readings"
-  ON public.obd2_readings FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.vehicles v
-      WHERE v.id = obd2_readings.vehicle_id
-      AND (v.owner_id = auth.uid() OR
-           EXISTS (
-             SELECT 1 FROM public.shared_access sa
-             WHERE sa.vehicle_id = v.id
-             AND sa.user_id = auth.uid()
-             AND sa.status = 'accepted'
-           )
+DO $$ BEGIN
+  CREATE POLICY "Users can read own vehicle readings"
+    ON public.obd2_readings FOR SELECT
+    USING (
+      EXISTS (
+        SELECT 1 FROM public.vehicles v
+        WHERE v.id = obd2_readings.vehicle_id
+        AND (v.owner_id = auth.uid() OR
+             EXISTS (
+               SELECT 1 FROM public.shared_access sa
+               WHERE sa.vehicle_id = v.id
+               AND sa.user_id = auth.uid()
+               AND sa.status = 'accepted'
+             )
+        )
       )
-    )
-  );
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY "Only app service can insert readings"
-  ON public.obd2_readings FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.vehicles v
-      WHERE v.id = obd2_readings.vehicle_id
-      AND v.owner_id = auth.uid()
-    )
-  );
+DO $$ BEGIN
+  CREATE POLICY "Only app service can insert readings"
+    ON public.obd2_readings FOR INSERT
+    WITH CHECK (
+      EXISTS (
+        SELECT 1 FROM public.vehicles v
+        WHERE v.id = obd2_readings.vehicle_id
+        AND v.owner_id = auth.uid()
+      )
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- RLS Policies for obd2_anomalies
 ALTER TABLE public.obd2_anomalies ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can read own vehicle anomalies"
-  ON public.obd2_anomalies FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.vehicles v
-      WHERE v.id = obd2_anomalies.vehicle_id
-      AND (v.owner_id = auth.uid() OR
-           EXISTS (
-             SELECT 1 FROM public.shared_access sa
-             WHERE sa.vehicle_id = v.id
-             AND sa.user_id = auth.uid()
-             AND sa.status = 'accepted'
-           )
+DO $$ BEGIN
+  CREATE POLICY "Users can read own vehicle anomalies"
+    ON public.obd2_anomalies FOR SELECT
+    USING (
+      EXISTS (
+        SELECT 1 FROM public.vehicles v
+        WHERE v.id = obd2_anomalies.vehicle_id
+        AND (v.owner_id = auth.uid() OR
+             EXISTS (
+               SELECT 1 FROM public.shared_access sa
+               WHERE sa.vehicle_id = v.id
+               AND sa.user_id = auth.uid()
+               AND sa.status = 'accepted'
+             )
+        )
+      )
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "Only app can insert anomalies"
+    ON public.obd2_anomalies FOR INSERT
+    WITH CHECK (
+      EXISTS (
+        SELECT 1 FROM public.vehicles v
+        WHERE v.id = obd2_anomalies.vehicle_id
+        AND v.owner_id = auth.uid()
+      )
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "Users can update own anomalies"
+    ON public.obd2_anomalies FOR UPDATE
+    USING (
+      EXISTS (
+        SELECT 1 FROM public.vehicles v
+        WHERE v.id = obd2_anomalies.vehicle_id
+        AND v.owner_id = auth.uid()
       )
     )
-  );
-
-CREATE POLICY "Only app can insert anomalies"
-  ON public.obd2_anomalies FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.vehicles v
-      WHERE v.id = obd2_anomalies.vehicle_id
-      AND v.owner_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Users can update own anomalies"
-  ON public.obd2_anomalies FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.vehicles v
-      WHERE v.id = obd2_anomalies.vehicle_id
-      AND v.owner_id = auth.uid()
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.vehicles v
-      WHERE v.id = obd2_anomalies.vehicle_id
-      AND v.owner_id = auth.uid()
-    )
-  );
+    WITH CHECK (
+      EXISTS (
+        SELECT 1 FROM public.vehicles v
+        WHERE v.id = obd2_anomalies.vehicle_id
+        AND v.owner_id = auth.uid()
+      )
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
