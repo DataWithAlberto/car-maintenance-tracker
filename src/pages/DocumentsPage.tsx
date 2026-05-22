@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, FileText, Star } from 'lucide-react';
 import { DocumentUpload } from '../components/documents/DocumentUpload';
@@ -10,7 +10,7 @@ import { useAuthStore } from '../store/authStore';
 import { documentsService } from '../services/documents.service';
 import type { Document } from '../types';
 import { formatDate } from '../utils/formatters';
-import { isBefore, parseISO, addDays } from 'date-fns';
+import { calculateDocumentAlerts } from '../utils/calculations';
 import toast from 'react-hot-toast';
 
 export const DocumentsPage = () => {
@@ -23,12 +23,32 @@ export const DocumentsPage = () => {
   const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
-    if (!selectedVehicle) { navigate('/dashboard'); return; }
+    if (!selectedVehicle) {
+      navigate('/dashboard');
+      return;
+    }
     setLoading(true);
-    documentsService.getByVehicle(selectedVehicle.id)
+    documentsService
+      .getByVehicle(selectedVehicle.id)
       .then(setDocs)
       .finally(() => setLoading(false));
   }, [selectedVehicle?.id]);
+
+  // Una sola pasada por docs, memoizada. Reusa la función canónica de
+  // calculations.ts en lugar de duplicar la lógica de expiración con
+  // date-fns por cada doc en cada render.
+  const expiryMap = useMemo(() => {
+    const map = new Map<string, 'expired' | 'soon'>();
+    if (!selectedVehicle) return map;
+    for (const a of calculateDocumentAlerts(selectedVehicle.id, docs)) {
+      if (a.type === 'document_expired') {
+        map.set(a.id.replace('doc-expired-', ''), 'expired');
+      } else if (a.type === 'document_expiring') {
+        map.set(a.id.replace('doc-soon-', ''), 'soon');
+      }
+    }
+    return map;
+  }, [docs, selectedVehicle]);
 
   if (!selectedVehicle || !user) return null;
 
@@ -44,11 +64,6 @@ export const DocumentsPage = () => {
       toast.error('No se pudo eliminar el documento');
     }
   };
-
-  const isExpiringSoon = (expiry?: string) =>
-    expiry ? isBefore(parseISO(expiry), addDays(new Date(), 30)) : false;
-  const isExpired = (expiry?: string) =>
-    expiry ? isBefore(parseISO(expiry), new Date()) : false;
 
   return (
     <div className="px-6 sm:px-10 py-10">
@@ -75,17 +90,24 @@ export const DocumentsPage = () => {
             className="font-text text-graphite mt-3"
             style={{ fontSize: 17, lineHeight: 1.45, letterSpacing: '-0.1px' }}
           >
-            <span className="text-ink font-medium tabular-nums">{docs.length}</span> archivos guardados
+            <span className="text-ink font-medium tabular-nums">{docs.length}</span> archivos
+            guardados
           </p>
         </div>
-        <Button variant="accent" onClick={() => setShowUpload(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
+        <Button
+          variant="accent"
+          onClick={() => setShowUpload(true)}
+          iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
+        >
           Subir documento
         </Button>
       </header>
 
       {loading ? (
         <div className="space-y-2">
-          {[0, 1, 2].map((i) => <SkeletonRow key={i} />)}
+          {[0, 1, 2].map((i) => (
+            <SkeletonRow key={i} />
+          ))}
         </div>
       ) : docs.length === 0 ? (
         <EmptyState
@@ -93,7 +115,11 @@ export const DocumentsPage = () => {
           title="Sin documentos guardados"
           description="Sube tu seguro, ITV, ficha técnica o cualquier documento importante del vehículo. Te avisaremos antes de que venzan."
           action={
-            <Button variant="accent" onClick={() => setShowUpload(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
+            <Button
+              variant="accent"
+              onClick={() => setShowUpload(true)}
+              iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
+            >
               Subir primer documento
             </Button>
           }
@@ -101,8 +127,9 @@ export const DocumentsPage = () => {
       ) : (
         <ul className="space-y-2">
           {docs.map((doc, i) => {
-            const expired = isExpired(doc.expiry_date);
-            const soon = !expired && isExpiringSoon(doc.expiry_date);
+            const state = expiryMap.get(doc.id);
+            const expired = state === 'expired';
+            const soon = state === 'soon';
             return (
               <li
                 key={doc.id}
@@ -155,7 +182,10 @@ export const DocumentsPage = () => {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-1 text-graphite font-text" style={{ fontSize: 13 }}>
+                  <div
+                    className="flex items-center gap-2 mt-1 text-graphite font-text"
+                    style={{ fontSize: 13 }}
+                  >
                     {doc.file_name && <span className="truncate">{doc.file_name}</span>}
                     {doc.expiry_date && (
                       <>

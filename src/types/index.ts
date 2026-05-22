@@ -83,11 +83,7 @@ export type InsuranceCoverage =
   | 'todo_riesgo'
   | 'todo_riesgo_franquicia';
 
-export type InsurancePaymentFrequency =
-  | 'mensual'
-  | 'trimestral'
-  | 'semestral'
-  | 'anual';
+export type InsurancePaymentFrequency = 'mensual' | 'trimestral' | 'semestral' | 'anual';
 
 export interface InsurancePolicy {
   id: string;
@@ -182,16 +178,16 @@ export interface Trip {
 // ─── Mechanics (Talleres recomendados por IA) ───────────────────────────────
 
 export interface Mechanic {
-  id: string;            // OSM element id (e.g. "node/123")
+  id: string; // OSM element id (e.g. "node/123")
   name: string;
   lat: number;
   lng: number;
   address?: string;
   phone?: string;
   website?: string;
-  brand?: string;        // marca en la que se especializa, si la hay
+  brand?: string; // marca en la que se especializa, si la hay
   openingHours?: string;
-  distanceKm: number;    // distancia al punto de búsqueda
+  distanceKm: number; // distancia al punto de búsqueda
 }
 
 export interface MechanicRecommendation {
@@ -201,10 +197,10 @@ export interface MechanicRecommendation {
 }
 
 export interface Diagnosis {
-  summary: string;            // diagnóstico del problema
-  likelyCause: string;        // causa más probable
-  urgency: AlertSeverity;     // urgencia general
-  estimatedService: string;   // servicio que necesita el coche
+  summary: string; // diagnóstico del problema
+  likelyCause: string; // causa más probable
+  urgency: AlertSeverity; // urgencia general
+  estimatedService: string; // servicio que necesita el coche
   recommendations: MechanicRecommendation[]; // talleres ordenados por idoneidad
 }
 
@@ -256,4 +252,59 @@ export interface CreateTripInput {
   weather_humidity?: number;
   weather_wind_speed?: number;
   spotify_playlist_url?: string;
+}
+
+// ─── OBD2 ────────────────────────────────────────────────────────────────────
+
+export type AnomalySeverity = 'warn' | 'critical';
+
+export interface OBD2Reading {
+  id?: string;
+  vehicle_id?: string;
+  timestamp?: number; // Unix timestamp
+  rpm: number | null;
+  speed: number | null;
+  coolant_temp: number | null;
+  fuel_level: number | null;
+  odometer: number | null;
+  oil_pressure: number | null;
+  battery_voltage: number | null;
+  engine_load: number | null;
+  timing_advance: number | null;
+  engine_runtime: number | null;
+  maf_air_flow: number | null;
+  fuel_trim_bank1: number | null;
+  fuel_rate: number | null;
+  short_term_fuel_trim_1: number | null;
+  long_term_fuel_trim_1: number | null;
+  intake_manifold_pressure: number | null;
+  absolute_load: number | null;
+  relative_throttle_pos: number | null;
+  ambient_air_temp: number | null;
+  abs_throttle_pos_b: number | null;
+  acc_pedal_pos_d: number | null;
+  acc_pedal_pos_e: number | null;
+  catalyst_temp_bank1_sensor1: number | null;
+  num_emissions_dtc: number | null;
+  created_at?: string;
+}
+
+export interface OBD2Anomaly {
+  id?: string;
+  vehicle_id?: string;
+  reading_id?: string;
+  type:
+    | 'overtemp'
+    | 'high_rpms'
+    | 'low_battery'
+    | 'low_fuel'
+    | 'oil_pressure_low'
+    | 'engine_load_high'
+    | 'other';
+  severity: AnomalySeverity;
+  value: number;
+  threshold: number;
+  message: string;
+  dismissed?: boolean;
+  created_at?: string;
 }

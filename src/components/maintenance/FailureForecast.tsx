@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Activity, ChevronDown } from 'lucide-react';
 import type { MaintenanceRecord, VehicleWithAccess } from '../../types';
 import { predictFailures } from '../../utils/failurePrediction';
+import { formatKm } from '../../utils/formatters';
 import { cn } from '../../utils/cn';
 
 interface Props {
@@ -20,7 +21,9 @@ const STATUS_LABEL: Record<string, string> = {
   ok: 'En vida útil',
 };
 
-const fmtKm = (n: number) => `${new Intl.NumberFormat('es-ES').format(Math.abs(n))} km`;
+// Reutiliza el Intl.NumberFormat cacheado en utils/formatters en lugar de
+// crear una instancia nueva por render (14 componentes × cada repaint).
+const fmtKm = (n: number) => formatKm(Math.abs(n));
 
 export const FailureForecast = ({ vehicle, records }: Props) => {
   const [open, setOpen] = useState(true);
@@ -43,10 +46,7 @@ export const FailureForecast = ({ vehicle, records }: Props) => {
         </span>
         <span className="flex items-center gap-3">
           {critical > 0 && (
-            <span
-              className="font-text font-semibold"
-              style={{ fontSize: 12, color: '#b64400' }}
-            >
+            <span className="font-text font-semibold" style={{ fontSize: 12, color: '#b64400' }}>
               {critical} a revisar
             </span>
           )}
@@ -67,7 +67,10 @@ export const FailureForecast = ({ vehicle, records }: Props) => {
                     className="shrink-0 h-2 w-2 rounded-full"
                     style={{ background: STATUS_COLOR[p.status] }}
                   />
-                  <span className="font-text text-ink font-medium truncate" style={{ fontSize: 14 }}>
+                  <span
+                    className="font-text text-ink font-medium truncate"
+                    style={{ fontSize: 14 }}
+                  >
                     {p.label}
                   </span>
                   {p.lastServiceKm === null && (
@@ -106,14 +109,16 @@ export const FailureForecast = ({ vehicle, records }: Props) => {
                 className="flex justify-between mt-1 font-mono text-graphite"
                 style={{ fontSize: 10, letterSpacing: '0.04em' }}
               >
-                <span>{STATUS_LABEL[p.status]} · {Math.round(p.lifeUsedPct)}% de vida</span>
+                <span>
+                  {STATUS_LABEL[p.status]} · {Math.round(p.lifeUsedPct)}% de vida
+                </span>
                 <span>cambio estimado a {fmtKm(p.predictedKm)}</span>
               </div>
             </div>
           ))}
           <p className="font-text text-graphite pt-1" style={{ fontSize: 11.5, lineHeight: 1.4 }}>
-            Estimación orientativa basada en vida útil típica de cada pieza y tu
-            último registro. Tu conducción real puede variar el resultado.
+            Estimación orientativa basada en vida útil típica de cada pieza y tu último registro. Tu
+            conducción real puede variar el resultado.
           </p>
         </div>
       )}

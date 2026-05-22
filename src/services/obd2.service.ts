@@ -6,6 +6,25 @@ export interface LiveData {
   coolantTemp: number | null;
   fuelLevel: number | null;
   odometer: number | null;
+  oilPressure: number | null;
+  batteryVoltage: number | null;
+  engineLoad: number | null;
+  timingAdvance: number | null;
+  engineRuntime: number | null;
+  mafAirFlow: number | null;
+  fuelTrimBank1: number | null;
+  fuelRate: number | null;
+  shortTermFuelTrim1: number | null;
+  longTermFuelTrim1: number | null;
+  intakeManifoldPressure: number | null;
+  absoluteLoad: number | null;
+  relativeThrottlePos: number | null;
+  ambientAirTemp: number | null;
+  absThrottlePosB: number | null;
+  accPedalPosD: number | null;
+  accPedalPosE: number | null;
+  catalystTempBank1Sensor1: number | null;
+  numEmissionsDtc: number | null;
 }
 
 export interface DTC {
@@ -18,20 +37,20 @@ const BLE_PROFILES = [
   {
     // Nordic UART Service (most common BLE adapters)
     serviceUUID: '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
-    writeUUID:   '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
-    notifyUUID:  '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
+    writeUUID: '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
+    notifyUUID: '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
   },
   {
     // Common Chinese ELM327 adapters
     serviceUUID: '0000fff0-0000-1000-8000-00805f9b34fb',
-    writeUUID:   '0000fff2-0000-1000-8000-00805f9b34fb',
-    notifyUUID:  '0000fff1-0000-1000-8000-00805f9b34fb',
+    writeUUID: '0000fff2-0000-1000-8000-00805f9b34fb',
+    notifyUUID: '0000fff1-0000-1000-8000-00805f9b34fb',
   },
   {
     // BTLE-miniOBD / some clones
     serviceUUID: '0000ffe0-0000-1000-8000-00805f9b34fb',
-    writeUUID:   '0000ffe1-0000-1000-8000-00805f9b34fb',
-    notifyUUID:  '0000ffe1-0000-1000-8000-00805f9b34fb',
+    writeUUID: '0000ffe1-0000-1000-8000-00805f9b34fb',
+    notifyUUID: '0000ffe1-0000-1000-8000-00805f9b34fb',
   },
 ];
 
@@ -85,19 +104,20 @@ class OBD2Service {
       }
     }
 
-    if (!connected) throw new Error('Adaptador no reconocido. Asegúrate de que es un ELM327 compatible.');
+    if (!connected)
+      throw new Error('Adaptador no reconocido. Asegúrate de que es un ELM327 compatible.');
 
     // Subscribe to notifications
     await this.notifyChar!.startNotifications();
     this.notifyChar!.addEventListener('characteristicvaluechanged', this.onData);
 
     // Init ELM327
-    await this.sendRaw('ATZ\r', 2000);   // reset
-    await this.sendRaw('ATE0\r');         // echo off
-    await this.sendRaw('ATL0\r');         // linefeeds off
-    await this.sendRaw('ATS0\r');         // spaces off
-    await this.sendRaw('ATH0\r');         // headers off
-    await this.sendRaw('ATSP0\r');        // auto protocol
+    await this.sendRaw('ATZ\r', 2000); // reset
+    await this.sendRaw('ATE0\r'); // echo off
+    await this.sendRaw('ATL0\r'); // linefeeds off
+    await this.sendRaw('ATS0\r'); // spaces off
+    await this.sendRaw('ATH0\r'); // headers off
+    await this.sendRaw('ATSP0\r'); // auto protocol
 
     // Listen for disconnect
     this.device.addEventListener('gattserverdisconnected', () => {
@@ -110,7 +130,11 @@ class OBD2Service {
   async disconnect(): Promise<void> {
     this.stopPolling();
     if (this.notifyChar) {
-      try { await this.notifyChar.stopNotifications(); } catch { /* ignore */ }
+      try {
+        await this.notifyChar.stopNotifications();
+      } catch {
+        /* ignore */
+      }
       this.notifyChar.removeEventListener('characteristicvaluechanged', this.onData);
     }
     this.device?.gatt?.disconnect();
@@ -142,7 +166,10 @@ class OBD2Service {
         this.pendingResolve = null;
         resolve('TIMEOUT');
       }, timeoutMs);
-      this.pendingResolve = (v) => { clearTimeout(timer); resolve(v); };
+      this.pendingResolve = (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      };
       this.writeChar!.writeValue(new TextEncoder().encode(cmd)).catch(reject);
     });
   }
@@ -164,8 +191,10 @@ class OBD2Service {
       const res = await this.sendRaw('010C\r');
       const bytes = this.parseHexBytes(res.replace(/^41\s*0C\s*/i, ''));
       if (bytes.length < 2) return null;
-      return Math.round(((bytes[0] * 256) + bytes[1]) / 4);
-    } catch { return null; }
+      return Math.round((bytes[0] * 256 + bytes[1]) / 4);
+    } catch {
+      return null;
+    }
   }
 
   async readSpeed(): Promise<number | null> {
@@ -173,7 +202,9 @@ class OBD2Service {
       const res = await this.sendRaw('010D\r');
       const bytes = this.parseHexBytes(res.replace(/^41\s*0D\s*/i, ''));
       return bytes[0] ?? null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   async readCoolantTemp(): Promise<number | null> {
@@ -182,7 +213,9 @@ class OBD2Service {
       const bytes = this.parseHexBytes(res.replace(/^41\s*05\s*/i, ''));
       if (bytes[0] == null) return null;
       return bytes[0] - 40;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   async readFuelLevel(): Promise<number | null> {
@@ -191,7 +224,9 @@ class OBD2Service {
       const bytes = this.parseHexBytes(res.replace(/^41\s*2F\s*/i, ''));
       if (bytes[0] == null) return null;
       return Math.round((bytes[0] * 100) / 255);
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   /** Odometer via PID A6 (not universally supported). */
@@ -201,26 +236,306 @@ class OBD2Service {
       if (res.includes('NO DATA') || res.includes('ERROR') || res.includes('TIMEOUT')) return null;
       const bytes = this.parseHexBytes(res.replace(/^41\s*A6\s*/i, ''));
       if (bytes.length < 4) return null;
-      return Math.round(((bytes[0] * 16777216) + (bytes[1] * 65536) + (bytes[2] * 256) + bytes[3]) / 10);
-    } catch { return null; }
+      return Math.round((bytes[0] * 16777216 + bytes[1] * 65536 + bytes[2] * 256 + bytes[3]) / 10);
+    } catch {
+      return null;
+    }
+  }
+
+  async readOilPressure(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('015D\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*5D\s*/i, ''));
+      return bytes[0] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async readBatteryVoltage(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0142\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*42\s*/i, ''));
+      if (bytes.length < 2) return null;
+      return Math.round((bytes[0] * 256 + bytes[1]) * 0.05 * 100) / 100;
+    } catch {
+      return null;
+    }
+  }
+
+  async readEngineLoad(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0104\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*04\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return Math.round((bytes[0] * 100) / 255);
+    } catch {
+      return null;
+    }
+  }
+
+  async readTimingAdvance(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('010E\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*0E\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return bytes[0] / 2 - 64;
+    } catch {
+      return null;
+    }
+  }
+
+  async readEngineRuntime(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('011F\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*1F\s*/i, ''));
+      if (bytes.length < 2) return null;
+      return bytes[0] * 256 + bytes[1];
+    } catch {
+      return null;
+    }
+  }
+
+  async readMafAirFlow(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0110\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*10\s*/i, ''));
+      if (bytes.length < 2) return null;
+      return Math.round(((bytes[0] * 256 + bytes[1]) / 100) * 100) / 100;
+    } catch {
+      return null;
+    }
+  }
+
+  async readFuelTrimBank1(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0107\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*07\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return (bytes[0] * 100) / 128 - 100;
+    } catch {
+      return null;
+    }
+  }
+
+  async readFuelRate(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('015E\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*5E\s*/i, ''));
+      if (bytes.length < 2) return null;
+      return Math.round((bytes[0] * 256 + bytes[1]) * 0.05 * 100) / 100;
+    } catch {
+      return null;
+    }
+  }
+
+  async readShortTermFuelTrim1(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0106\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*06\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return (bytes[0] * 100) / 128 - 100;
+    } catch {
+      return null;
+    }
+  }
+
+  async readLongTermFuelTrim1(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0108\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*08\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return (bytes[0] * 100) / 128 - 100;
+    } catch {
+      return null;
+    }
+  }
+
+  async readIntakeManifoldPressure(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('010B\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*0B\s*/i, ''));
+      return bytes[0] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async readAbsoluteLoad(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0143\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*43\s*/i, ''));
+      if (bytes.length < 2) return null;
+      return Math.round(((bytes[0] * 256 + bytes[1]) * 100) / 25600);
+    } catch {
+      return null;
+    }
+  }
+
+  async readRelativeThrottlePos(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0145\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*45\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return Math.round((bytes[0] * 100) / 255);
+    } catch {
+      return null;
+    }
+  }
+
+  async readAmbientAirTemp(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0146\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*46\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return bytes[0] - 40;
+    } catch {
+      return null;
+    }
+  }
+
+  async readAbsThrottlePosB(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0147\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*47\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return Math.round((bytes[0] * 100) / 255);
+    } catch {
+      return null;
+    }
+  }
+
+  async readAccPedalPosD(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('0149\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*49\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return Math.round((bytes[0] * 100) / 255);
+    } catch {
+      return null;
+    }
+  }
+
+  async readAccPedalPosE(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('014A\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*4A\s*/i, ''));
+      if (bytes[0] == null) return null;
+      return Math.round((bytes[0] * 100) / 255);
+    } catch {
+      return null;
+    }
+  }
+
+  async readCatalystTempBank1Sensor1(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('013C\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*3C\s*/i, ''));
+      if (bytes.length < 2) return null;
+      return Math.round((bytes[0] * 256 + bytes[1]) / 10 - 40);
+    } catch {
+      return null;
+    }
+  }
+
+  async readNumEmissionsDtc(): Promise<number | null> {
+    try {
+      const res = await this.sendRaw('011D\r');
+      const bytes = this.parseHexBytes(res.replace(/^41\s*1D\s*/i, ''));
+      return bytes[0] ?? null;
+    } catch {
+      return null;
+    }
   }
 
   async readLiveData(): Promise<LiveData> {
-    const [rpm, speed, coolantTemp, fuelLevel, odometer] = await Promise.all([
+    const [
+      rpm,
+      speed,
+      coolantTemp,
+      fuelLevel,
+      odometer,
+      oilPressure,
+      batteryVoltage,
+      engineLoad,
+      timingAdvance,
+      engineRuntime,
+      mafAirFlow,
+      fuelTrimBank1,
+      fuelRate,
+      shortTermFuelTrim1,
+      longTermFuelTrim1,
+      intakeManifoldPressure,
+      absoluteLoad,
+      relativeThrottlePos,
+      ambientAirTemp,
+      absThrottlePosB,
+      accPedalPosD,
+      accPedalPosE,
+      catalystTempBank1Sensor1,
+      numEmissionsDtc,
+    ] = await Promise.all([
       this.readRpm(),
       this.readSpeed(),
       this.readCoolantTemp(),
       this.readFuelLevel(),
       this.readOdometer(),
+      this.readOilPressure(),
+      this.readBatteryVoltage(),
+      this.readEngineLoad(),
+      this.readTimingAdvance(),
+      this.readEngineRuntime(),
+      this.readMafAirFlow(),
+      this.readFuelTrimBank1(),
+      this.readFuelRate(),
+      this.readShortTermFuelTrim1(),
+      this.readLongTermFuelTrim1(),
+      this.readIntakeManifoldPressure(),
+      this.readAbsoluteLoad(),
+      this.readRelativeThrottlePos(),
+      this.readAmbientAirTemp(),
+      this.readAbsThrottlePosB(),
+      this.readAccPedalPosD(),
+      this.readAccPedalPosE(),
+      this.readCatalystTempBank1Sensor1(),
+      this.readNumEmissionsDtc(),
     ]);
-    return { rpm, speed, coolantTemp, fuelLevel, odometer };
+    return {
+      rpm,
+      speed,
+      coolantTemp,
+      fuelLevel,
+      odometer,
+      oilPressure,
+      batteryVoltage,
+      engineLoad,
+      timingAdvance,
+      engineRuntime,
+      mafAirFlow,
+      fuelTrimBank1,
+      fuelRate,
+      shortTermFuelTrim1,
+      longTermFuelTrim1,
+      intakeManifoldPressure,
+      absoluteLoad,
+      relativeThrottlePos,
+      ambientAirTemp,
+      absThrottlePosB,
+      accPedalPosD,
+      accPedalPosE,
+      catalystTempBank1Sensor1,
+      numEmissionsDtc,
+    };
   }
 
   // ─── DTCs ─────────────────────────────────────────────────────────────────────
 
   async readDtcs(): Promise<DTC[]> {
     const res = await this.sendRaw('03\r', 5000);
-    const lines = res.split('\n').map((l) => l.trim()).filter(Boolean);
+    const lines = res
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     const dtcs: DTC[] = [];
 
     for (const line of lines) {
@@ -231,7 +546,10 @@ class OBD2Service {
         const b1 = bytes[i];
         const b2 = bytes[i + 1];
         if (b1 === 0 && b2 === 0) continue;
-        dtcs.push({ code: decodeDtcBytes(b1, b2), raw: `${b1.toString(16).padStart(2, '0')}${b2.toString(16).padStart(2, '0')}`.toUpperCase() });
+        dtcs.push({
+          code: decodeDtcBytes(b1, b2),
+          raw: `${b1.toString(16).padStart(2, '0')}${b2.toString(16).padStart(2, '0')}`.toUpperCase(),
+        });
       }
     }
     return dtcs;
@@ -267,7 +585,9 @@ class OBD2Service {
       }
       if (vinBytes.length < 5) return null;
       return String.fromCharCode(...vinBytes).replace(/[^A-Z0-9]/gi, '');
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   // ─── Live polling ─────────────────────────────────────────────────────────────
@@ -275,7 +595,10 @@ class OBD2Service {
   startPolling(onData: (data: LiveData) => void, intervalMs = 2000): void {
     this.stopPolling();
     const tick = async () => {
-      if (!this.isConnected) { this.stopPolling(); return; }
+      if (!this.isConnected) {
+        this.stopPolling();
+        return;
+      }
       const data = await this.readLiveData();
       onData(data);
     };
@@ -284,7 +607,10 @@ class OBD2Service {
   }
 
   stopPolling(): void {
-    if (this.pollInterval) { clearInterval(this.pollInterval); this.pollInterval = null; }
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
   }
 }
 

@@ -1,20 +1,37 @@
-import { addMonths, addDays, parseISO, isBefore } from 'date-fns';
 import type { MaintenanceRecord, Vehicle, Alert, Document } from '../types';
-import { OIL_CHANGE_KM_INTERVAL, OIL_CHANGE_MONTH_INTERVAL, GENERAL_SERVICE_KM_INTERVAL } from './constants';
+import {
+  OIL_CHANGE_KM_INTERVAL,
+  OIL_CHANGE_MONTH_INTERVAL,
+  GENERAL_SERVICE_KM_INTERVAL,
+} from './constants';
+
+const DAY_MS = 86_400_000;
 
 export const calculateAlerts = (vehicle: Vehicle, records: MaintenanceRecord[]): Alert[] => {
   const alerts: Alert[] = [];
   const now = new Date();
+  const nowMs = now.getTime();
 
-  const lastOilChange = records
-    .filter((r) => r.type === 'Cambio de aceite')
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+  // Una sola pasada: encuentra el cambio de aceite más reciente sin filtrar
+  // ni ordenar (evita el array intermedio y el O(K log K) del sort).
+  let lastOilChange: MaintenanceRecord | undefined;
+  let lastOilMs = -Infinity;
+  for (const r of records) {
+    if (r.type !== 'Cambio de aceite') continue;
+    const t = new Date(r.date).getTime();
+    if (t > lastOilMs) {
+      lastOilMs = t;
+      lastOilChange = r;
+    }
+  }
 
   if (lastOilChange) {
     const kmDiff = vehicle.current_km - lastOilChange.km_at_service;
-    const nextDate = addMonths(parseISO(lastOilChange.date), OIL_CHANGE_MONTH_INTERVAL);
+    // addMonths nativo: setMonth maneja el rollover de año correctamente.
+    const nextDate = new Date(lastOilMs);
+    nextDate.setMonth(nextDate.getMonth() + OIL_CHANGE_MONTH_INTERVAL);
 
-    if (kmDiff >= OIL_CHANGE_KM_INTERVAL || isBefore(nextDate, now)) {
+    if (kmDiff >= OIL_CHANGE_KM_INTERVAL || nextDate.getTime() < nowMs) {
       alerts.push({
         id: `oil-${vehicle.id}`,
         vehicle_id: vehicle.id,
@@ -61,8 +78,8 @@ export const calculateAlerts = (vehicle: Vehicle, records: MaintenanceRecord[]):
     }
 
     if (record.next_service_date) {
-      const nextDate = parseISO(record.next_service_date);
-      if (isBefore(nextDate, now)) {
+      const nextMs = new Date(record.next_service_date).getTime();
+      if (nextMs < nowMs) {
         alerts.push({
           id: `next-date-${record.id}`,
           vehicle_id: vehicle.id,
@@ -84,14 +101,16 @@ export const DOCUMENT_EXPIRY_WARN_DAYS = 30;
 export const calculateDocumentAlerts = (vehicleId: string, documents: Document[]): Alert[] => {
   const alerts: Alert[] = [];
   const now = new Date();
-  const soon = addDays(now, DOCUMENT_EXPIRY_WARN_DAYS);
+  const nowMs = now.getTime();
+  const soonMs = nowMs + DOCUMENT_EXPIRY_WARN_DAYS * DAY_MS;
 
-  documents.forEach((doc) => {
-    if (!doc.expiry_date) return;
-    const expiry = parseISO(doc.expiry_date);
+  for (const doc of documents) {
+    if (!doc.expiry_date) continue;
+    const expiry = new Date(doc.expiry_date);
+    const expiryMs = expiry.getTime();
     const dateLabel = expiry.toLocaleDateString('es-ES');
 
-    if (isBefore(expiry, now)) {
+    if (expiryMs < nowMs) {
       alerts.push({
         id: `doc-expired-${doc.id}`,
         vehicle_id: vehicleId,
@@ -101,7 +120,7 @@ export const calculateDocumentAlerts = (vehicleId: string, documents: Document[]
         is_dismissed: false,
         created_at: now.toISOString(),
       });
-    } else if (isBefore(expiry, soon)) {
+    } else if (expiryMs < soonMs) {
       alerts.push({
         id: `doc-soon-${doc.id}`,
         vehicle_id: vehicleId,
@@ -112,7 +131,7 @@ export const calculateDocumentAlerts = (vehicleId: string, documents: Document[]
         created_at: now.toISOString(),
       });
     }
-  });
+  }
 
   return alerts;
 };

@@ -42,8 +42,7 @@ const isMildHybrid = (v: Vehicle): boolean =>
 const hasCombustionEngine = (v: Vehicle): boolean => !isElectric(v);
 const hasSparkPlugs = (v: Vehicle): boolean => hasCombustionEngine(v) && !isDiesel(v);
 /** Full hybrids and EVs recover braking energy; mild hybrids do not. */
-const hasRegenBraking = (v: Vehicle): boolean =>
-  (isHybrid(v) || isElectric(v)) && !isMildHybrid(v);
+const hasRegenBraking = (v: Vehicle): boolean => (isHybrid(v) || isElectric(v)) && !isMildHybrid(v);
 
 /** Clutch is excluded only when the gearbox is explicitly automatic-type. */
 const hasClutch = (v: Vehicle): boolean => {
@@ -55,8 +54,7 @@ export const vehicleAgeYears = (v: Vehicle): number =>
   Math.max(0, new Date().getFullYear() - v.year);
 
 /** Spain's ITV cadence for passenger cars, by vehicle age. */
-const itvIntervalMonths = (age: number): number =>
-  age >= 10 ? 12 : age >= 4 ? 24 : 48;
+const itvIntervalMonths = (age: number): number => (age >= 10 ? 12 : age >= 4 ? 24 : 48);
 
 const DAY_MS = 86400000;
 const MONTH_MS = 30.44 * DAY_MS;
@@ -79,8 +77,7 @@ interface EngineProfile {
  * the troublesome wet (oil-bath) timing belt for a maintenance-free chain.
  * Earlier units still run the wet belt.
  */
-const ecoboostHasTimingChain = (v: Vehicle): boolean =>
-  isMildHybrid(v) || v.year >= 2020;
+const ecoboostHasTimingChain = (v: Vehicle): boolean => isMildHybrid(v) || v.year >= 2020;
 
 /**
  * Ford 1.0 EcoBoost — three-cylinder turbo (incl. the 155 cv MHEV). Tight oil
@@ -106,23 +103,25 @@ const FORD_1L_ECOBOOST: EngineProfile = {
         ],
   apply: (specs, v) => {
     const chain = ecoboostHasTimingChain(v);
-    return specs
-      // A timing chain has no scheduled replacement — drop the item entirely.
-      .filter((s) => !(s.key === 'timing' && chain))
-      .map((s) => {
-        if (s.key === 'oil') {
-          return { ...s, intervalKm: 10000, intervalMonths: 12 };
-        }
-        if (s.key === 'timing') {
-          return {
-            ...s,
-            label: 'Correa de distribución (bañada en aceite)',
-            intervalKm: 150000,
-            intervalMonths: 96,
-          };
-        }
-        return s;
-      });
+    return (
+      specs
+        // A timing chain has no scheduled replacement — drop the item entirely.
+        .filter((s) => !(s.key === 'timing' && chain))
+        .map((s) => {
+          if (s.key === 'oil') {
+            return { ...s, intervalKm: 10000, intervalMonths: 12 };
+          }
+          if (s.key === 'timing') {
+            return {
+              ...s,
+              label: 'Correa de distribución (bañada en aceite)',
+              intervalKm: 150000,
+              intervalMonths: 96,
+            };
+          }
+          return s;
+        })
+    );
   },
 };
 
@@ -300,14 +299,20 @@ export const describePlanAdaptations = (v: Vehicle): string[] => {
   const profile = findEngineProfile(v);
 
   if (isElectric(v)) {
-    notes.push('Vehículo eléctrico: se omiten aceite, filtros de aire y combustible, bujías y correa de distribución.');
+    notes.push(
+      'Vehículo eléctrico: se omiten aceite, filtros de aire y combustible, bujías y correa de distribución.',
+    );
     notes.push('Frenos con intervalo ampliado un 60 % por el frenado regenerativo.');
   } else if (isHybrid(v) && !isMildHybrid(v)) {
-    notes.push('Híbrido completo: frenos con intervalo ampliado un 60 % por el frenado regenerativo.');
+    notes.push(
+      'Híbrido completo: frenos con intervalo ampliado un 60 % por el frenado regenerativo.',
+    );
   }
 
   if (isMildHybrid(v)) {
-    notes.push('Hibridación ligera (MHEV 48 V): sin frenado regenerativo relevante; los frenos mantienen el intervalo estándar.');
+    notes.push(
+      'Hibridación ligera (MHEV 48 V): sin frenado regenerativo relevante; los frenos mantienen el intervalo estándar.',
+    );
   }
 
   if (isDiesel(v)) {
@@ -328,7 +333,9 @@ export const describePlanAdaptations = (v: Vehicle): string[] => {
     notes.push(...profile.notes(v));
   }
 
-  notes.push(`ITV cada ${itvIntervalMonths(age)} meses según la antigüedad del vehículo (${age} años).`);
+  notes.push(
+    `ITV cada ${itvIntervalMonths(age)} meses según la antigüedad del vehículo (${age} años).`,
+  );
 
   return notes;
 };
@@ -372,12 +379,24 @@ export const buildMaintenancePlan = (
   // Estimated registration date — baseline for components never serviced.
   const registrationMs = new Date(vehicle.year, 0, 1).getTime();
 
+  // Una sola pasada por records: índice tipo → último servicio (mayor km).
+  // Antes el .map(spec) hacía un filter+sort por cada spec = O(N×M log K)
+  // con 14 specs × N registros + 14 arrays intermedios. Ahora O(N) + O(1) por spec.
+  const latestByType = new Map<string, MaintenanceRecord>();
+  for (const r of records) {
+    const prev = latestByType.get(r.type);
+    if (!prev || r.km_at_service > prev.km_at_service) {
+      latestByType.set(r.type, r);
+    }
+  }
+
   return buildServiceSpecs(vehicle)
     .map((s): MaintenancePlanItem => {
-      const matching = records
-        .filter((r) => s.matchTypes.includes(r.type))
-        .sort((a, b) => b.km_at_service - a.km_at_service);
-      const last = matching[0] ?? null;
+      let last: MaintenanceRecord | null = null;
+      for (const type of s.matchTypes) {
+        const r = latestByType.get(type);
+        if (r && (!last || r.km_at_service > last.km_at_service)) last = r;
+      }
       const lastServiceKm = last ? last.km_at_service : null;
       const lastServiceDate = last ? last.date : null;
 
@@ -386,9 +405,7 @@ export const buildMaintenancePlan = (
       const kmRemaining = dueKm - km;
 
       // Time baseline: last service, or the vehicle's registration date.
-      const baseTimeMs = lastServiceDate
-        ? new Date(lastServiceDate).getTime()
-        : registrationMs;
+      const baseTimeMs = lastServiceDate ? new Date(lastServiceDate).getTime() : registrationMs;
       const dueByTimeMs = baseTimeMs + s.intervalMonths * MONTH_MS;
       const dueByKmMs = now + (kmRemaining / kmPerDay) * DAY_MS;
 
@@ -398,10 +415,13 @@ export const buildMaintenancePlan = (
 
       const effectiveKmRemaining = s.timeBased ? Infinity : kmRemaining;
       const status: PlanStatus =
-        effectiveKmRemaining <= 0 || daysRemaining <= 0 ? 'overdue'
-        : (effectiveKmRemaining <= 2000 || daysRemaining <= 45) ? 'soon'
-        : (effectiveKmRemaining <= 8000 || daysRemaining <= 150) ? 'upcoming'
-        : 'ok';
+        effectiveKmRemaining <= 0 || daysRemaining <= 0
+          ? 'overdue'
+          : effectiveKmRemaining <= 2000 || daysRemaining <= 45
+            ? 'soon'
+            : effectiveKmRemaining <= 8000 || daysRemaining <= 150
+              ? 'upcoming'
+              : 'ok';
 
       return {
         key: s.key,

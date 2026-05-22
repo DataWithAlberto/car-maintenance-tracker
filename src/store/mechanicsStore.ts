@@ -27,12 +27,19 @@ export const useMechanicsStore = create<MechanicsState>()(
       diagnosis: null,
       selectedId: undefined,
       setSymptom: (symptom) => set({ symptom }),
-      setSearchResult: ({ origin, mechanics, diagnosis }) =>
-        set({ origin, mechanics, diagnosis }),
+      setSearchResult: ({ origin, mechanics, diagnosis }) => set({ origin, mechanics, diagnosis }),
       setSelectedId: (selectedId) => set({ selectedId }),
       reset: () =>
         set({ symptom: '', origin: null, mechanics: [], diagnosis: null, selectedId: undefined }),
     }),
-    { name: 'fh-mechanics-search' },
+    {
+      name: 'fh-mechanics-search',
+      // Solo persistimos el input del usuario. Los resultados de la API
+      // (mechanics[], diagnosis, origin) son volátiles y pueden pesar 10–20 KB
+      // serializados por búsqueda: serializarlos a localStorage en cada update
+      // bloquea el hilo principal y se quedan obsoletos en cuanto cambia la
+      // ubicación o el inventario de talleres.
+      partialize: (s) => ({ symptom: s.symptom }),
+    },
   ),
 );

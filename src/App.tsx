@@ -5,29 +5,55 @@ import { Layout } from './components/layout/Layout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { DashboardPage } from './pages/DashboardPage';
 import { SkeletonCard } from './components/ui/Skeleton';
 import { authService } from './services/auth.service';
 import { useAuthStore } from './store/authStore';
 import { useThemeStore } from './store/themeStore';
 
-// Páginas secundarias en chunks separados — reduce bundle inicial (Leaflet,
+// Páginas autenticadas en chunks separados — reduce bundle inicial (Leaflet,
 // Recharts, WebBluetooth y resto de dependencias pesadas no se descargan hasta
-// que el usuario navega a la página correspondiente).
+// que el usuario navega a la página correspondiente). Incluye el Dashboard,
+// que arrastra calculateAlerts y los servicios de maintenance/expenses/trips/
+// documents, todos innecesarios en /login y /register.
+const DashboardPage = lazy(() =>
+  import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
 const CarPage = lazy(() => import('./pages/CarPage').then((m) => ({ default: m.CarPage })));
-const MaintenancePage = lazy(() => import('./pages/MaintenancePage').then((m) => ({ default: m.MaintenancePage })));
-const MaintenancePlanPage = lazy(() => import('./pages/MaintenancePlanPage').then((m) => ({ default: m.MaintenancePlanPage })));
-const ExpensesPage = lazy(() => import('./pages/ExpensesPage').then((m) => ({ default: m.ExpensesPage })));
-const DocumentsPage = lazy(() => import('./pages/DocumentsPage').then((m) => ({ default: m.DocumentsPage })));
-const InsurancePage = lazy(() => import('./pages/InsurancePage').then((m) => ({ default: m.InsurancePage })));
+const MaintenancePage = lazy(() =>
+  import('./pages/MaintenancePage').then((m) => ({ default: m.MaintenancePage })),
+);
+const MaintenancePlanPage = lazy(() =>
+  import('./pages/MaintenancePlanPage').then((m) => ({ default: m.MaintenancePlanPage })),
+);
+const ExpensesPage = lazy(() =>
+  import('./pages/ExpensesPage').then((m) => ({ default: m.ExpensesPage })),
+);
+const DocumentsPage = lazy(() =>
+  import('./pages/DocumentsPage').then((m) => ({ default: m.DocumentsPage })),
+);
+const InsurancePage = lazy(() =>
+  import('./pages/InsurancePage').then((m) => ({ default: m.InsurancePage })),
+);
 const TripsPage = lazy(() => import('./pages/TripsPage').then((m) => ({ default: m.TripsPage })));
-const MechanicsPage = lazy(() => import('./pages/MechanicsPage').then((m) => ({ default: m.MechanicsPage })));
-const MechanicDetailPage = lazy(() => import('./pages/MechanicDetailPage').then((m) => ({ default: m.MechanicDetailPage })));
+const MechanicsPage = lazy(() =>
+  import('./pages/MechanicsPage').then((m) => ({ default: m.MechanicsPage })),
+);
+const MechanicDetailPage = lazy(() =>
+  import('./pages/MechanicDetailPage').then((m) => ({ default: m.MechanicDetailPage })),
+);
 const OBD2Page = lazy(() => import('./pages/OBD2Page').then((m) => ({ default: m.OBD2Page })));
-const SharingPage = lazy(() => import('./pages/SharingPage').then((m) => ({ default: m.SharingPage })));
-const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
-const InvitePage = lazy(() => import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })));
-const WorkshopPage = lazy(() => import('./pages/WorkshopPage').then((m) => ({ default: m.WorkshopPage })));
+const SharingPage = lazy(() =>
+  import('./pages/SharingPage').then((m) => ({ default: m.SharingPage })),
+);
+const SettingsPage = lazy(() =>
+  import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+);
+const InvitePage = lazy(() =>
+  import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
+);
+const WorkshopPage = lazy(() =>
+  import('./pages/WorkshopPage').then((m) => ({ default: m.WorkshopPage })),
+);
 
 const PageFallback = () => (
   <div className="px-6 sm:px-10 py-10 space-y-4">
@@ -54,7 +80,9 @@ function App() {
       setLoading(false);
     });
 
-    const { data: { subscription } } = authService.onAuthStateChange(async (_event, session) => {
+    const {
+      data: { subscription },
+    } = authService.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -68,7 +96,13 @@ function App() {
       <Toaster
         position="top-right"
         toastOptions={{
-          style: { background: 'var(--color-snow)', color: 'var(--color-ink)', border: '1px solid var(--color-silver-mist)', boxShadow: 'none', borderRadius: '20px' },
+          style: {
+            background: 'var(--color-snow)',
+            color: 'var(--color-ink)',
+            border: '1px solid var(--color-silver-mist)',
+            boxShadow: 'none',
+            borderRadius: '20px',
+          },
         }}
       />
       <Routes>
@@ -85,7 +119,7 @@ function App() {
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="dashboard" element={lazyRoute(<DashboardPage />)} />
           <Route path="car" element={lazyRoute(<CarPage />)} />
           <Route path="maintenance" element={lazyRoute(<MaintenancePage />)} />
           <Route path="maintenance-plan" element={lazyRoute(<MaintenancePlanPage />)} />

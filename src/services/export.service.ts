@@ -1,13 +1,22 @@
 import type { Vehicle, MaintenanceRecord, Expense, Document } from '../types';
 
 const esc = (s: unknown): string =>
-  String(s ?? '').replace(/[&<>"]/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] ?? c));
+  String(s ?? '').replace(
+    /[&<>"]/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c,
+  );
 
-const fmtDate = (d: string): string => new Date(d).toLocaleDateString('es-ES');
-const fmtEur = (n: number): string =>
-  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
-const fmtKm = (n: number): string => `${new Intl.NumberFormat('es-ES').format(n)} km`;
+// Instancias únicas a nivel de módulo: un export de 200 registros llama a
+// fmtEur/fmtKm/fmtDate cientos de veces; construir Intl.NumberFormat o
+// Intl.DateTimeFormat en cada llamada es uno de los hot-spots más caros
+// del runtime (carga ICU + negociación de locale por instancia).
+const FMT_EUR = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+const FMT_KM = new Intl.NumberFormat('es-ES');
+const FMT_DATE = new Intl.DateTimeFormat('es-ES');
+
+const fmtDate = (d: string): string => FMT_DATE.format(new Date(d));
+const fmtEur = (n: number): string => FMT_EUR.format(n);
+const fmtKm = (n: number): string => `${FMT_KM.format(n)} km`;
 
 export const exportService = {
   exportVehicleReport(
@@ -21,38 +30,52 @@ export const exportService = {
     const generatedAt = new Date().toLocaleString('es-ES');
 
     const recordsSorted = [...records].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
     const expensesSorted = [...expenses].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
 
     const maintRows = recordsSorted.length
-      ? recordsSorted.map((r) => `
+      ? recordsSorted
+          .map(
+            (r) => `
         <tr>
           <td>${esc(fmtDate(r.date))}</td>
           <td>${esc(r.type)}</td>
           <td class="num">${esc(fmtKm(r.km_at_service))}</td>
           <td class="num">${r.cost != null ? esc(fmtEur(r.cost)) : '—'}</td>
           <td>${esc(r.description ?? '—')}</td>
-        </tr>`).join('')
+        </tr>`,
+          )
+          .join('')
       : '<tr><td colspan="5" class="empty">Sin registros</td></tr>';
 
     const expenseRows = expensesSorted.length
-      ? expensesSorted.map((e) => `
+      ? expensesSorted
+          .map(
+            (e) => `
         <tr>
           <td>${esc(fmtDate(e.date))}</td>
           <td>${esc(e.category)}</td>
           <td class="num">${esc(fmtEur(e.amount))}</td>
           <td>${esc(e.description ?? '—')}</td>
-        </tr>`).join('')
+        </tr>`,
+          )
+          .join('')
       : '<tr><td colspan="4" class="empty">Sin registros</td></tr>';
 
     const docRows = documents.length
-      ? documents.map((d) => `
+      ? documents
+          .map(
+            (d) => `
         <tr>
           <td>${esc(d.doc_type)}</td>
           <td>${esc(d.file_name ?? '—')}</td>
           <td>${d.expiry_date ? esc(fmtDate(d.expiry_date)) : '—'}</td>
-        </tr>`).join('')
+        </tr>`,
+          )
+          .join('')
       : '<tr><td colspan="3" class="empty">Sin documentos</td></tr>';
 
     const html = `<!DOCTYPE html>
@@ -138,12 +161,12 @@ export const exportService = {
     const inYear = (d: string): boolean => new Date(d).getFullYear() === year;
 
     const cats: Record<string, number> = {};
-    expenses.filter((e) => inYear(e.date)).forEach((e) => {
-      cats[e.category] = (cats[e.category] ?? 0) + e.amount;
-    });
-    const maintCost = records
-      .filter((r) => inYear(r.date))
-      .reduce((s, r) => s + (r.cost ?? 0), 0);
+    expenses
+      .filter((e) => inYear(e.date))
+      .forEach((e) => {
+        cats[e.category] = (cats[e.category] ?? 0) + e.amount;
+      });
+    const maintCost = records.filter((r) => inYear(r.date)).reduce((s, r) => s + (r.cost ?? 0), 0);
     if (maintCost > 0) cats['Mantenimiento'] = (cats['Mantenimiento'] ?? 0) + maintCost;
 
     const rows = Object.entries(cats).sort((a, b) => b[1] - a[1]);
@@ -151,12 +174,16 @@ export const exportService = {
     const generatedAt = new Date().toLocaleString('es-ES');
 
     const catRows = rows.length
-      ? rows.map(([name, value]) => `
+      ? rows
+          .map(
+            ([name, value]) => `
         <tr>
           <td>${esc(name)}</td>
           <td class="num">${esc(fmtEur(value))}</td>
           <td class="num">${total > 0 ? Math.round((value / total) * 100) : 0}%</td>
-        </tr>`).join('')
+        </tr>`,
+          )
+          .join('')
       : '<tr><td colspan="3" class="empty">Sin gastos este año</td></tr>';
 
     const html = `<!DOCTYPE html>
@@ -212,11 +239,7 @@ export const exportService = {
     openPrintWindow(html);
   },
 
-  exportDetailedReport(
-    vehicle: Vehicle,
-    expenses: Expense[],
-    records: MaintenanceRecord[],
-  ): void {
+  exportDetailedReport(vehicle: Vehicle, expenses: Expense[], records: MaintenanceRecord[]): void {
     const generatedAt = new Date().toLocaleString('es-ES');
     const now = new Date();
 
@@ -252,7 +275,9 @@ export const exportService = {
 
     // ── Category breakdown ─────────────────────────────────────────────────
     const cats: Record<string, number> = {};
-    entries.forEach((e) => { cats[e.category] = (cats[e.category] ?? 0) + e.amount; });
+    entries.forEach((e) => {
+      cats[e.category] = (cats[e.category] ?? 0) + e.amount;
+    });
     const catRows = Object.entries(cats).sort((a, b) => b[1] - a[1]);
     const maxCat = Math.max(1, ...catRows.map(([, v]) => v));
 
@@ -263,24 +288,32 @@ export const exportService = {
 
     const costPerKm = vehicle.current_km > 0 ? grandTotal / vehicle.current_km : 0;
 
-    const monthBars = months.map((m) => `
+    const monthBars = months
+      .map(
+        (m) => `
       <div class="bar-col">
         <div class="bar-track">
           <div class="bar-fill" style="height: ${Math.round((m.total / maxMonth) * 100)}%"></div>
         </div>
         <div class="bar-val">${m.total > 0 ? esc(fmtEur(m.total)) : '—'}</div>
         <div class="bar-label">${esc(m.label)}</div>
-      </div>`).join('');
+      </div>`,
+      )
+      .join('');
 
     const catList = catRows.length
-      ? catRows.map(([name, value]) => `
+      ? catRows
+          .map(
+            ([name, value]) => `
         <div class="cat-row">
           <div class="cat-head">
             <span class="cat-name">${esc(name)}</span>
             <span class="cat-amt">${esc(fmtEur(value))} · ${grandTotal > 0 ? Math.round((value / grandTotal) * 100) : 0}%</span>
           </div>
           <div class="cat-track"><div class="cat-fill" style="width: ${Math.round((value / maxCat) * 100)}%"></div></div>
-        </div>`).join('')
+        </div>`,
+          )
+          .join('')
       : '<p class="empty">Sin gastos registrados</p>';
 
     const html = `<!DOCTYPE html>

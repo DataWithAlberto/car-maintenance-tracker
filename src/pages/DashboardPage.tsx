@@ -124,26 +124,29 @@ export const DashboardPage = () => {
   const statsLoading = loading || (vehicles.length > 0 && !loadedAt);
 
   // ─── Aggregates (fleet-wide) ──────────────────────────────────────────────
+  // Una sola pasada por vehicles, lookup directo en stats por ID. Elimina
+  // el Set + Object.entries + filter + map intermedios, y los 4 filter()
+  // anidados (uno por gasto y otro por registro) se funden en un único
+  // bucle sin allocations.
   const aggregate = useMemo(() => {
-    const ids = new Set(vehicles.map((v) => v.id));
-    const all = Object.entries(stats)
-      .filter(([id]) => ids.has(id))
-      .map(([, s]) => s);
     const ytd = new Date().getFullYear();
-    const totalKm = vehicles.reduce((s, v) => s + v.current_km, 0);
-    const totalRecords = all.reduce((s, x) => s + x.records.length, 0);
-    const totalSpentYtd = all.reduce(
-      (s, x) =>
-        s +
-        x.expenses
-          .filter((e) => new Date(e.date).getFullYear() === ytd)
-          .reduce((a, e) => a + e.amount, 0) +
-        x.records
-          .filter((r) => new Date(r.date).getFullYear() === ytd)
-          .reduce((a, r) => a + (r.cost ?? 0), 0),
-      0,
-    );
-    const totalAlerts = all.reduce((s, x) => s + x.alerts.length, 0);
+    let totalKm = 0;
+    let totalRecords = 0;
+    let totalSpentYtd = 0;
+    let totalAlerts = 0;
+    for (const v of vehicles) {
+      totalKm += v.current_km;
+      const s = stats[v.id];
+      if (!s) continue;
+      totalRecords += s.records.length;
+      totalAlerts += s.alerts.length;
+      for (const e of s.expenses) {
+        if (new Date(e.date).getFullYear() === ytd) totalSpentYtd += e.amount;
+      }
+      for (const r of s.records) {
+        if (new Date(r.date).getFullYear() === ytd) totalSpentYtd += r.cost ?? 0;
+      }
+    }
     return { totalKm, totalRecords, totalSpentYtd, totalAlerts, ytd };
   }, [stats, vehicles]);
 
@@ -178,13 +181,21 @@ export const DashboardPage = () => {
 
   const nextAppointment = useMemo(() => {
     if (!primaryStats) return null;
-    const now = Date.now();
-    const future = primaryStats.records
-      .filter((r) => r.next_service_date && new Date(r.next_service_date).getTime() > now)
-      .sort(
-        (a, b) =>
-          new Date(a.next_service_date!).getTime() - new Date(b.next_service_date!).getTime(),
-      )[0];
+    // Usa loadedAt (snapshot estable del momento de carga) en lugar de
+    // Date.now() para no leer reloj dentro de useMemo. Además, una sola
+    // pasada — el patrón anterior creaba 3 arrays intermedios (filter →
+    // sort → [0]).
+    const nowMs = loadedAt ? loadedAt.getTime() : 0;
+    let future: (typeof primaryStats.records)[number] | null = null;
+    let futureMs = Infinity;
+    for (const r of primaryStats.records) {
+      if (!r.next_service_date) continue;
+      const t = new Date(r.next_service_date).getTime();
+      if (t > nowMs && t < futureMs) {
+        future = r;
+        futureMs = t;
+      }
+    }
     if (!future) return null;
     const d = new Date(future.next_service_date!);
     const dayLabel = d
@@ -192,7 +203,7 @@ export const DashboardPage = () => {
       .replace('.', '');
     const time = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     return { dayLabel, time, type: future.type };
-  }, [primaryStats]);
+  }, [primaryStats, loadedAt]);
 
   const healthScore = useMemo(() => {
     if (!primaryStats) return 100;
@@ -218,62 +229,68 @@ export const DashboardPage = () => {
         ? 'Sistemas principales en orden, alertas menores activas.'
         : 'Varios sistemas requieren atención. Revisa las alertas.';
 
-  // Daily km — 30-day window from primary vehicle trips
-  const { dailyKm, axisDates } = useMemo(() => {
+  // Una sola pasada por trips: ventana de 30 días + km del mes actual +
+  // total acumulado + fecha más antigua, todo en O(N). Antes eran 3 useMemos
+  // independientes que recorrían el mismo array, generando arrays
+  // intermedios por filter().
+  const tripStats = useMemo(() => {
     const buckets: number[] = new Array(30).fill(0);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const start = new Date(today);
     start.setDate(start.getDate() - 29);
-    primaryStats?.trips.forEach((t) => {
-      const d = new Date(t.start_datetime);
-      d.setHours(0, 0, 0, 0);
-      const idx = Math.floor((d.getTime() - start.getTime()) / 86_400_000);
-      if (idx >= 0 && idx < 30) buckets[idx] += t.total_km ?? 0;
-    });
     const mid = new Date(start);
     mid.setDate(start.getDate() + 14);
+    const startMs = start.getTime();
+    const nowY = today.getFullYear();
+    const nowM = today.getMonth();
+
+    let thisMonthKm = 0;
+    let totalTripKm = 0;
+    let firstMs = Infinity;
+    let sumWindow = 0;
+
+    const trips = primaryStats?.trips ?? [];
+    for (const t of trips) {
+      const km = t.total_km ?? 0;
+      totalTripKm += km;
+      const d = new Date(t.start_datetime);
+      const ms = d.getTime();
+      if (ms < firstMs) firstMs = ms;
+      if (d.getFullYear() === nowY && d.getMonth() === nowM) thisMonthKm += km;
+      d.setHours(0, 0, 0, 0);
+      const idx = Math.floor((d.getTime() - startMs) / 86_400_000);
+      if (idx >= 0 && idx < 30) {
+        buckets[idx] += km;
+        sumWindow += km;
+      }
+    }
+
+    let pctVsAvg = 0;
+    let moreOrLess: 'más' | 'menos' = 'menos';
+    if (trips.length > 0 && firstMs !== Infinity) {
+      // Usa today (ya construido arriba) como referencia temporal en lugar
+      // de Date.now() — evita lectura de reloj dentro de useMemo.
+      const monthsActive = Math.max(1, (today.getTime() - firstMs) / (1000 * 60 * 60 * 24 * 30));
+      const monthlyAvg = totalTripKm / monthsActive;
+      if (monthlyAvg > 0) {
+        const ratio = thisMonthKm / monthlyAvg;
+        pctVsAvg = Math.round(Math.abs(1 - ratio) * 100);
+        moreOrLess = ratio >= 1 ? 'más' : 'menos';
+      }
+    }
+
     return {
       dailyKm: buckets,
       axisDates: [fmtMonthDay(start), fmtMonthDay(mid), fmtMonthDay(today)],
+      thisMonthKm,
+      pctVsAvg,
+      moreOrLess,
+      avgPerDay: sumWindow / 30,
     };
   }, [primaryStats]);
 
-  const sumWindow = dailyKm.reduce((s, v) => s + v, 0);
-  const avgPerDay = sumWindow / 30;
-
-  // Month delta + vs-average %
-  const thisMonthKm = useMemo(() => {
-    if (!primaryStats) return 0;
-    const now = new Date();
-    return primaryStats.trips
-      .filter((t) => {
-        const d = new Date(t.start_datetime);
-        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-      })
-      .reduce((s, t) => s + (t.total_km ?? 0), 0);
-  }, [primaryStats]);
-
-  const { pctVsAvg, moreOrLess } = useMemo(() => {
-    if (!primaryStats || primaryStats.trips.length === 0) {
-      return { pctVsAvg: 0, moreOrLess: 'menos' as const };
-    }
-    const totalTripKm = primaryStats.trips.reduce((s, t) => s + (t.total_km ?? 0), 0);
-    const first = primaryStats.trips[primaryStats.trips.length - 1];
-    const firstDate = new Date(first.start_datetime);
-    const monthsActive = Math.max(
-      1,
-      (Date.now() - firstDate.getTime()) / (1000 * 60 * 60 * 24 * 30),
-    );
-    const monthlyAvg = totalTripKm / monthsActive;
-    if (monthlyAvg === 0) return { pctVsAvg: 0, moreOrLess: 'menos' as const };
-    const ratio = thisMonthKm / monthlyAvg;
-    const pct = Math.round(Math.abs(1 - ratio) * 100);
-    return {
-      pctVsAvg: pct,
-      moreOrLess: (ratio >= 1 ? 'más' : 'menos') as 'más' | 'menos',
-    };
-  }, [primaryStats, thisMonthKm]);
+  const { dailyKm, axisDates, thisMonthKm, pctVsAvg, moreOrLess, avgPerDay } = tripStats;
 
   // YTD expense breakdown (primary vehicle)
   const expensesByCat = useMemo(() => {
@@ -307,13 +324,29 @@ export const DashboardPage = () => {
     return (user?.email ?? '').split('@')[0] || 'piloto';
   }, [user]);
 
+  // Tick reactivo: el useMemo anterior leía Date.now() sin tenerlo como
+  // dependencia, así que el label se congelaba en "AHORA" para toda la
+  // sesión. Mantenemos los minutos transcurridos en estado y los
+  // refrescamos cada 60 s — Date.now() vive solo dentro del setInterval,
+  // nunca dentro del useMemo (que debe ser puro).
+  const [minsSinceSync, setMinsSinceSync] = useState(0);
+  useEffect(() => {
+    if (!loadedAt) {
+      setMinsSinceSync(0);
+      return;
+    }
+    const tick = () => setMinsSinceSync(Math.floor((Date.now() - loadedAt.getTime()) / 60_000));
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, [loadedAt]);
+
   const lastSyncLabel = useMemo(() => {
     if (!loadedAt) return 'AHORA';
-    const mins = Math.floor((Date.now() - loadedAt.getTime()) / 60_000);
-    if (mins < 1) return 'AHORA';
-    if (mins < 60) return `${mins}m AGO`;
-    return `${Math.floor(mins / 60)}h AGO`;
-  }, [loadedAt]);
+    if (minsSinceSync < 1) return 'AHORA';
+    if (minsSinceSync < 60) return `${minsSinceSync}m AGO`;
+    return `${Math.floor(minsSinceSync / 60)}h AGO`;
+  }, [loadedAt, minsSinceSync]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleAdd = () => setShowForm(true);

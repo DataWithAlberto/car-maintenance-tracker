@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Receipt, Calendar, FileBarChart } from 'lucide-react';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
@@ -38,15 +38,38 @@ export const ExpensesPage = () => {
   const [view, setView] = useState<'list' | 'chart'>('list');
 
   useEffect(() => {
-    if (!selectedVehicle) { navigate('/dashboard'); return; }
+    if (!selectedVehicle) {
+      navigate('/dashboard');
+      return;
+    }
     setLoading(true);
     Promise.all([
       expensesService.getByVehicle(selectedVehicle.id),
       maintenanceService.getByVehicle(selectedVehicle.id).catch(() => [] as MaintenanceRecord[]),
     ])
-      .then(([exp, rec]) => { setExpenses(exp); setRecords(rec); })
+      .then(([exp, rec]) => {
+        setExpenses(exp);
+        setRecords(rec);
+      })
       .finally(() => setLoading(false));
   }, [selectedVehicle?.id]);
+
+  // Una sola pasada memoizada: acumula total y mes actual en un único bucle,
+  // evitando 2 .reduce() + 1 .filter() + N new Date() en cada render. Se
+  // declara antes del early-return para no romper las rules-of-hooks.
+  const { total, monthTotal } = useMemo(() => {
+    const now = new Date();
+    const nowY = now.getFullYear();
+    const nowM = now.getMonth();
+    let total = 0;
+    let monthTotal = 0;
+    for (const e of expenses) {
+      total += e.amount;
+      const d = new Date(e.date);
+      if (d.getFullYear() === nowY && d.getMonth() === nowM) monthTotal += e.amount;
+    }
+    return { total, monthTotal };
+  }, [expenses]);
 
   if (!selectedVehicle) return null;
 
@@ -76,15 +99,6 @@ export const ExpensesPage = () => {
     }
   };
 
-  const total = expenses.reduce((s, e) => s + e.amount, 0);
-  const now = new Date();
-  const monthTotal = expenses
-    .filter((e) => {
-      const d = new Date(e.date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    })
-    .reduce((s, e) => s + e.amount, 0);
-
   return (
     <div className="px-6 sm:px-10 py-10">
       <header className="flex items-end justify-between mb-10 gap-6 flex-wrap">
@@ -111,14 +125,21 @@ export const ExpensesPage = () => {
             style={{ fontSize: 17, lineHeight: 1.45, letterSpacing: '-0.1px' }}
           >
             <span className="text-ink font-medium tabular-nums">{expenses.length}</span> registros ·{' '}
-            <span className="text-ink font-medium tabular-nums">{formatCurrency(total)}</span> total ·{' '}
-            <span className="text-ink font-medium tabular-nums">{formatCurrency(monthTotal)}</span> este mes
+            <span className="text-ink font-medium tabular-nums">{formatCurrency(total)}</span> total
+            ·{' '}
+            <span className="text-ink font-medium tabular-nums">{formatCurrency(monthTotal)}</span>{' '}
+            este mes
           </p>
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
           <div className="flex bg-fog rounded-full p-1 gap-0.5">
-            {([['list', 'Lista'], ['chart', 'Gráfica']] as const).map(([v, label]) => (
+            {(
+              [
+                ['list', 'Lista'],
+                ['chart', 'Gráfica'],
+              ] as const
+            ).map(([v, label]) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -138,7 +159,11 @@ export const ExpensesPage = () => {
           >
             Informe
           </Button>
-          <Button variant="accent" onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
+          <Button
+            variant="accent"
+            onClick={() => setShowForm(true)}
+            iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
+          >
             Añadir
           </Button>
         </div>
@@ -146,7 +171,9 @@ export const ExpensesPage = () => {
 
       {loading ? (
         <div className="space-y-2">
-          {[0, 1, 2].map((i) => <SkeletonRow key={i} />)}
+          {[0, 1, 2].map((i) => (
+            <SkeletonRow key={i} />
+          ))}
         </div>
       ) : view === 'chart' ? (
         <div className="bg-snow border border-silver-mist rounded-[28px] p-7">
@@ -158,7 +185,11 @@ export const ExpensesPage = () => {
           title="Sin gastos registrados"
           description="Lleva el control de gasolina, peajes, seguros y todo lo que pagues por tu coche."
           action={
-            <Button variant="accent" onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
+            <Button
+              variant="accent"
+              onClick={() => setShowForm(true)}
+              iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
+            >
               Registrar primer gasto
             </Button>
           }
@@ -177,7 +208,10 @@ export const ExpensesPage = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-text text-ink font-medium truncate" style={{ fontSize: 15 }}>
+                  <span
+                    className="font-text text-ink font-medium truncate"
+                    style={{ fontSize: 15 }}
+                  >
                     {e.category}
                   </span>
                   <span
@@ -187,7 +221,10 @@ export const ExpensesPage = () => {
                     {formatCurrency(e.amount)}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 mt-1 text-graphite font-text" style={{ fontSize: 13 }}>
+                <div
+                  className="flex items-center gap-2 mt-1 text-graphite font-text"
+                  style={{ fontSize: 13 }}
+                >
                   <span className="inline-flex items-center gap-1">
                     <Calendar className="h-3 w-3" strokeWidth={1.6} />
                     {formatDate(e.date)}
@@ -201,7 +238,10 @@ export const ExpensesPage = () => {
                 </div>
               </div>
               <button
-                onClick={(ev) => { ev.stopPropagation(); handleDelete(e.id); }}
+                onClick={(ev) => {
+                  ev.stopPropagation();
+                  handleDelete(e.id);
+                }}
                 className="font-text text-graphite hover:text-caution transition-colors shrink-0"
                 style={{ fontSize: 13 }}
               >
@@ -217,7 +257,10 @@ export const ExpensesPage = () => {
           vehicleId={selectedVehicle.id}
           initialData={editing ? toInput(editing) : undefined}
           onSubmit={handleSubmit}
-          onClose={() => { setShowForm(false); setEditing(null); }}
+          onClose={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
         />
       )}
     </div>
