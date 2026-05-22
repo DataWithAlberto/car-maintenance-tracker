@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Activity, ChevronDown } from 'lucide-react';
-import type { MaintenanceRecord, VehicleWithAccess } from '../../types';
-import { predictFailures } from '../../utils/failurePrediction';
+import type { MaintenanceRecord, OBD2Reading, VehicleWithAccess } from '../../types';
+import { predictFailures, predictFailuresWithOBD2 } from '../../utils/failurePrediction';
 import { formatKm } from '../../utils/formatters';
 import { cn } from '../../utils/cn';
+import { obd2PersistenceService } from '../../services/obd2Persistence.service';
 
 interface Props {
   vehicle: VehicleWithAccess;
@@ -27,9 +28,28 @@ const fmtKm = (n: number) => formatKm(Math.abs(n));
 
 export const FailureForecast = ({ vehicle, records }: Props) => {
   const [open, setOpen] = useState(true);
-  const predictions = useMemo(() => predictFailures(vehicle, records), [vehicle, records]);
+  const [obd2History, setObd2History] = useState<OBD2Reading[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    obd2PersistenceService.getReadingHistory(vehicle.id, 720).then((history) => {
+      if (!cancelled) setObd2History(history);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [vehicle.id]);
+
+  const predictions = useMemo(
+    () =>
+      obd2History.length > 0
+        ? predictFailuresWithOBD2(vehicle, records, obd2History)
+        : predictFailures(vehicle, records),
+    [vehicle, records, obd2History],
+  );
 
   const critical = predictions.filter((p) => p.status !== 'ok').length;
+  const hasObd2 = obd2History.length > 0;
 
   return (
     <div className="bg-snow border border-silver-mist rounded-[28px] p-6 mb-8">
@@ -43,6 +63,19 @@ export const FailureForecast = ({ vehicle, records }: Props) => {
         >
           <Activity className="h-3.5 w-3.5" strokeWidth={1.7} />
           Predicción de desgaste · {fmtKm(vehicle.current_km)}
+          {hasObd2 && (
+            <span
+              className="ml-1 rounded-full px-1.5 py-0.5"
+              style={{
+                fontSize: 9,
+                background: '#e3f0e3',
+                color: '#2f6b34',
+                letterSpacing: '0.06em',
+              }}
+            >
+              OBD2
+            </span>
+          )}
         </span>
         <span className="flex items-center gap-3">
           {critical > 0 && (

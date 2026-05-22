@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Cpu,
@@ -19,6 +19,11 @@ import {
   Play,
   Square,
   HardDrive,
+  Battery,
+  Droplet,
+  Wind,
+  Activity,
+  LineChart,
 } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useOBD2Store } from '../store/obd2Store';
@@ -29,6 +34,9 @@ import { getDtcDescription } from '../utils/dtcCodes';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { KpiCard } from '../components/ui/KpiCard';
+import { OBD2HistoryChart } from '../components/obd2/OBD2HistoryChart';
+import { OBD2AnomalyLog } from '../components/obd2/OBD2AnomalyLog';
+import type { OBD2Reading } from '../types';
 import toast from 'react-hot-toast';
 
 // ─── Gauge bar ───────────────────────────────────────────────────────────────
@@ -74,6 +82,47 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+// ─── PID Card (small) ────────────────────────────────────────────────────────
+const PIDCard = ({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  color = '#5e5ce6',
+}: {
+  icon: typeof Battery;
+  label: string;
+  value: number | null;
+  unit: string;
+  color?: string;
+}) => (
+  <div className="bg-fog rounded-[16px] p-4">
+    <div className="flex items-center gap-2 mb-1.5">
+      <span className="rounded-full" style={{ width: 5, height: 5, background: color }} />
+      <span
+        className="font-mono uppercase text-graphite truncate"
+        style={{ fontSize: 9, letterSpacing: '0.1em' }}
+      >
+        {label}
+      </span>
+      <Icon className="h-3 w-3 text-graphite ml-auto shrink-0" strokeWidth={1.6} />
+    </div>
+    <p
+      className="text-ink tabular-nums"
+      style={{ fontWeight: 600, fontSize: 18, letterSpacing: '-0.3px' }}
+    >
+      {value != null
+        ? typeof value === 'number' && value % 1 !== 0
+          ? value.toFixed(1)
+          : value
+        : '—'}
+    </p>
+    <p className="font-text text-graphite" style={{ fontSize: 10 }}>
+      {unit}
+    </p>
+  </div>
+);
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export const OBD2Page = () => {
   const { selectedVehicle } = useVehicleStore();
@@ -100,11 +149,98 @@ export const OBD2Page = () => {
     addAnomaly,
     setIsRecording,
     reset,
+    readings,
+    anomalies,
+    setReadings,
+    setAnomalies,
   } = useOBD2Store();
 
   const [dtcLoading, setDtcLoading] = useState(false);
   const [vinLoading, setVinLoading] = useState(false);
   const [clearLoading, setClearLoading] = useState(false);
+  const [historyReadings, setHistoryReadings] = useState<OBD2Reading[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  useEffect(() => {
+    if (!selectedVehicle) return;
+    const load = async () => {
+      setLoadingHistory(true);
+      const [hist, anoms] = await Promise.all([
+        obd2PersistenceService.getReadingHistory(selectedVehicle.id, 24),
+        obd2PersistenceService.getAnomalies(selectedVehicle.id, 100),
+      ]);
+      setHistoryReadings(hist);
+      setReadings(
+        hist.map((r) => ({
+          rpm: r.rpm,
+          speed: r.speed,
+          coolantTemp: r.coolant_temp,
+          fuelLevel: r.fuel_level,
+          odometer: r.odometer,
+          oilPressure: r.oil_pressure,
+          batteryVoltage: r.battery_voltage,
+          engineLoad: r.engine_load,
+          timingAdvance: r.timing_advance,
+          engineRuntime: r.engine_runtime,
+          mafAirFlow: r.maf_air_flow,
+          fuelTrimBank1: r.fuel_trim_bank1,
+          fuelRate: r.fuel_rate,
+          shortTermFuelTrim1: r.short_term_fuel_trim_1,
+          longTermFuelTrim1: r.long_term_fuel_trim_1,
+          intakeManifoldPressure: r.intake_manifold_pressure,
+          absoluteLoad: r.absolute_load,
+          relativeThrottlePos: r.relative_throttle_pos,
+          ambientAirTemp: r.ambient_air_temp,
+          absThrottlePosB: r.abs_throttle_pos_b,
+          accPedalPosD: r.acc_pedal_pos_d,
+          accPedalPosE: r.acc_pedal_pos_e,
+          catalystTempBank1Sensor1: r.catalyst_temp_bank1_sensor1,
+          numEmissionsDtc: r.num_emissions_dtc,
+        })),
+      );
+      setAnomalies(anoms);
+      setLoadingHistory(false);
+    };
+    load();
+  }, [selectedVehicle, setReadings, setAnomalies]);
+
+  const chartReadings = useMemo<OBD2Reading[]>(() => {
+    if (historyReadings.length > 0) return historyReadings;
+    return readings.map((r) => ({
+      rpm: r.rpm,
+      speed: r.speed,
+      coolant_temp: r.coolantTemp,
+      fuel_level: r.fuelLevel,
+      odometer: r.odometer,
+      oil_pressure: r.oilPressure,
+      battery_voltage: r.batteryVoltage,
+      engine_load: r.engineLoad,
+      timing_advance: r.timingAdvance,
+      engine_runtime: r.engineRuntime,
+      maf_air_flow: r.mafAirFlow,
+      fuel_trim_bank1: r.fuelTrimBank1,
+      fuel_rate: r.fuelRate,
+      short_term_fuel_trim_1: r.shortTermFuelTrim1,
+      long_term_fuel_trim_1: r.longTermFuelTrim1,
+      intake_manifold_pressure: r.intakeManifoldPressure,
+      absolute_load: r.absoluteLoad,
+      relative_throttle_pos: r.relativeThrottlePos,
+      ambient_air_temp: r.ambientAirTemp,
+      abs_throttle_pos_b: r.absThrottlePosB,
+      acc_pedal_pos_d: r.accPedalPosD,
+      acc_pedal_pos_e: r.accPedalPosE,
+      catalyst_temp_bank1_sensor1: r.catalystTempBank1Sensor1,
+      num_emissions_dtc: r.numEmissionsDtc,
+    }));
+  }, [historyReadings, readings]);
+
+  const handleDismissAnomaly = async (anomalyId: string) => {
+    const success = await obd2PersistenceService.dismissAnomaly(anomalyId);
+    if (success && selectedVehicle) {
+      const anoms = await obd2PersistenceService.getAnomalies(selectedVehicle.id, 100);
+      setAnomalies(anoms);
+    }
+  };
 
   if (!selectedVehicle) {
     return (
@@ -614,6 +750,170 @@ export const OBD2Page = () => {
               </Button>
             )}
           </div>
+
+          {/* PIDs adicionales */}
+          <div>
+            <h3
+              className="font-mono uppercase text-graphite mb-3"
+              style={{ fontSize: 10, letterSpacing: '0.14em' }}
+            >
+              Parámetros adicionales
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <PIDCard
+                icon={Battery}
+                label="Batería"
+                value={liveData.batteryVoltage}
+                unit="V"
+                color="#34c759"
+              />
+              <PIDCard
+                icon={Droplet}
+                label="Presión aceite"
+                value={liveData.oilPressure}
+                unit="kPa"
+                color="#f5a623"
+              />
+              <PIDCard
+                icon={Activity}
+                label="Carga motor"
+                value={liveData.engineLoad}
+                unit="%"
+                color="#ff9500"
+              />
+              <PIDCard
+                icon={Wind}
+                label="Flujo aire (MAF)"
+                value={liveData.mafAirFlow}
+                unit="g/s"
+                color="#5ac8fa"
+              />
+              <PIDCard
+                icon={Gauge}
+                label="Presión admisión"
+                value={liveData.intakeManifoldPressure}
+                unit="kPa"
+                color="#bf5af2"
+              />
+              <PIDCard
+                icon={Thermometer}
+                label="Temp. ambiente"
+                value={liveData.ambientAirTemp}
+                unit="°C"
+                color="#64d2ff"
+              />
+              <PIDCard
+                icon={Activity}
+                label="Carga absoluta"
+                value={liveData.absoluteLoad}
+                unit="%"
+                color="#ff375f"
+              />
+              <PIDCard
+                icon={Activity}
+                label="Avance enc."
+                value={liveData.timingAdvance}
+                unit="°"
+                color="#30d158"
+              />
+              <PIDCard
+                icon={Fuel}
+                label="Consumo"
+                value={liveData.fuelRate}
+                unit="L/h"
+                color="#ff9500"
+              />
+              <PIDCard
+                icon={Activity}
+                label="Mariposa rel."
+                value={liveData.relativeThrottlePos}
+                unit="%"
+                color="#0a84ff"
+              />
+              <PIDCard
+                icon={Activity}
+                label="Pedal acel. D"
+                value={liveData.accPedalPosD}
+                unit="%"
+                color="#ff453a"
+              />
+              <PIDCard
+                icon={Activity}
+                label="Pedal acel. E"
+                value={liveData.accPedalPosE}
+                unit="%"
+                color="#ff6482"
+              />
+              <PIDCard
+                icon={Activity}
+                label="Trim CP B1"
+                value={liveData.shortTermFuelTrim1}
+                unit="%"
+                color="#ffd60a"
+              />
+              <PIDCard
+                icon={Activity}
+                label="Trim LP B1"
+                value={liveData.longTermFuelTrim1}
+                unit="%"
+                color="#bf5af2"
+              />
+              <PIDCard
+                icon={Thermometer}
+                label="Catalizador B1"
+                value={liveData.catalystTempBank1Sensor1}
+                unit="°C"
+                color="#ff9f0a"
+              />
+              <PIDCard
+                icon={Activity}
+                label="Mariposa B"
+                value={liveData.absThrottlePosB}
+                unit="%"
+                color="#5e5ce6"
+              />
+            </div>
+            {liveData.engineRuntime != null && (
+              <p className="font-text text-graphite mt-3" style={{ fontSize: 12 }}>
+                Motor encendido durante: {Math.floor(liveData.engineRuntime / 60)} min{' '}
+                {liveData.engineRuntime % 60}s
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Historial gráfico */}
+      {selectedVehicle && (readings.length > 0 || historyReadings.length > 0) && (
+        <section className="bg-snow border border-silver-mist rounded-[28px] p-7 space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <LineChart className="h-4 w-4 text-graphite" strokeWidth={1.6} />
+            <h2
+              className="font-mono uppercase text-graphite"
+              style={{ fontSize: 11, letterSpacing: '0.14em' }}
+            >
+              Historial gráfico
+            </h2>
+            {loadingHistory && <span className="font-text text-graphite text-xs">Cargando…</span>}
+          </div>
+          <OBD2HistoryChart readings={chartReadings} />
+        </section>
+      )}
+
+      {/* Registro de anomalías */}
+      {selectedVehicle && (
+        <section className="bg-snow border border-silver-mist rounded-[28px] p-7 space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <AlertTriangle className="h-4 w-4 text-graphite" strokeWidth={1.6} />
+            <h2
+              className="font-mono uppercase text-graphite"
+              style={{ fontSize: 11, letterSpacing: '0.14em' }}
+            >
+              Registro de anomalías
+            </h2>
+            <span className="font-text text-graphite text-xs">{anomalies.length} total</span>
+          </div>
+          <OBD2AnomalyLog anomalies={anomalies} onDismiss={handleDismissAnomaly} />
         </section>
       )}
 
