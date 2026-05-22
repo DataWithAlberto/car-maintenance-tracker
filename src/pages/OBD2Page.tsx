@@ -307,7 +307,7 @@ export const OBD2Page = () => {
             if (anomaly.severity === 'critical') {
               toast.error(`🚨 ${anomaly.message}`);
             } else if (anomaly.severity === 'warn') {
-              toast.warning(`⚠️ ${anomaly.message}`);
+              toast(`⚠️ ${anomaly.message}`);
             }
           }
         }
