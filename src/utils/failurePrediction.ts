@@ -1,4 +1,10 @@
-import type { MaintenanceRecord, Vehicle, FailurePrediction, FailureStatus } from '../types';
+import type {
+  MaintenanceRecord,
+  Vehicle,
+  FailurePrediction,
+  FailureStatus,
+  OBD2Reading,
+} from '../types';
 
 interface ComponentSpec {
   key: string;
@@ -113,4 +119,62 @@ export const predictFailures = (
       status,
     };
   }).sort((a, b) => a.kmRemaining - b.kmRemaining);
+};
+
+export const predictFailuresWithOBD2 = (
+  vehicle: Vehicle,
+  records: MaintenanceRecord[],
+  obd2History: OBD2Reading[],
+): FailurePrediction[] => {
+  const predictions = predictFailures(vehicle, records);
+  if (obd2History.length === 0) return predictions;
+
+  const validRpms = obd2History.map((r) => r.rpm).filter((v): v is number => v !== null);
+  const validTemps = obd2History.map((r) => r.coolant_temp).filter((v): v is number => v !== null);
+
+  const avgRpm = validRpms.length > 0 ? validRpms.reduce((a, b) => a + b, 0) / validRpms.length : 0;
+  const avgTemp =
+    validTemps.length > 0 ? validTemps.reduce((a, b) => a + b, 0) / validTemps.length : 0;
+
+  return predictions
+    .map((p) => {
+      let adjustedLifespan = p.lifespanKm;
+      let severity = '';
+
+      if (p.key === 'oil' && avgRpm > 5000) {
+        adjustedLifespan *= 0.8;
+        severity = ' (RPM alta detectada)';
+      }
+
+      if (p.key === 'coolant' && avgTemp > 95) {
+        adjustedLifespan *= 0.85;
+        severity = ' (Temperatura elevada)';
+      }
+
+      if (p.key === 'battery' && avgRpm > 6000) {
+        adjustedLifespan *= 0.9;
+        severity = ' (Carga alta detectada)';
+      }
+
+      const baseline = p.lastServiceKm ?? 0;
+      const newPredictedKm = baseline + adjustedLifespan;
+      const newKmRemaining = newPredictedKm - vehicle.current_km;
+      const newLifeUsedPct = Math.min(
+        100,
+        Math.max(0, ((vehicle.current_km - baseline) / adjustedLifespan) * 100),
+      );
+      const newStatus: FailureStatus =
+        newKmRemaining <= 0 ? 'overdue' : newLifeUsedPct >= 85 ? 'soon' : 'ok';
+
+      return {
+        ...p,
+        lifespanKm: adjustedLifespan,
+        label: p.label + severity,
+        predictedKm: newPredictedKm,
+        kmRemaining: newKmRemaining,
+        lifeUsedPct: newLifeUsedPct,
+        status: newStatus,
+      };
+    })
+    .sort((a, b) => a.kmRemaining - b.kmRemaining);
 };
