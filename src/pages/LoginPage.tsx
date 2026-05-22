@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { loginSchema } from '../utils/validators';
@@ -12,7 +12,12 @@ function Mark({ size = 18, color = '#ffffff' }: { size?: number; color?: string 
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
       <circle cx="12" cy="12" r="10.25" stroke={color} strokeWidth="1.5" />
       <circle cx="12" cy="12" r="2.4" fill={color} />
-      <path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -31,7 +36,9 @@ export const LoginPage = () => {
     const result = loginSchema.safeParse(form);
     if (!result.success) {
       const errs: Record<string, string> = {};
-      result.error.issues.forEach((issue) => { errs[issue.path[0] as string] = issue.message; });
+      result.error.issues.forEach((issue) => {
+        errs[issue.path[0] as string] = issue.message;
+      });
       setErrors(errs);
       return;
     }
@@ -73,7 +80,10 @@ export const LoginPage = () => {
   return (
     <div
       className="min-h-screen relative overflow-hidden"
-      style={{ background: GRADIENT_INDIGO, fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif' }}
+      style={{
+        background: GRADIENT_INDIGO,
+        fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif',
+      }}
     >
       {/* ── Top nav ── */}
       <nav
@@ -89,7 +99,13 @@ export const LoginPage = () => {
       >
         <div className="flex items-center gap-2.5">
           <Mark size={18} />
-          <span style={{ font: '600 13px/1 inherit', color: 'rgba(255,255,255,.92)', letterSpacing: '-0.06px' }}>
+          <span
+            style={{
+              font: '600 13px/1 inherit',
+              color: 'rgba(255,255,255,.92)',
+              letterSpacing: '-0.06px',
+            }}
+          >
             FocusHub
           </span>
         </div>
@@ -110,9 +126,18 @@ export const LoginPage = () => {
               margin: '0 0 12px',
             }}
           >
-            Toma el<br />volante.
+            Toma el
+            <br />
+            volante.
           </h1>
-          <p style={{ fontSize: 18, fontWeight: 400, color: 'rgba(255,255,255,.82)', lineHeight: 1.4 }}>
+          <p
+            style={{
+              fontSize: 18,
+              fontWeight: 400,
+              color: 'rgba(255,255,255,.82)',
+              lineHeight: 1.4,
+            }}
+          >
             Control total sobre tu vehículo.
           </p>
         </div>
@@ -130,10 +155,17 @@ export const LoginPage = () => {
         />
       </div>
 
-      {/* ── Desktop absolute layout ── */}
-      <div className="hidden lg:block">
+      {/* ── Desktop layout (grid responsivo) ── */}
+      <div
+        className="hidden lg:grid min-h-screen items-center"
+        style={{
+          gridTemplateColumns: '1fr minmax(360px, 420px)',
+          columnGap: 64,
+          padding: '88px 80px 80px',
+        }}
+      >
         {/* Left column */}
-        <div className="absolute" style={{ left: 80, top: 130, maxWidth: 620 }}>
+        <div style={{ maxWidth: 620 }}>
           <span
             style={{
               display: 'block',
@@ -149,7 +181,7 @@ export const LoginPage = () => {
           </span>
           <h1
             style={{
-              fontSize: 96,
+              fontSize: 'clamp(64px, 7vw, 96px)',
               fontWeight: 700,
               lineHeight: 1.02,
               letterSpacing: '-2.11px',
@@ -157,7 +189,9 @@ export const LoginPage = () => {
               margin: '0 0 20px',
             }}
           >
-            Toma el<br />volante.
+            Toma el
+            <br />
+            volante.
           </h1>
           <p
             style={{
@@ -170,32 +204,26 @@ export const LoginPage = () => {
               margin: 0,
             }}
           >
-            Control total sobre el mantenimiento, gastos y documentación de tu vehículo —
-            desde una sola interfaz.
+            Control total sobre el mantenimiento, gastos y documentación de tu vehículo — desde una
+            sola interfaz.
           </p>
         </div>
 
-
         {/* Auth card */}
-        <AuthCard
-          form={form}
-          setForm={setForm}
-          errors={errors}
-          loading={loading}
-          showPassword={showPassword}
-          setShowPassword={setShowPassword}
-          handleSubmit={handleSubmit}
-          inputBase={inputBase}
-          labelBase={labelBase}
-          style={{
-            position: 'absolute',
-            right: 80,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: 420,
-            padding: 36,
-          }}
-        />
+        <div className="flex justify-end">
+          <AuthCard
+            form={form}
+            setForm={setForm}
+            errors={errors}
+            loading={loading}
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
+            handleSubmit={handleSubmit}
+            inputBase={inputBase}
+            labelBase={labelBase}
+            style={{ width: '100%', maxWidth: 420, padding: 36 }}
+          />
+        </div>
 
         {/* Bottom plate */}
         <div
@@ -225,10 +253,20 @@ interface AuthCardProps {
 }
 
 function AuthCard({
-  form, setForm, errors, loading,
-  showPassword, setShowPassword,
-  handleSubmit, inputBase, labelBase, style,
+  form,
+  setForm,
+  errors,
+  loading,
+  showPassword,
+  setShowPassword,
+  handleSubmit,
+  inputBase,
+  labelBase,
+  style,
 }: AuthCardProps) {
+  const uid = useId();
+  const emailId = `${uid}-email`;
+  const passwordId = `${uid}-password`;
   return (
     <div
       style={{
@@ -245,72 +283,128 @@ function AuthCard({
       <div className="flex items-center gap-2 mb-3.5">
         <span
           style={{
-            width: 8, height: 8, borderRadius: 999,
+            width: 8,
+            height: 8,
+            borderRadius: 999,
             background: '#1cb05c',
             boxShadow: '0 0 6px rgba(28,176,92,.6)',
             display: 'inline-block',
             flexShrink: 0,
           }}
         />
-        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-slate)', letterSpacing: '-0.04px' }}>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'var(--color-slate)',
+            letterSpacing: '-0.04px',
+          }}
+        >
           Acceso seguro
         </span>
       </div>
 
-      <h2 style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.6px', margin: '0 0 6px' }}>
+      <h2
+        style={{
+          fontSize: 40,
+          fontWeight: 700,
+          lineHeight: 1.1,
+          letterSpacing: '-0.6px',
+          margin: '0 0 6px',
+        }}
+      >
         Iniciar sesión
       </h2>
-      <p style={{ fontSize: 15, lineHeight: 1.43, color: 'var(--color-slate)', margin: '0 0 22px' }}>
-        Tu sesión expiró por inactividad. Vuelve a entrar para continuar donde lo dejaste.
+      <p
+        style={{ fontSize: 15, lineHeight: 1.43, color: 'var(--color-slate)', margin: '0 0 22px' }}
+      >
+        Introduce tus credenciales para acceder a tu garaje.
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* Email */}
         <div>
-          <label style={labelBase}>Email</label>
+          <label htmlFor={emailId} style={labelBase}>
+            Email
+          </label>
           <input
+            id={emailId}
             type="email"
             autoComplete="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             placeholder="nombre@dominio.com"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? `${emailId}-error` : undefined}
             style={{
               ...inputBase,
               borderColor: errors.email ? '#d70015' : 'var(--color-silver-mist)',
             }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-ink)'; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = errors.email ? '#d70015' : 'var(--color-silver-mist)'; }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-ink)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = errors.email
+                ? '#d70015'
+                : 'var(--color-silver-mist)';
+            }}
           />
           {errors.email && (
-            <p style={{ fontSize: 12, color: '#d70015', marginTop: 6, marginLeft: 2 }}>{errors.email}</p>
+            <p
+              id={`${emailId}-error`}
+              style={{ fontSize: 12, color: '#d70015', marginTop: 6, marginLeft: 2 }}
+            >
+              {errors.email}
+            </p>
           )}
         </div>
 
         {/* Password */}
         <div>
-          <label style={labelBase}>Contraseña</label>
+          <label htmlFor={passwordId} style={labelBase}>
+            Contraseña
+          </label>
           <div style={{ position: 'relative' }}>
             <input
+              id={passwordId}
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? `${passwordId}-error` : undefined}
               style={{
                 ...inputBase,
                 paddingRight: 90,
                 borderColor: errors.password ? '#d70015' : 'var(--color-silver-mist)',
               }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-ink)'; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = errors.password ? '#d70015' : 'var(--color-silver-mist)'; }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-ink)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = errors.password
+                  ? '#d70015'
+                  : 'var(--color-silver-mist)';
+              }}
             />
             <button
               type="button"
               onClick={() => setShowPassword((s) => !s)}
+              aria-controls={passwordId}
+              aria-pressed={showPassword}
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               style={{
-                position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                background: 'transparent', border: 0,
-                color: '#0066cc', fontSize: 13, cursor: 'pointer', padding: '8px 10px',
+                position: 'absolute',
+                right: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 0,
+                color: '#0066cc',
+                fontSize: 13,
+                cursor: 'pointer',
+                padding: '8px 10px',
                 fontFamily: 'inherit',
               }}
             >
@@ -318,7 +412,12 @@ function AuthCard({
             </button>
           </div>
           {errors.password && (
-            <p style={{ fontSize: 12, color: '#d70015', marginTop: 6, marginLeft: 2 }}>{errors.password}</p>
+            <p
+              id={`${passwordId}-error`}
+              style={{ fontSize: 12, color: '#d70015', marginTop: 6, marginLeft: 2 }}
+            >
+              {errors.password}
+            </p>
           )}
         </div>
 
@@ -346,13 +445,29 @@ function AuthCard({
         </button>
 
         {/* Footer links */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-          <a
-            href="#"
-            style={{ fontSize: 14, color: '#0066cc', textDecoration: 'none' }}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 10,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => toast('Contacta con soporte para recuperar tu acceso.')}
+            style={{
+              fontSize: 14,
+              color: '#0066cc',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
           >
             Recuperar acceso
-          </a>
+          </button>
           <Link
             to="/register"
             style={{ fontSize: 14, color: '#0066cc', textDecoration: 'none', fontWeight: 500 }}
