@@ -99,8 +99,11 @@ export const GalleryMap = ({ images, onSelect, onUpdate }: Props) => {
     try {
       const updated = await galleryService.setLocation(img.id, coords);
       onUpdate?.(updated);
-    } catch {
-      toast.error('No se pudo guardar la ubicación');
+    } catch (err) {
+      console.error('[gallery] setLocation failed', err);
+      const msg =
+        err instanceof Error && err.message ? err.message : 'No se pudo guardar la ubicación';
+      toast.error(msg);
     }
   };
 

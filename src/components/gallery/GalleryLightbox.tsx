@@ -70,8 +70,10 @@ export const GalleryLightbox = ({ image, onClose, onUpdate }: Props) => {
       onUpdate?.(updated);
       setDirty(false);
       toast.success('Pie guardado');
-    } catch {
-      toast.error('No se pudo guardar el pie');
+    } catch (err) {
+      console.error('[gallery] updateCaption failed', err);
+      const msg = err instanceof Error && err.message ? err.message : 'No se pudo guardar el pie';
+      toast.error(msg);
     } finally {
       setSavingCaption(false);
     }
