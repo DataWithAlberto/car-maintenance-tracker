@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { Car, ChevronDown } from 'lucide-react';
 import { LordIcon } from '../ui/LordIcon';
+import { useThemeStore } from '../../store/themeStore';
 
 export interface FloatingDockItem {
   id: string;
@@ -49,26 +50,41 @@ export interface FloatingDockProps {
 export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: FloatingDockProps) => {
   const [hovered, setHovered] = useState(false);
   const open = hovered;
+  const theme = useThemeStore((s) => s.theme);
 
-  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
+  // Hex colors for Lordicon (no CSS vars allowed). When item is "active" we
+  // invert the icon to match the inverted background (--color-ink).
+  const themeInk = theme === 'dark' ? '#f5f5f7' : '#1d1d1f';
+  const themeSnow = theme === 'dark' ? '#1e1e20' : '#ffffff';
 
-  /* Auto-expand the group that owns the active route. */
+  // Groups the user has explicitly collapsed (default = all open on hover)
+  const [closedGroups, setClosedGroups] = useState<Set<string>>(() => new Set());
+
+  /* Ensure the group that owns the active route is never collapsed. */
   useEffect(() => {
     const owner = entries.find(
       (e): e is FloatingDockGroup => isGroup(e) && e.children.some((c) => c.id === activeId),
     );
     if (!owner) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOpenGroups((prev) => {
-      if (prev.has(owner.id)) return prev;
+    setClosedGroups((prev) => {
+      if (!prev.has(owner.id)) return prev;
       const next = new Set(prev);
-      next.add(owner.id);
+      next.delete(owner.id);
       return next;
     });
   }, [activeId, entries]);
 
+  /* Reset user-collapsed state when the rail closes so next hover opens all groups again. */
+  useEffect(() => {
+    if (!open && closedGroups.size > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setClosedGroups(new Set());
+    }
+  }, [open, closedGroups.size]);
+
   const toggleGroup = (id: string) =>
-    setOpenGroups((prev) => {
+    setClosedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -120,8 +136,8 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
               src={it.lordSrc}
               trigger={isActive ? 'loop' : 'hover'}
               size={nested ? 16 : 18}
-              primaryColor={isActive ? '#ffffff' : '#1d1d1f'}
-              secondaryColor={isActive ? '#ffffff' : '#1d1d1f'}
+              primaryColor={isActive ? themeSnow : themeInk}
+              secondaryColor={isActive ? themeSnow : themeInk}
               stroke="regular"
             />
           ) : (
@@ -173,9 +189,11 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
   const renderGroup = (g: FloatingDockGroup) => {
     const Icon = g.icon;
     const childActive = g.children.some((c) => c.id === activeId);
-    const isOpen = openGroups.has(g.id);
+    /* New behavior: groups auto-expand when the rail is hovered open.
+       Users can still click the header to collapse a specific group. */
+    const isOpen = !closedGroups.has(g.id);
     const showChildren = open && isOpen;
-    /* Dark header only when the active page is hidden inside a collapsed group. */
+    /* Inverted header only when the active page is hidden inside a collapsed group. */
     const headerActive = childActive && !showChildren;
 
     return (
@@ -221,8 +239,8 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
                 src={g.lordSrc}
                 trigger="hover"
                 size={18}
-                primaryColor={headerActive ? '#ffffff' : '#1d1d1f'}
-                secondaryColor={headerActive ? '#ffffff' : '#1d1d1f'}
+                primaryColor={headerActive ? themeSnow : themeInk}
+                secondaryColor={headerActive ? themeSnow : themeInk}
                 stroke="regular"
               />
             ) : (
