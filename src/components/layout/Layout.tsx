@@ -1,8 +1,20 @@
 import { useEffect, useMemo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import {
-  LayoutGrid, Wrench, Receipt, FileText, Route, Share2, Settings,
-  ShieldCheck, CalendarClock, Wallet, Folder,
+  LayoutGrid,
+  LayoutDashboard,
+  Wrench,
+  Receipt,
+  FileText,
+  Route,
+  Share2,
+  Settings,
+  ShieldCheck,
+  CalendarClock,
+  Wallet,
+  Folder,
+  Cpu,
+  Store,
 } from 'lucide-react';
 import { FloatingDock, type FloatingDockEntry } from './FloatingDock';
 import { BottomNav } from './BottomNav';
@@ -20,55 +32,66 @@ export const Layout = () => {
 
   /* Make sure the vehicle list is populated regardless of which page the user
      lands on first. The hook short-circuits when called twice. */
-  useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
+  useEffect(() => {
+    fetchVehicles();
+  }, [fetchVehicles]);
 
   /* Vehicle context for the dock: selected → first available. */
   const activeVehicle = selectedVehicle ?? vehicles[0] ?? null;
 
-  const dockEntries = useMemo<FloatingDockEntry[]>(() => ([
-    { id: 'overview', label: 'Vista general', icon: LayoutGrid, href: '/car' },
-    {
-      id: 'maintenance-group',
-      label: 'Mantenimiento',
-      icon: Wrench,
-      children: [
-        { id: 'maintenance', label: 'Mantenimiento',    icon: Wrench,        href: '/maintenance' },
-        { id: 'plan',        label: 'Plan predictivo',  icon: CalendarClock, href: '/maintenance-plan' },
-      ],
-    },
-    {
-      id: 'finance-group',
-      label: 'Finanzas',
-      icon: Wallet,
-      children: [
-        { id: 'expenses',  label: 'Gastos', icon: Receipt,     href: '/expenses' },
-        { id: 'insurance', label: 'Seguro', icon: ShieldCheck, href: '/insurance' },
-      ],
-    },
-    { id: 'trips', label: 'Viajes', icon: Route, href: '/trips' },
-    {
-      id: 'management-group',
-      label: 'Gestión',
-      icon: Folder,
-      children: [
-        { id: 'documents', label: 'Documentos', icon: FileText, href: '/documents' },
-        { id: 'sharing',   label: 'Compartir',  icon: Share2,   href: '/sharing' },
-      ],
-    },
-    { id: 'settings', label: 'Ajustes', icon: Settings, href: '/settings' },
-  ]), []);
+  const dockEntries = useMemo<FloatingDockEntry[]>(
+    () => [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+      { id: 'overview', label: 'Mi vehículo', icon: LayoutGrid, href: '/car' },
+      {
+        id: 'maintenance-group',
+        label: 'Mantenimiento',
+        icon: Wrench,
+        children: [
+          { id: 'maintenance', label: 'Mantenimiento', icon: Wrench, href: '/maintenance' },
+          { id: 'plan', label: 'Plan predictivo', icon: CalendarClock, href: '/maintenance-plan' },
+        ],
+      },
+      {
+        id: 'finance-group',
+        label: 'Finanzas',
+        icon: Wallet,
+        children: [
+          { id: 'expenses', label: 'Gastos', icon: Receipt, href: '/expenses' },
+          { id: 'insurance', label: 'Seguro', icon: ShieldCheck, href: '/insurance' },
+        ],
+      },
+      { id: 'trips', label: 'Viajes', icon: Route, href: '/trips' },
+      { id: 'obd2', label: 'OBD-II', icon: Cpu, href: '/obd2' },
+      { id: 'mechanics', label: 'Talleres', icon: Store, href: '/mechanics' },
+      {
+        id: 'management-group',
+        label: 'Gestión',
+        icon: Folder,
+        children: [
+          { id: 'documents', label: 'Documentos', icon: FileText, href: '/documents' },
+          { id: 'sharing', label: 'Compartir', icon: Share2, href: '/sharing' },
+        ],
+      },
+      { id: 'settings', label: 'Ajustes', icon: Settings, href: '/settings' },
+    ],
+    [],
+  );
 
   const activeId = useMemo(() => {
     const p = location.pathname;
-    if (p === '/car' || p.startsWith('/car/'))                   return 'overview';
+    if (p === '/dashboard' || p.startsWith('/dashboard/')) return 'dashboard';
+    if (p === '/car' || p.startsWith('/car/')) return 'overview';
     if (p === '/maintenance-plan' || p.startsWith('/maintenance-plan/')) return 'plan';
-    if (p === '/maintenance' || p.startsWith('/maintenance/'))   return 'maintenance';
-    if (p === '/expenses' || p.startsWith('/expenses/'))         return 'expenses';
-    if (p === '/documents' || p.startsWith('/documents/'))       return 'documents';
-    if (p === '/insurance' || p.startsWith('/insurance/'))       return 'insurance';
-    if (p === '/trips' || p.startsWith('/trips/'))               return 'trips';
-    if (p === '/sharing' || p.startsWith('/sharing/'))           return 'sharing';
-    if (p === '/settings' || p.startsWith('/settings/'))         return 'settings';
+    if (p === '/maintenance' || p.startsWith('/maintenance/')) return 'maintenance';
+    if (p === '/expenses' || p.startsWith('/expenses/')) return 'expenses';
+    if (p === '/documents' || p.startsWith('/documents/')) return 'documents';
+    if (p === '/insurance' || p.startsWith('/insurance/')) return 'insurance';
+    if (p === '/trips' || p.startsWith('/trips/')) return 'trips';
+    if (p === '/obd2' || p.startsWith('/obd2/')) return 'obd2';
+    if (p === '/mechanics' || p.startsWith('/mechanics/')) return 'mechanics';
+    if (p === '/sharing' || p.startsWith('/sharing/')) return 'sharing';
+    if (p === '/settings' || p.startsWith('/settings/')) return 'settings';
     return '';
   }, [location.pathname]);
 
