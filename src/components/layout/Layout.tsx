@@ -127,7 +127,7 @@ export const Layout = () => {
         label: 'Galería',
         icon: Images,
         href: '/galeria',
-        lordSrc: 'https://cdn.lordicon.com/ggihhudh.json',
+        lordSrc: 'https://cdn.lordicon.com/zczzhvwa.json',
       },
       {
         id: 'management-group',
