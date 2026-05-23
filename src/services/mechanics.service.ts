@@ -1,12 +1,9 @@
 import type { Mechanic } from '../types';
 
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass.openstreetmap.fr/api/interpreter',
-  'https://overpass.osm.ch/api/interpreter',
-  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-];
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+const SEARCH_URL = 'https://api.mapbox.com/search/searchbox/v1/category';
+// Categorías Mapbox que cubren talleres mecánicos y de neumáticos
+const CATEGORIES = ['auto_repair', 'tire_repair'];
 
 // Haversine — distancia en km entre dos puntos
 const distanceKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -20,74 +17,66 @@ const distanceKm = (lat1: number, lng1: number, lat2: number, lng2: number): num
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const buildAddress = (tags: Record<string, any>): string | undefined => {
-  const parts = [
-    [tags['addr:street'], tags['addr:housenumber']].filter(Boolean).join(' '),
-    tags['addr:postcode'],
-    tags['addr:city'],
-  ].filter(Boolean);
-  return parts.length ? parts.join(', ') : undefined;
+const toMechanic = (f: any, lat: number, lng: number): Mechanic | null => {
+  const coords = f.geometry?.coordinates;
+  if (!Array.isArray(coords) || coords.length < 2) return null;
+  const [fLng, fLat] = coords;
+  const props = f.properties ?? {};
+  return {
+    id: props.mapbox_id ?? `${fLat},${fLng}`,
+    name: props.name ?? props.name_preferred ?? 'Taller sin nombre',
+    lat: fLat,
+    lng: fLng,
+    address: props.full_address ?? props.place_formatted ?? props.address,
+    phone: props.metadata?.phone ?? props.phone,
+    website: props.metadata?.website,
+    brand: Array.isArray(props.brand) ? props.brand[0] : props.brand,
+    openingHours: props.metadata?.open_hours?.display,
+    distanceKm: distanceKm(lat, lng, fLat, fLng),
+  };
 };
 
 export const mechanicsService = {
   /**
-   * Busca talleres mecánicos cerca de un punto vía OpenStreetMap Overpass API.
-   * radiusKm por defecto 15 km. Devuelve ordenados por distancia.
+   * Busca talleres mecánicos cerca de un punto vía Mapbox Search Box API.
+   * Combina las categorías auto_repair y tire_repair, deduplica y ordena por distancia.
    */
   async findNearby(lat: number, lng: number, radiusKm = 15): Promise<Mechanic[]> {
-    const radius = Math.round(radiusKm * 1000);
-    const query = `
-      [out:json][timeout:25];
-      (
-        node["shop"="car_repair"](around:${radius},${lat},${lng});
-        way["shop"="car_repair"](around:${radius},${lat},${lng});
-        node["shop"="tyres"](around:${radius},${lat},${lng});
-        way["shop"="tyres"](around:${radius},${lat},${lng});
-      );
-      out center tags;
-    `;
-    const body = `data=${encodeURIComponent(query)}`;
+    if (!MAPBOX_TOKEN) {
+      throw new Error('Falta VITE_MAPBOX_TOKEN. Añádelo en Vercel o .env.local.');
+    }
 
-    let lastError: Error | null = null;
-    for (const endpoint of OVERPASS_ENDPOINTS) {
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body,
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const elements: any[] = json.elements ?? [];
-        return elements
-          .map((el) => {
-            const elLat = el.lat ?? el.center?.lat;
-            const elLng = el.lon ?? el.center?.lon;
-            if (elLat == null || elLng == null) return null;
-            const tags = el.tags ?? {};
-            return {
-              id: `${el.type}/${el.id}`,
-              name: tags.name ?? 'Taller sin nombre',
-              lat: elLat,
-              lng: elLng,
-              address: buildAddress(tags),
-              phone: tags.phone ?? tags['contact:phone'],
-              website: tags.website ?? tags['contact:website'],
-              brand: tags.brand,
-              openingHours: tags.opening_hours,
-              distanceKm: distanceKm(lat, lng, elLat, elLng),
-            } as Mechanic;
-          })
-          .filter((m): m is Mechanic => m !== null)
-          .sort((a, b) => a.distanceKm - b.distanceKm);
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
+    const params = new URLSearchParams({
+      access_token: MAPBOX_TOKEN,
+      proximity: `${lng},${lat}`,
+      limit: '25',
+      language: 'es',
+    });
+
+    const responses = await Promise.all(
+      CATEGORIES.map((cat) =>
+        fetch(`${SEARCH_URL}/${cat}?${params}`).then(async (res) => {
+          if (!res.ok) {
+            const err = await res.json().catch(() => null);
+            throw new Error(err?.message ?? `Mapbox HTTP ${res.status}`);
+          }
+          return res.json();
+        }),
+      ),
+    );
+
+    const seen = new Set<string>();
+    const mechanics: Mechanic[] = [];
+    for (const json of responses) {
+      for (const feature of json.features ?? []) {
+        const m = toMechanic(feature, lat, lng);
+        if (!m || seen.has(m.id) || m.distanceKm > radiusKm) continue;
+        seen.add(m.id);
+        mechanics.push(m);
       }
     }
-    throw new Error(
-      `No se pudo consultar el mapa de talleres: ${lastError?.message ?? 'error desconocido'}`,
-    );
+
+    return mechanics.sort((a, b) => a.distanceKm - b.distanceKm);
   },
 
   /** Geolocalización del navegador. Lanza error si el usuario la deniega. */
