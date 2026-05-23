@@ -335,13 +335,13 @@ export const MechanicsPage = () => {
       )}
 
       {/* Map + mechanics list */}
-      {mechanics.length > 0 && (
+      {origin && (
         <section className="bg-snow border border-silver-mist rounded-[28px] p-7 space-y-5">
           <h2
             className="font-mono uppercase text-graphite"
             style={{ fontSize: 11, letterSpacing: '0.14em' }}
           >
-            {mechanics.length} talleres cerca de ti
+            {mechanics.length > 0 ? `${mechanics.length} talleres cerca de ti` : 'Tu ubicación'}
           </h2>
 
           <MechanicsMap

@@ -22,7 +22,6 @@
     "@types/leaflet": "^1.9.21",
     "autoprefixer": "^10.5.0",
     "date-fns": "^4.1.0",
-    "leaflet": "^1.9.4",
     "lucide-react": "^1.14.0",
     "mapbox-gl": "^3.12.0",
     "postcss": "^8.5.14",
