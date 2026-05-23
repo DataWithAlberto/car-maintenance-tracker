@@ -57,39 +57,15 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
   const themeInk = theme === 'dark' ? '#f5f5f7' : '#1d1d1f';
   const themeSnow = theme === 'dark' ? '#1e1e20' : '#ffffff';
 
-  // Groups the user has explicitly collapsed (default = all open on hover)
-  const [closedGroups, setClosedGroups] = useState<Set<string>>(() => new Set());
-
-  /* Ensure the group that owns the active route is never collapsed. */
+  // Group currently under the cursor — opens its children on hover.
+  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
+  // Reset hovered group when the rail closes
   useEffect(() => {
-    const owner = entries.find(
-      (e): e is FloatingDockGroup => isGroup(e) && e.children.some((c) => c.id === activeId),
-    );
-    if (!owner) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setClosedGroups((prev) => {
-      if (!prev.has(owner.id)) return prev;
-      const next = new Set(prev);
-      next.delete(owner.id);
-      return next;
-    });
-  }, [activeId, entries]);
-
-  /* Reset user-collapsed state when the rail closes so next hover opens all groups again. */
-  useEffect(() => {
-    if (!open && closedGroups.size > 0) {
+    if (!open && hoveredGroup !== null) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setClosedGroups(new Set());
+      setHoveredGroup(null);
     }
-  }, [open, closedGroups.size]);
-
-  const toggleGroup = (id: string) =>
-    setClosedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  }, [open, hoveredGroup]);
 
   const renderLeaf = (it: FloatingDockItem, nested = false) => {
     const isActive = it.id === activeId;
@@ -189,20 +165,22 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
   const renderGroup = (g: FloatingDockGroup) => {
     const Icon = g.icon;
     const childActive = g.children.some((c) => c.id === activeId);
-    /* New behavior: groups auto-expand when the rail is hovered open.
-       Users can still click the header to collapse a specific group. */
-    const isOpen = !closedGroups.has(g.id);
-    const showChildren = open && isOpen;
+    /* Children show when: rail is open AND (this group is hovered OR contains the active route). */
+    const showChildren = open && (hoveredGroup === g.id || childActive);
     /* Inverted header only when the active page is hidden inside a collapsed group. */
     const headerActive = childActive && !showChildren;
 
     return (
-      <div key={g.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div
+        key={g.id}
+        style={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+        onMouseEnter={() => setHoveredGroup(g.id)}
+        onMouseLeave={() => setHoveredGroup(null)}
+      >
         <button
           type="button"
           className="focus-ring"
-          onClick={() => toggleGroup(g.id)}
-          aria-expanded={isOpen}
+          aria-expanded={showChildren}
           title={!open ? g.label : undefined}
           style={{
             display: 'flex',
@@ -255,7 +233,7 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
                 strokeWidth={1.8}
                 style={{
                   flexShrink: 0,
-                  transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                  transform: showChildren ? 'rotate(0deg)' : 'rotate(-90deg)',
                   transition: 'transform 200ms ease',
                   color: headerActive ? 'var(--color-snow)' : 'var(--color-mist)',
                 }}
