@@ -1,6 +1,10 @@
 import type { Mechanic } from '../types';
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+];
 
 // Haversine — distancia en km entre dos puntos
 const distanceKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -9,9 +13,7 @@ const distanceKm = (lat1: number, lng1: number, lat2: number, lng2: number): num
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
@@ -42,41 +44,48 @@ export const mechanicsService = {
       );
       out center tags;
     `;
+    const body = `data=${encodeURIComponent(query)}`;
 
-    const res = await fetch(OVERPASS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
-    });
-    if (!res.ok) throw new Error('No se pudo consultar OpenStreetMap');
-
-    const json = await res.json();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const elements: any[] = json.elements ?? [];
-
-    const mechanics: Mechanic[] = elements
-      .map((el) => {
-        const elLat = el.lat ?? el.center?.lat;
-        const elLng = el.lon ?? el.center?.lon;
-        if (elLat == null || elLng == null) return null;
-        const tags = el.tags ?? {};
-        return {
-          id: `${el.type}/${el.id}`,
-          name: tags.name ?? 'Taller sin nombre',
-          lat: elLat,
-          lng: elLng,
-          address: buildAddress(tags),
-          phone: tags.phone ?? tags['contact:phone'],
-          website: tags.website ?? tags['contact:website'],
-          brand: tags.brand,
-          openingHours: tags.opening_hours,
-          distanceKm: distanceKm(lat, lng, elLat, elLng),
-        } as Mechanic;
-      })
-      .filter((m): m is Mechanic => m !== null)
-      .sort((a, b) => a.distanceKm - b.distanceKm);
-
-    return mechanics;
+    let lastError: Error | null = null;
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const elements: any[] = json.elements ?? [];
+        return elements
+          .map((el) => {
+            const elLat = el.lat ?? el.center?.lat;
+            const elLng = el.lon ?? el.center?.lon;
+            if (elLat == null || elLng == null) return null;
+            const tags = el.tags ?? {};
+            return {
+              id: `${el.type}/${el.id}`,
+              name: tags.name ?? 'Taller sin nombre',
+              lat: elLat,
+              lng: elLng,
+              address: buildAddress(tags),
+              phone: tags.phone ?? tags['contact:phone'],
+              website: tags.website ?? tags['contact:website'],
+              brand: tags.brand,
+              openingHours: tags.opening_hours,
+              distanceKm: distanceKm(lat, lng, elLat, elLng),
+            } as Mechanic;
+          })
+          .filter((m): m is Mechanic => m !== null)
+          .sort((a, b) => a.distanceKm - b.distanceKm);
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+      }
+    }
+    throw new Error(
+      `No se pudo consultar el mapa de talleres: ${lastError?.message ?? 'error desconocido'}`,
+    );
   },
 
   /** Geolocalización del navegador. Lanza error si el usuario la deniega. */

@@ -99,7 +99,9 @@ export const MechanicsPage = () => {
     setSelectedId(undefined);
     try {
       setStatusMsg('Obteniendo tu ubicación…');
-      const loc = await mechanicsService.getCurrentLocation();
+      const loc = await mechanicsService.getCurrentLocation().catch(() => {
+        throw new Error('No se pudo obtener tu ubicación. Comprueba los permisos del navegador.');
+      });
 
       setStatusMsg('Buscando talleres cercanos…');
       const found = await mechanicsService.findNearby(loc.lat, loc.lng);
@@ -112,7 +114,7 @@ export const MechanicsPage = () => {
       setStatusMsg('Cargando historial del vehículo…');
       const records = await maintenanceService.getByVehicle(selectedVehicle.id).catch(() => []);
 
-      setStatusMsg('Gemini está analizando el problema…');
+      setStatusMsg('Consultando Gemini…');
       const result = await claudeService.diagnose({
         apiKey: geminiApiKey,
         vehicle: selectedVehicle,
