@@ -940,45 +940,39 @@ body {
 }
 
 /* ─── Lightbox layout ─────────────────────────────────────────────────── */
+/* La foto se muestra siempre a tamaño natural — el modal hace scroll para
+ * que puedas ver hasta el último píxel sin recortes. */
 .lightbox-shell {
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 1400px;
-  margin: auto;
-  padding: 24px;
-  gap: 16px;
+  margin: 0 auto;
+  padding: 64px 24px 48px;
+  gap: 20px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 @media (min-width: 1024px) {
   .lightbox-shell {
     flex-direction: row;
-    align-items: stretch;
-    gap: 28px;
-    padding: 32px;
-    overflow: hidden;
+    align-items: flex-start;
+    gap: 32px;
+    padding: 64px 32px 48px;
   }
 }
 .lightbox-media {
   flex: 1 1 auto;
   display: flex;
-  align-items: center;
   justify-content: center;
-  min-height: 0;
+  min-width: 0;
 }
 .lightbox-img {
   display: block;
   max-width: 100%;
-  max-height: 88vh;
   width: auto;
   height: auto;
   border-radius: 14px;
-  object-fit: contain;
-}
-@media (min-width: 1024px) {
-  .lightbox-img {
-    max-height: calc(100vh - 64px);
-  }
 }
 .lightbox-info {
   flex: 0 0 auto;
@@ -995,7 +989,9 @@ body {
     width: 320px;
     flex: 0 0 320px;
     margin: 0;
-    align-self: center;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
   }
 }
 .lightbox-caption {

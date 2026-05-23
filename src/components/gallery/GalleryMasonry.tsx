@@ -14,10 +14,6 @@ export const GalleryMasonry = ({ images, onSelect, onDelete, deletingId }: Props
   return (
     <div className="gallery-masonry">
       {images.map((img, i) => {
-        const aspect =
-          img.width && img.height && img.width > 0 && img.height > 0
-            ? `${img.width} / ${img.height}`
-            : undefined;
         return (
           <figure
             key={img.id}
@@ -33,15 +29,14 @@ export const GalleryMasonry = ({ images, onSelect, onDelete, deletingId }: Props
               }
             }}
           >
-            <div
-              className="gallery-masonry__media"
-              style={aspect ? { aspectRatio: aspect } : undefined}
-            >
+            <div className="gallery-masonry__media">
               <img
                 src={img.public_url}
                 alt={img.caption ?? img.file_name ?? 'Foto del coche'}
                 loading="lazy"
                 decoding="async"
+                width={img.width ?? undefined}
+                height={img.height ?? undefined}
                 className="gallery-masonry__img"
               />
             </div>
