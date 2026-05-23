@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard,
   Car,
@@ -17,22 +18,55 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { LordIcon } from '../ui/LordIcon';
 
-const MAIN_TABS = [
+interface TabDef {
+  to: string;
+  icon: LucideIcon;
+  lordSrc?: string;
+  label: string;
+}
+
+const MAIN_TABS: TabDef[] = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { to: '/car', icon: Car, label: 'Coche' },
-  { to: '/maintenance', icon: Wrench, label: 'Servicio' },
-  { to: '/trips', icon: Route, label: 'Viajes' },
+  {
+    to: '/maintenance',
+    icon: Wrench,
+    label: 'Servicio',
+    lordSrc: 'https://cdn.lordicon.com/mudwpdhy.json',
+  },
+  { to: '/trips', icon: Route, label: 'Viajes', lordSrc: 'https://cdn.lordicon.com/qtzfwijv.json' },
 ];
 
-const MORE_ITEMS = [
+const MORE_ITEMS: TabDef[] = [
   { to: '/maintenance-plan', icon: CalendarClock, label: 'Plan predictivo' },
-  { to: '/expenses', icon: Receipt, label: 'Gastos' },
-  { to: '/insurance', icon: ShieldCheck, label: 'Seguro' },
+  {
+    to: '/expenses',
+    icon: Receipt,
+    label: 'Gastos',
+    lordSrc: 'https://cdn.lordicon.com/yycecovd.json',
+  },
+  {
+    to: '/insurance',
+    icon: ShieldCheck,
+    label: 'Seguro',
+    lordSrc: 'https://cdn.lordicon.com/yraqammt.json',
+  },
   { to: '/documents', icon: FileText, label: 'Documentos' },
   { to: '/obd2', icon: Cpu, label: 'OBD-II' },
-  { to: '/mechanics', icon: Store, label: 'Talleres' },
-  { to: '/sharing', icon: Share2, label: 'Compartir' },
+  {
+    to: '/mechanics',
+    icon: Store,
+    label: 'Talleres',
+    lordSrc: 'https://cdn.lordicon.com/vwwysvjs.json',
+  },
+  {
+    to: '/sharing',
+    icon: Share2,
+    label: 'Compartir',
+    lordSrc: 'https://cdn.lordicon.com/fhlrrido.json',
+  },
   { to: '/settings', icon: Settings, label: 'Ajustes' },
 ];
 
@@ -75,7 +109,7 @@ export const BottomNav = () => {
             </div>
 
             <div className="grid grid-cols-4 gap-2 px-4 pb-5 pt-2">
-              {MORE_ITEMS.map(({ to, icon: Icon, label }) => (
+              {MORE_ITEMS.map(({ to, icon: Icon, lordSrc, label }) => (
                 <button
                   key={to}
                   onClick={() => {
@@ -92,7 +126,11 @@ export const BottomNav = () => {
                       border: '1px solid var(--color-silver-mist)',
                     }}
                   >
-                    <Icon className="h-5 w-5 text-ink" strokeWidth={1.6} />
+                    {lordSrc ? (
+                      <LordIcon src={lordSrc} trigger="hover" size={22} />
+                    ) : (
+                      <Icon className="h-5 w-5 text-ink" strokeWidth={1.6} />
+                    )}
                   </span>
                   <span
                     className="font-text text-ink text-center leading-tight"
@@ -118,7 +156,7 @@ export const BottomNav = () => {
         aria-label="Navegación móvil"
       >
         <ul className="grid grid-cols-5 px-1">
-          {MAIN_TABS.map(({ to, icon: Icon, label }) => (
+          {MAIN_TABS.map(({ to, icon: Icon, lordSrc, label }) => (
             <li key={to}>
               <NavLink
                 to={to}
@@ -138,10 +176,14 @@ export const BottomNav = () => {
                         isActive ? 'bg-ink/10 scale-110' : 'scale-100',
                       )}
                     >
-                      <Icon
-                        className="h-5 w-5 transition-transform duration-300"
-                        strokeWidth={isActive ? 2.2 : 1.8}
-                      />
+                      {lordSrc ? (
+                        <LordIcon src={lordSrc} trigger={isActive ? 'loop' : 'hover'} size={22} />
+                      ) : (
+                        <Icon
+                          className="h-5 w-5 transition-transform duration-300"
+                          strokeWidth={isActive ? 2.2 : 1.8}
+                        />
+                      )}
                     </span>
                     {label}
                   </>
