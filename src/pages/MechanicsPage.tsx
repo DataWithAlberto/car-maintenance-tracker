@@ -50,6 +50,7 @@ export const MechanicsPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [mapError, setMapError] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   // Cancela cualquier diagnóstico en vuelo si el usuario abandona la página.
@@ -95,6 +96,7 @@ export const MechanicsPage = () => {
     abortRef.current = controller;
 
     setLoading(true);
+    setMapError(false);
     setSearchResult({ origin: null, mechanics: [], diagnosis: null });
     setSelectedId(undefined);
     try {
@@ -104,12 +106,10 @@ export const MechanicsPage = () => {
       });
 
       setStatusMsg('Buscando talleres cercanos…');
-      const found = await mechanicsService.findNearby(loc.lat, loc.lng);
-      if (found.length === 0) {
-        setSearchResult({ origin: loc, mechanics: [], diagnosis: null });
-        toast.error('No se encontraron talleres en 15 km a la redonda');
-        return;
-      }
+      const found = await mechanicsService.findNearby(loc.lat, loc.lng).catch(() => {
+        setMapError(true);
+        return [] as Mechanic[];
+      });
 
       setStatusMsg('Cargando historial del vehículo…');
       const records = await maintenanceService.getByVehicle(selectedVehicle.id).catch(() => []);
@@ -228,6 +228,42 @@ export const MechanicsPage = () => {
           )}
         </div>
       </section>
+
+      {/* Map unavailable warning */}
+      {mapError && diagnosis && (
+        <section className="bg-snow border border-silver-mist rounded-[28px] p-7">
+          <div className="flex items-start gap-4">
+            <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
+              <MapPin className="h-5 w-5 text-graphite" strokeWidth={1.6} />
+            </div>
+            <div className="flex-1">
+              <p
+                className="font-display text-ink"
+                style={{ fontWeight: 600, fontSize: 18, lineHeight: 1.2, letterSpacing: '-0.2px' }}
+              >
+                Mapa de talleres no disponible
+              </p>
+              <p
+                className="font-text text-graphite mt-1 mb-3"
+                style={{ fontSize: 14, lineHeight: 1.45 }}
+              >
+                El servicio de mapas está temporalmente saturado. Puedes buscar talleres cerca de ti
+                directamente en Google Maps.
+              </p>
+              <a
+                href={`https://www.google.com/maps/search/taller+mecánico+cerca/@${origin?.lat},${origin?.lng},14z`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 font-text font-medium text-azure"
+                style={{ fontSize: 14 }}
+              >
+                <Navigation className="h-4 w-4" strokeWidth={1.7} />
+                Buscar talleres en Google Maps
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Diagnosis result */}
       {diagnosis && (
