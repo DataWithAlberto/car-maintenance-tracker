@@ -18,6 +18,7 @@ export interface GalleryImage {
   taken_at: string | null;
   width: number | null;
   height: number | null;
+  caption: string | null;
   created_at: string;
 }
 
@@ -144,13 +145,13 @@ export const galleryService = {
     /* 2) HEIC → JPEG quality 1.0 (sin pérdida visual, compatible con todo navegador) */
     const uploadFile = isHeic(file) ? await convertHeicToJpeg(file) : file;
 
-    /* 3) Dimensiones del bitmap final si EXIF no las tenía */
-    if (exif.width == null || exif.height == null) {
-      const dims = await readImageDims(uploadFile);
-      if (dims) {
-        exif.width = dims.width;
-        exif.height = dims.height;
-      }
+    /* 3) Dimensiones SIEMPRE del bitmap real que se sube — las EXIF del HEIC
+     *    original no coinciden con el JPEG tras la conversión (rotación
+     *    aplicada) y eso provoca aspect-ratio incorrecto = crop visual. */
+    const dims = await readImageDims(uploadFile);
+    if (dims) {
+      exif.width = dims.width;
+      exif.height = dims.height;
     }
 
     /* 4) Subida a Storage */
@@ -193,6 +194,35 @@ export const galleryService = {
         .catch(() => undefined);
       throw error;
     }
+    return data as GalleryImage;
+  },
+
+  async updateCaption(id: string, caption: string | null): Promise<GalleryImage> {
+    const trimmed = caption?.trim() ?? '';
+    const { data, error } = await supabase
+      .from(TABLE)
+      .update({ caption: trimmed.length ? trimmed : null })
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data as GalleryImage;
+  },
+
+  async setLocation(
+    id: string,
+    coords: { latitude: number; longitude: number } | null,
+  ): Promise<GalleryImage> {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .update({
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+      })
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) throw error;
     return data as GalleryImage;
   },
 

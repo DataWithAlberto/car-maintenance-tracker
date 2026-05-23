@@ -86,6 +86,11 @@ export const GalleryPage = () => {
     setProgress({ done: 0, total: 0 });
   };
 
+  const handleUpdate = (updated: GalleryImage) => {
+    setImages((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+    setLightbox((prev) => (prev && prev.id === updated.id ? updated : prev));
+  };
+
   const handleDelete = async (img: GalleryImage) => {
     setDeletingId(img.id);
     const snapshot = images;
@@ -216,11 +221,11 @@ export const GalleryPage = () => {
             deletingId={deletingId}
           />
         ) : (
-          <GalleryMap images={images} onSelect={setLightbox} />
+          <GalleryMap images={images} onSelect={setLightbox} onUpdate={handleUpdate} />
         )}
       </section>
 
-      <GalleryLightbox image={lightbox} onClose={() => setLightbox(null)} />
+      <GalleryLightbox image={lightbox} onClose={() => setLightbox(null)} onUpdate={handleUpdate} />
     </div>
   );
 };

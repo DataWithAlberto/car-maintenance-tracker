@@ -39,12 +39,16 @@ export const GalleryMasonry = ({ images, onSelect, onDelete, deletingId }: Props
             >
               <img
                 src={img.public_url}
-                alt={img.file_name ?? 'Foto del coche'}
+                alt={img.caption ?? img.file_name ?? 'Foto del coche'}
                 loading="lazy"
                 decoding="async"
                 className="gallery-masonry__img"
               />
             </div>
+
+            {img.caption && (
+              <figcaption className="gallery-masonry__caption">{img.caption}</figcaption>
+            )}
 
             {img.latitude != null && img.longitude != null && (
               <span

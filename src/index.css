@@ -812,10 +812,29 @@ body {
   display: block;
   width: 100%;
   height: auto;
-  object-fit: cover;
   transition:
     transform 0.6s var(--ease-out-expo),
     filter 0.4s var(--ease-out-expo);
+}
+.gallery-masonry__caption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 28px 14px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity var(--duration-base) var(--ease-out-expo),
+    transform var(--duration-base) var(--ease-out-expo);
+}
+.gallery-masonry__item:hover .gallery-masonry__caption,
+.gallery-masonry__item:focus-within .gallery-masonry__caption {
+  opacity: 1;
+  transform: translateY(0);
 }
 .gallery-masonry__badge {
   position: absolute;
@@ -918,6 +937,148 @@ body {
 }
 [data-theme='dark'] .gallery-map-marker {
   border-color: #1e1e20;
+}
+
+/* ─── Lightbox layout ─────────────────────────────────────────────────── */
+.lightbox-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1400px;
+  margin: auto;
+  padding: 24px;
+  gap: 16px;
+  overflow-y: auto;
+}
+@media (min-width: 1024px) {
+  .lightbox-shell {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 28px;
+    padding: 32px;
+    overflow: hidden;
+  }
+}
+.lightbox-media {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+.lightbox-img {
+  display: block;
+  max-width: 100%;
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  border-radius: 14px;
+  object-fit: contain;
+}
+@media (min-width: 1024px) {
+  .lightbox-img {
+    max-height: calc(100vh - 64px);
+  }
+}
+.lightbox-info {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: rgba(255, 255, 255, 0.92);
+}
+@media (min-width: 1024px) {
+  .lightbox-info {
+    width: 320px;
+    flex: 0 0 320px;
+    margin: 0;
+    align-self: center;
+  }
+}
+.lightbox-caption {
+  display: block;
+  margin-top: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-family: var(--font-sf-pro-text);
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-default);
+}
+.lightbox-caption::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+.lightbox-caption:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.lightbox-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--color-azure);
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.lightbox-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.lightbox-meta-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: rgba(255, 255, 255, 0.85);
+}
+.lightbox-meta-row > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.lightbox-meta-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.lightbox-meta-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+.lightbox-meta-value {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Mapbox popup en dark mode hereda tokens */
+.gallery-map-popup .mapboxgl-popup-content {
+  background: var(--surface-card);
+  color: var(--color-ink);
+  border-radius: 12px;
+  padding: 8px;
+}
+.gallery-map-popup .mapboxgl-popup-tip {
+  border-top-color: var(--surface-card) !important;
 }
 
 /* ─── Editorial helpers (Indigo + Editorial dashboard) ─────────────────── */
