@@ -18,7 +18,7 @@ export const useAuth = () => {
     await authService.logout();
     // La API key vive solo en este navegador: se borra al salir para no
     // dejarla accesible en equipos compartidos.
-    useApiKeyStore.getState().clearAnthropicApiKey();
+    useApiKeyStore.getState().clearGeminiApiKey();
   };
 
   return { user, loading, login, register, logout };

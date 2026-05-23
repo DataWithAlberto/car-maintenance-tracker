@@ -42,8 +42,9 @@ const toInput = (r: MaintenanceRecord): Partial<MaintenanceInput> => ({
 
 export const MaintenancePage = () => {
   const { selectedVehicle } = useVehicleStore();
-  const { records, loading, fetchRecords, createRecord, updateRecord, deleteRecord } = useMaintenance(selectedVehicle?.id);
-  const { anthropicApiKey } = useApiKeyStore();
+  const { records, loading, fetchRecords, createRecord, updateRecord, deleteRecord } =
+    useMaintenance(selectedVehicle?.id);
+  const { geminiApiKey } = useApiKeyStore();
   const navigate = useNavigate();
 
   const [showForm, setShowForm] = useState(false);
@@ -54,7 +55,10 @@ export const MaintenancePage = () => {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!selectedVehicle) { navigate('/dashboard'); return; }
+    if (!selectedVehicle) {
+      navigate('/dashboard');
+      return;
+    }
     fetchRecords();
   }, [selectedVehicle?.id]);
 
@@ -84,8 +88,8 @@ export const MaintenancePage = () => {
 
   const handleAnalyze = async () => {
     if (!selectedVehicle) return;
-    if (!anthropicApiKey) {
-      toast.error('Configura la API key de Claude en Ajustes');
+    if (!geminiApiKey) {
+      toast.error('Configura la API key de Gemini en Ajustes');
       navigate('/settings');
       return;
     }
@@ -97,7 +101,7 @@ export const MaintenancePage = () => {
     try {
       const expenses = await expensesService.getByVehicle(selectedVehicle.id).catch(() => []);
       const result = await claudeService.analyzeMaintenance({
-        apiKey: anthropicApiKey,
+        apiKey: geminiApiKey,
         vehicle: selectedVehicle,
         records,
         expenses,
@@ -138,7 +142,8 @@ export const MaintenancePage = () => {
             className="font-text text-graphite mt-3"
             style={{ fontSize: 17, lineHeight: 1.45, letterSpacing: '-0.1px' }}
           >
-            <span className="text-ink font-medium tabular-nums">{records.length}</span> registros · gasto total{' '}
+            <span className="text-ink font-medium tabular-nums">{records.length}</span> registros ·
+            gasto total{' '}
             <span className="text-ink font-medium tabular-nums">{formatCurrency(totalCost)}</span>
           </p>
         </div>
@@ -151,7 +156,11 @@ export const MaintenancePage = () => {
           >
             Análisis IA
           </Button>
-          <Button variant="accent" onClick={() => setShowForm(true)} iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}>
+          <Button
+            variant="accent"
+            onClick={() => setShowForm(true)}
+            iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
+          >
             Añadir registro
           </Button>
         </div>
@@ -178,7 +187,10 @@ export const MaintenancePage = () => {
             )}
           </div>
           {analyzing ? (
-            <div className="flex items-center gap-2 text-graphite font-text" style={{ fontSize: 14 }}>
+            <div
+              className="flex items-center gap-2 text-graphite font-text"
+              style={{ fontSize: 14 }}
+            >
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.8} />
               Analizando mantenimiento y gastos…
             </div>
@@ -198,14 +210,18 @@ export const MaintenancePage = () => {
                       <span
                         className="font-mono uppercase"
                         style={{
-                          fontSize: 9, letterSpacing: '0.1em',
+                          fontSize: 9,
+                          letterSpacing: '0.1em',
                           color: SEVERITY_COLOR[ins.severity] ?? 'var(--color-graphite)',
                         }}
                       >
                         {SEVERITY_LABEL[ins.severity] ?? ins.severity}
                       </span>
                     </div>
-                    <p className="font-text text-graphite mt-0.5" style={{ fontSize: 13.5, lineHeight: 1.45 }}>
+                    <p
+                      className="font-text text-graphite mt-0.5"
+                      style={{ fontSize: 13.5, lineHeight: 1.45 }}
+                    >
                       {ins.detail}
                     </p>
                   </div>
@@ -225,7 +241,10 @@ export const MaintenancePage = () => {
 
       {/* Filter chips */}
       <div className="flex items-center gap-2 mb-8 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
-        <span className="shrink-0 inline-flex items-center gap-1.5 font-mono uppercase text-graphite" style={{ fontSize: 11, letterSpacing: '0.12em' }}>
+        <span
+          className="shrink-0 inline-flex items-center gap-1.5 font-mono uppercase text-graphite"
+          style={{ fontSize: 11, letterSpacing: '0.12em' }}
+        >
           <Filter className="h-3 w-3" strokeWidth={1.6} /> Filtros
         </span>
         <button
@@ -277,7 +296,9 @@ export const MaintenancePage = () => {
 
       {loading ? (
         <div className="space-y-2">
-          {[0, 1, 2, 3].map((i) => <SkeletonRow key={i} />)}
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonRow key={i} />
+          ))}
         </div>
       ) : (
         <MaintenanceList records={filtered} onDelete={handleDelete} onSelect={setEditing} />
@@ -288,7 +309,10 @@ export const MaintenancePage = () => {
           currentKm={selectedVehicle.current_km}
           initialData={editing ? toInput(editing) : undefined}
           onSubmit={handleSubmit}
-          onClose={() => { setShowForm(false); setEditing(null); }}
+          onClose={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
         />
       )}
     </div>

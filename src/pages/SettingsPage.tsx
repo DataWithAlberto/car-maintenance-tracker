@@ -1,6 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, AlertTriangle, Car, LogOut, KeyRound, Sparkles, Check, FileDown, Bell, Wrench, Copy, Moon, Sun } from 'lucide-react';
+import {
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  Car,
+  LogOut,
+  KeyRound,
+  Sparkles,
+  Check,
+  FileDown,
+  Bell,
+  Wrench,
+  Copy,
+  Moon,
+  Sun,
+} from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useApiKeyStore } from '../store/apiKeyStore';
@@ -26,15 +41,17 @@ export const SettingsPage = () => {
   const { updateVehicle, deleteVehicle } = useVehicle();
   const { logout, user } = useAuth();
   const { pushEnabled, setPushEnabled } = useSettingsStore();
-  const { anthropicApiKey, setAnthropicApiKey, clearAnthropicApiKey } = useApiKeyStore();
-  const { exporting, exportingTax, exportReport, exportTaxReport } = useVehicleExport(selectedVehicle);
-  const { shareUrl, shareBusy, generateShare, disableShare, copyShare } = useWorkshopShare(selectedVehicle);
+  const { geminiApiKey, setGeminiApiKey, clearGeminiApiKey } = useApiKeyStore();
+  const { exporting, exportingTax, exportReport, exportTaxReport } =
+    useVehicleExport(selectedVehicle);
+  const { shareUrl, shareBusy, generateShare, disableShare, copyShare } =
+    useWorkshopShare(selectedVehicle);
   const navigate = useNavigate();
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [apiKeyDraft, setApiKeyDraft] = useState(anthropicApiKey);
+  const [apiKeyDraft, setApiKeyDraft] = useState(geminiApiKey);
   const [nameDraft, setNameDraft] = useState(
-    (user?.user_metadata?.full_name as string | undefined) ?? ''
+    (user?.user_metadata?.full_name as string | undefined) ?? '',
   );
   const [savingName, setSavingName] = useState(false);
   const taxYear = new Date().getFullYear();
@@ -43,7 +60,10 @@ export const SettingsPage = () => {
     setSavingName(true);
     const { error } = await supabase.auth.updateUser({ data: { full_name: nameDraft.trim() } });
     setSavingName(false);
-    if (error) { toast.error('No se pudo guardar el nombre'); return; }
+    if (error) {
+      toast.error('No se pudo guardar el nombre');
+      return;
+    }
     toast.success('Nombre actualizado');
   };
 
@@ -63,12 +83,12 @@ export const SettingsPage = () => {
   };
 
   const handleSaveApiKey = () => {
-    setAnthropicApiKey(apiKeyDraft.trim());
+    setGeminiApiKey(apiKeyDraft.trim());
     toast.success(apiKeyDraft.trim() ? 'API key guardada' : 'API key eliminada');
   };
 
   const handleClearApiKey = () => {
-    clearAnthropicApiKey();
+    clearGeminiApiKey();
     setApiKeyDraft('');
     toast.success('API key eliminada');
   };
@@ -145,9 +165,9 @@ export const SettingsPage = () => {
             style={{ fontSize: 15 }}
           >
             {(
-              (user?.user_metadata?.full_name as string | undefined)?.trim()?.[0]
-              ?? user?.email?.[0]
-              ?? 'U'
+              (user?.user_metadata?.full_name as string | undefined)?.trim()?.[0] ??
+              user?.email?.[0] ??
+              'U'
             ).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
@@ -181,7 +201,9 @@ export const SettingsPage = () => {
             size="sm"
             onClick={handleSaveName}
             loading={savingName}
-            disabled={nameDraft.trim() === ((user?.user_metadata?.full_name as string | undefined) ?? '')}
+            disabled={
+              nameDraft.trim() === ((user?.user_metadata?.full_name as string | undefined) ?? '')
+            }
             iconLeft={<Check className="h-4 w-4" strokeWidth={1.8} />}
           >
             Guardar
@@ -206,26 +228,26 @@ export const SettingsPage = () => {
               className="font-display text-ink"
               style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px' }}
             >
-              API key de Claude
+              API key de Gemini
             </p>
             <p
               className="font-text text-graphite mt-2 mb-4 max-w-xl"
               style={{ fontSize: 15, lineHeight: 1.45 }}
             >
-              Necesaria para el diagnóstico de Talleres IA. Obtén tu clave en{' '}
+              Necesaria para el diagnóstico de Talleres IA. Obtén tu clave gratis en{' '}
               <a
-                href="https://console.anthropic.com/settings/keys"
+                href="https://aistudio.google.com/app/apikey"
                 target="_blank"
                 rel="noreferrer"
                 className="text-azure"
               >
-                console.anthropic.com
+                aistudio.google.com
               </a>
               . Se guarda solo en este navegador.
             </p>
 
             <FloatingInput
-              label="API key (sk-ant-…)"
+              label="API key (AIza…)"
               type="password"
               value={apiKeyDraft}
               onChange={(e) => setApiKeyDraft(e.target.value)}
@@ -238,17 +260,17 @@ export const SettingsPage = () => {
                 variant="accent"
                 size="sm"
                 onClick={handleSaveApiKey}
-                disabled={apiKeyDraft.trim() === anthropicApiKey}
+                disabled={apiKeyDraft.trim() === geminiApiKey}
                 iconLeft={<Check className="h-4 w-4" strokeWidth={1.8} />}
               >
                 Guardar
               </Button>
-              {anthropicApiKey && (
+              {geminiApiKey && (
                 <Button variant="secondary" size="sm" onClick={handleClearApiKey}>
                   Eliminar clave
                 </Button>
               )}
-              {anthropicApiKey && (
+              {geminiApiKey && (
                 <span
                   className="inline-flex items-center gap-1.5 font-text"
                   style={{ fontSize: 13, color: '#2f6b34' }}
@@ -263,8 +285,8 @@ export const SettingsPage = () => {
               className="font-text text-graphite mt-3 max-w-xl"
               style={{ fontSize: 12.5, lineHeight: 1.4 }}
             >
-              Nota: la clave se usa desde el navegador. No la compartas y revócala si
-              sospechas que se ha filtrado.
+              Nota: la clave se usa desde el navegador. No la compartas y revócala en Google AI
+              Studio si sospechas que se ha filtrado.
             </p>
           </div>
         </div>
@@ -280,9 +302,11 @@ export const SettingsPage = () => {
         </h2>
         <div className="flex items-center gap-4">
           <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
-            {theme === 'dark'
-              ? <Moon className="h-5 w-5 text-graphite" strokeWidth={1.6} />
-              : <Sun className="h-5 w-5 text-graphite" strokeWidth={1.6} />}
+            {theme === 'dark' ? (
+              <Moon className="h-5 w-5 text-graphite" strokeWidth={1.6} />
+            ) : (
+              <Sun className="h-5 w-5 text-graphite" strokeWidth={1.6} />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p
@@ -296,7 +320,12 @@ export const SettingsPage = () => {
             </p>
           </div>
           <div className="flex bg-fog rounded-full p-1 gap-0.5 select-none">
-            {([['light', 'Claro'], ['dark', 'Oscuro']] as const).map(([v, label]) => (
+            {(
+              [
+                ['light', 'Claro'],
+                ['dark', 'Oscuro'],
+              ] as const
+            ).map(([v, label]) => (
               <button
                 key={v}
                 onClick={() => setTheme(v)}
@@ -333,10 +362,7 @@ export const SettingsPage = () => {
             >
               Avisos del navegador
             </p>
-            <p
-              className="font-text text-graphite mt-1"
-              style={{ fontSize: 14, lineHeight: 1.45 }}
-            >
+            <p className="font-text text-graphite mt-1" style={{ fontSize: 14, lineHeight: 1.45 }}>
               {notificationsSupported()
                 ? 'Recibe alertas de mantenimiento y documentos al abrir el panel.'
                 : 'Este navegador no admite notificaciones.'}
@@ -377,8 +403,8 @@ export const SettingsPage = () => {
                 className="font-text text-graphite mt-2 mb-4 max-w-xl"
                 style={{ fontSize: 15, lineHeight: 1.45 }}
               >
-                Genera un enlace de solo lectura con el historial de mantenimiento,
-                gastos y documentos. El taller lo abre sin cuenta ni contraseña.
+                Genera un enlace de solo lectura con el historial de mantenimiento, gastos y
+                documentos. El taller lo abre sin cuenta ni contraseña.
               </p>
 
               {shareUrl ? (
@@ -471,12 +497,12 @@ export const SettingsPage = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
-            ['Kilómetros',   formatKm(selectedVehicle.current_km)],
-            ['Matrícula',    selectedVehicle.license_plate ?? '—'],
-            ['Color',        selectedVehicle.color ?? '—'],
-            ['Combustible',  selectedVehicle.fuel_type ?? '—'],
-            ['Transmisión',  selectedVehicle.transmission ?? '—'],
-            ['VIN',          selectedVehicle.vin ?? '—'],
+            ['Kilómetros', formatKm(selectedVehicle.current_km)],
+            ['Matrícula', selectedVehicle.license_plate ?? '—'],
+            ['Color', selectedVehicle.color ?? '—'],
+            ['Combustible', selectedVehicle.fuel_type ?? '—'],
+            ['Transmisión', selectedVehicle.transmission ?? '—'],
+            ['VIN', selectedVehicle.vin ?? '—'],
           ].map(([label, value]) => (
             <div key={label} className="bg-fog rounded-[14px] px-4 py-3">
               <p
@@ -531,7 +557,10 @@ export const SettingsPage = () => {
               <h3
                 className="font-display text-ink"
                 style={{
-                  fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px',
+                  fontWeight: 600,
+                  fontSize: 20,
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.2px',
                 }}
               >
                 Zona peligrosa
@@ -540,8 +569,8 @@ export const SettingsPage = () => {
                 className="font-text text-graphite mt-2 mb-4 max-w-xl"
                 style={{ fontSize: 15, lineHeight: 1.45 }}
               >
-                Eliminar el vehículo borrará permanentemente todos sus registros, gastos,
-                documentos y accesos compartidos.
+                Eliminar el vehículo borrará permanentemente todos sus registros, gastos, documentos
+                y accesos compartidos.
               </p>
               <Button
                 variant="danger"
@@ -583,8 +612,8 @@ export const SettingsPage = () => {
           }
         >
           <p className="font-text text-graphite" style={{ fontSize: 15, lineHeight: 1.5 }}>
-            Se borrarán permanentemente todos los registros de mantenimiento, gastos,
-            documentos y accesos compartidos de este vehículo.
+            Se borrarán permanentemente todos los registros de mantenimiento, gastos, documentos y
+            accesos compartidos de este vehículo.
           </p>
         </Modal>
       )}

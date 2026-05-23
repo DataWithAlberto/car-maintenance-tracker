@@ -31,7 +31,7 @@ const fileToBase64 = (file: File): Promise<{ base64: string; mediaType: string }
 
 export const ExpenseForm = ({ vehicleId, initialData, onSubmit, onClose }: Props) => {
   const isEdit = initialData != null;
-  const { anthropicApiKey } = useApiKeyStore();
+  const { geminiApiKey } = useApiKeyStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<Partial<ExpenseInput>>(
     initialData ?? {
@@ -64,15 +64,18 @@ export const ExpenseForm = ({ vehicleId, initialData, onSubmit, onClose }: Props
       const url = await storageService.upload(path, file);
       setForm((f) => ({ ...f, receipt_url: url }));
 
-      if (anthropicApiKey) {
+      if (geminiApiKey) {
         const { base64, mediaType } = await fileToBase64(file);
-        const scan = await claudeService.parseReceipt({ apiKey: anthropicApiKey, base64, mediaType });
+        const scan = await claudeService.parseReceipt({ apiKey: geminiApiKey, base64, mediaType });
         setForm((f) => ({
           ...f,
           amount: scan.amount ?? f.amount,
           date: scan.date ?? f.date,
-          category: EXPENSE_CATEGORIES.includes(scan.category as (typeof EXPENSE_CATEGORIES)[number])
-            ? scan.category : f.category,
+          category: EXPENSE_CATEGORIES.includes(
+            scan.category as (typeof EXPENSE_CATEGORIES)[number],
+          )
+            ? scan.category
+            : f.category,
           description: scan.description ?? f.description,
         }));
         toast.success('Ticket leído por IA');
@@ -92,7 +95,9 @@ export const ExpenseForm = ({ vehicleId, initialData, onSubmit, onClose }: Props
     const result = expenseSchema.safeParse(coerced);
     if (!result.success) {
       const errs: Record<string, string> = {};
-      result.error.issues.forEach((e) => { errs[e.path[0] as string] = e.message; });
+      result.error.issues.forEach((e) => {
+        errs[e.path[0] as string] = e.message;
+      });
       setErrors(errs);
       return;
     }
@@ -113,7 +118,9 @@ export const ExpenseForm = ({ vehicleId, initialData, onSubmit, onClose }: Props
       description="Registra un gasto del vehículo"
       footer={
         <div className="flex gap-3">
-          <Button type="button" variant="secondary" onClick={onClose} fullWidth>Cancelar</Button>
+          <Button type="button" variant="secondary" onClick={onClose} fullWidth>
+            Cancelar
+          </Button>
           <Button type="submit" form="expense-form" variant="accent" loading={loading} fullWidth>
             {loading ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Guardar gasto'}
           </Button>
@@ -124,20 +131,22 @@ export const ExpenseForm = ({ vehicleId, initialData, onSubmit, onClose }: Props
         {/* Receipt scan */}
         <div className="rounded-[14px] border border-silver-mist bg-fog p-3 flex items-center gap-3">
           <div className="h-10 w-10 rounded-[10px] bg-snow flex items-center justify-center shrink-0">
-            {scanning
-              ? <Loader2 className="h-5 w-5 text-azure animate-spin" strokeWidth={1.8} />
-              : form.receipt_url
-                ? <Check className="h-5 w-5" style={{ color: '#2f6b34' }} strokeWidth={2} />
-                : <Camera className="h-5 w-5 text-graphite" strokeWidth={1.6} />}
+            {scanning ? (
+              <Loader2 className="h-5 w-5 text-azure animate-spin" strokeWidth={1.8} />
+            ) : form.receipt_url ? (
+              <Check className="h-5 w-5" style={{ color: '#2f6b34' }} strokeWidth={2} />
+            ) : (
+              <Camera className="h-5 w-5 text-graphite" strokeWidth={1.6} />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-text text-ink font-medium" style={{ fontSize: 14 }}>
               {form.receipt_url ? 'Ticket adjuntado' : 'Foto del ticket'}
             </p>
             <p className="font-text text-graphite" style={{ fontSize: 12 }}>
-              {anthropicApiKey
+              {geminiApiKey
                 ? 'La IA rellenará importe, fecha y categoría'
-                : 'Configura la API key de Claude para lectura automática'}
+                : 'Configura la API key de Gemini para lectura automática'}
             </p>
           </div>
           <Button

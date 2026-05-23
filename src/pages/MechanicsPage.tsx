@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Car, Wrench, Sparkles, MapPin, Phone, Globe, Navigation, AlertTriangle, KeyRound,
+  Car,
+  Wrench,
+  Sparkles,
+  MapPin,
+  Phone,
+  Globe,
+  Navigation,
+  AlertTriangle,
+  KeyRound,
   ChevronRight,
 } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
@@ -19,17 +27,23 @@ import type { Mechanic, AlertSeverity } from '../types';
 import toast from 'react-hot-toast';
 
 const URGENCY: Record<AlertSeverity, { label: string; bg: string; fg: string }> = {
-  high:   { label: 'Urgente',   bg: '#fce8e0', fg: '#b64400' },
-  medium: { label: 'Moderado',  bg: '#fdf1d9', fg: '#9a6700' },
-  low:    { label: 'Sin prisa', bg: '#e3f0e3', fg: '#2f6b34' },
+  high: { label: 'Urgente', bg: '#fce8e0', fg: '#b64400' },
+  medium: { label: 'Moderado', bg: '#fdf1d9', fg: '#9a6700' },
+  low: { label: 'Sin prisa', bg: '#e3f0e3', fg: '#2f6b34' },
 };
 
 export const MechanicsPage = () => {
   const { selectedVehicle } = useVehicleStore();
-  const { anthropicApiKey } = useApiKeyStore();
+  const { geminiApiKey } = useApiKeyStore();
   const {
-    symptom, origin, mechanics, diagnosis, selectedId,
-    setSymptom, setSearchResult, setSelectedId,
+    symptom,
+    origin,
+    mechanics,
+    diagnosis,
+    selectedId,
+    setSymptom,
+    setSearchResult,
+    setSelectedId,
   } = useMechanicsStore();
   const { ratings } = useMechanicRatingsStore();
   const navigate = useNavigate();
@@ -67,8 +81,8 @@ export const MechanicsPage = () => {
   };
 
   const handleDiagnose = async () => {
-    if (!anthropicApiKey) {
-      toast.error('Configura tu API key de Claude en Ajustes');
+    if (!geminiApiKey) {
+      toast.error('Configura tu API key de Gemini en Ajustes');
       return;
     }
     if (symptom.trim().length < 8) {
@@ -98,9 +112,9 @@ export const MechanicsPage = () => {
       setStatusMsg('Cargando historial del vehículo…');
       const records = await maintenanceService.getByVehicle(selectedVehicle.id).catch(() => []);
 
-      setStatusMsg('Claude está analizando el problema…');
+      setStatusMsg('Gemini está analizando el problema…');
       const result = await claudeService.diagnose({
-        apiKey: anthropicApiKey,
+        apiKey: geminiApiKey,
         vehicle: selectedVehicle,
         records,
         symptom: symptom.trim(),
@@ -142,14 +156,17 @@ export const MechanicsPage = () => {
         >
           Talleres IA.
         </h1>
-        <p className="font-text text-graphite mt-3 max-w-xl" style={{ fontSize: 15, lineHeight: 1.45 }}>
-          Describe qué le pasa a tu coche. Claude analiza el historial y te recomienda
-          los talleres más adecuados cerca de ti.
+        <p
+          className="font-text text-graphite mt-3 max-w-xl"
+          style={{ fontSize: 15, lineHeight: 1.45 }}
+        >
+          Describe qué le pasa a tu coche. Gemini analiza el historial y te recomienda los talleres
+          más adecuados cerca de ti.
         </p>
       </header>
 
       {/* API key warning */}
-      {!anthropicApiKey && (
+      {!geminiApiKey && (
         <section className="bg-snow border border-silver-mist rounded-[28px] p-7">
           <div className="flex items-start gap-4">
             <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
@@ -160,13 +177,13 @@ export const MechanicsPage = () => {
                 className="font-display text-ink"
                 style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px' }}
               >
-                Falta tu API key de Claude
+                Falta tu API key de Gemini
               </h3>
               <p
                 className="font-text text-graphite mt-2 mb-4 max-w-xl"
                 style={{ fontSize: 15, lineHeight: 1.45 }}
               >
-                Esta función usa la API de Anthropic. Añade tu clave en Ajustes para
+                Esta función usa la API gratuita de Google Gemini. Añade tu clave en Ajustes para
                 activar el diagnóstico inteligente.
               </p>
               <Button variant="accent" size="sm" onClick={() => navigate('/settings')}>
@@ -197,7 +214,7 @@ export const MechanicsPage = () => {
             variant="accent"
             onClick={handleDiagnose}
             loading={loading}
-            disabled={!anthropicApiKey}
+            disabled={!geminiApiKey}
             iconLeft={!loading ? <Sparkles className="h-4 w-4" strokeWidth={1.8} /> : undefined}
           >
             Diagnosticar y buscar talleres
@@ -215,13 +232,22 @@ export const MechanicsPage = () => {
         <section className="bg-snow border border-silver-mist rounded-[28px] p-7 space-y-5">
           <div className="flex items-start gap-4">
             <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-5 w-5" style={{ color: URGENCY[diagnosis.urgency].fg }} strokeWidth={1.7} />
+              <AlertTriangle
+                className="h-5 w-5"
+                style={{ color: URGENCY[diagnosis.urgency].fg }}
+                strokeWidth={1.7}
+              />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-3 flex-wrap">
                 <h2
                   className="font-display text-ink"
-                  style={{ fontWeight: 600, fontSize: 22, lineHeight: 1.2, letterSpacing: '-0.3px' }}
+                  style={{
+                    fontWeight: 600,
+                    fontSize: 22,
+                    lineHeight: 1.2,
+                    letterSpacing: '-0.3px',
+                  }}
                 >
                   Diagnóstico
                 </h2>
@@ -245,7 +271,10 @@ export const MechanicsPage = () => {
 
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="bg-fog rounded-[14px] px-4 py-3">
-              <p className="font-mono uppercase text-graphite" style={{ fontSize: 10, letterSpacing: '0.12em' }}>
+              <p
+                className="font-mono uppercase text-graphite"
+                style={{ fontSize: 10, letterSpacing: '0.12em' }}
+              >
                 Causa probable
               </p>
               <p className="font-text text-ink mt-1.5" style={{ fontSize: 14, lineHeight: 1.4 }}>
@@ -253,7 +282,10 @@ export const MechanicsPage = () => {
               </p>
             </div>
             <div className="bg-fog rounded-[14px] px-4 py-3">
-              <p className="font-mono uppercase text-graphite" style={{ fontSize: 10, letterSpacing: '0.12em' }}>
+              <p
+                className="font-mono uppercase text-graphite"
+                style={{ fontSize: 10, letterSpacing: '0.12em' }}
+              >
                 Servicio estimado
               </p>
               <p className="font-text text-ink mt-1.5" style={{ fontSize: 14, lineHeight: 1.4 }}>
@@ -286,8 +318,11 @@ export const MechanicsPage = () => {
           {/* Recommended first */}
           {diagnosis && diagnosis.recommendations.length > 0 && (
             <div className="space-y-3">
-              <p className="font-mono uppercase text-graphite" style={{ fontSize: 10, letterSpacing: '0.12em' }}>
-                Recomendados por Claude
+              <p
+                className="font-mono uppercase text-graphite"
+                style={{ fontSize: 10, letterSpacing: '0.12em' }}
+              >
+                Recomendados por Gemini
               </p>
               {diagnosis.recommendations.map((rec, i) => {
                 const m = mechanicById(rec.mechanicId);
@@ -297,7 +332,10 @@ export const MechanicsPage = () => {
                     key={rec.mechanicId}
                     onClick={() => openDetail(m.id)}
                     className="w-full text-left rounded-[18px] p-4 transition-colors"
-                    style={{ border: '1px solid var(--color-silver-mist)', background: 'var(--color-snow)' }}
+                    style={{
+                      border: '1px solid var(--color-silver-mist)',
+                      background: 'var(--color-snow)',
+                    }}
                   >
                     <div className="flex items-start gap-3">
                       <span
@@ -314,12 +352,18 @@ export const MechanicsPage = () => {
                           {m.distanceKm.toFixed(1)} km
                           {m.brand ? ` · Especialista ${m.brand}` : ''}
                         </p>
-                        <p className="font-text text-ink mt-2" style={{ fontSize: 13, lineHeight: 1.45 }}>
+                        <p
+                          className="font-text text-ink mt-2"
+                          style={{ fontSize: 13, lineHeight: 1.45 }}
+                        >
                           {rec.reason}
                         </p>
                         <MechanicLinks mechanic={m} />
                       </div>
-                      <ChevronRight className="h-4 w-4 text-graphite shrink-0 mt-1" strokeWidth={1.7} />
+                      <ChevronRight
+                        className="h-4 w-4 text-graphite shrink-0 mt-1"
+                        strokeWidth={1.7}
+                      />
                     </div>
                   </button>
                 );
@@ -329,7 +373,10 @@ export const MechanicsPage = () => {
 
           {/* All mechanics */}
           <div className="space-y-2">
-            <p className="font-mono uppercase text-graphite" style={{ fontSize: 10, letterSpacing: '0.12em' }}>
+            <p
+              className="font-mono uppercase text-graphite"
+              style={{ fontSize: 10, letterSpacing: '0.12em' }}
+            >
               Todos los talleres
             </p>
             {mechanics.map((m) => (
@@ -337,7 +384,10 @@ export const MechanicsPage = () => {
                 key={m.id}
                 onClick={() => openDetail(m.id)}
                 className="w-full text-left rounded-[14px] px-4 py-3 transition-colors hover:bg-fog"
-                style={{ border: '1px solid var(--color-silver-mist)', background: 'var(--color-fog)' }}
+                style={{
+                  border: '1px solid var(--color-silver-mist)',
+                  background: 'var(--color-fog)',
+                }}
               >
                 <div className="flex items-center gap-3">
                   <Wrench className="h-4 w-4 text-graphite shrink-0" strokeWidth={1.6} />
@@ -353,7 +403,10 @@ export const MechanicsPage = () => {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {ratings[m.id]?.rating > 0 && (
-                      <span className="inline-flex items-center gap-0.5" style={{ color: '#f5a623' }}>
+                      <span
+                        className="inline-flex items-center gap-0.5"
+                        style={{ color: '#f5a623' }}
+                      >
                         {'★'.repeat(ratings[m.id].rating)}
                       </span>
                     )}
