@@ -242,20 +242,37 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
           )}
         </button>
 
-        {showChildren && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              marginLeft: 22,
-              paddingLeft: 10,
-              borderLeft: '1px solid var(--color-silver-mist)',
-            }}
-          >
-            {g.children.map((c) => renderLeaf(c, true))}
+        {/* Collapsible children — smooth height animation via grid-template-rows.
+            Always mounted so the transition runs; visibility is controlled by
+            grid row size, opacity and pointer-events. */}
+        <div
+          aria-hidden={!showChildren}
+          style={{
+            display: 'grid',
+            gridTemplateRows: showChildren ? '1fr' : '0fr',
+            opacity: showChildren ? 1 : 0,
+            transform: showChildren ? 'translateY(0)' : 'translateY(-4px)',
+            transition:
+              'grid-template-rows 260ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease-out, transform 240ms ease-out',
+            pointerEvents: showChildren ? 'auto' : 'none',
+          }}
+        >
+          <div style={{ overflow: 'hidden' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                marginLeft: 22,
+                paddingLeft: 10,
+                paddingTop: 4,
+                borderLeft: '1px solid var(--color-silver-mist)',
+              }}
+            >
+              {g.children.map((c) => renderLeaf(c, true))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     );
   };
