@@ -41,8 +41,20 @@ export const Layout = () => {
 
   const dockEntries = useMemo<FloatingDockEntry[]>(
     () => [
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-      { id: 'overview', label: 'Mi vehículo', icon: LayoutGrid, href: '/car' },
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        href: '/dashboard',
+        lordSrc: 'https://cdn.lordicon.com/dutqakce.json',
+      },
+      {
+        id: 'overview',
+        label: 'Mi vehículo',
+        icon: LayoutGrid,
+        href: '/car',
+        lordSrc: 'https://cdn.lordicon.com/oeotfwsx.json',
+      },
       {
         id: 'maintenance-group',
         label: 'Mantenimiento',
@@ -56,13 +68,20 @@ export const Layout = () => {
             href: '/maintenance',
             lordSrc: 'https://cdn.lordicon.com/mudwpdhy.json',
           },
-          { id: 'plan', label: 'Plan predictivo', icon: CalendarClock, href: '/maintenance-plan' },
+          {
+            id: 'plan',
+            label: 'Plan predictivo',
+            icon: CalendarClock,
+            href: '/maintenance-plan',
+            lordSrc: 'https://cdn.lordicon.com/uoljexdg.json',
+          },
         ],
       },
       {
         id: 'finance-group',
         label: 'Finanzas',
         icon: Wallet,
+        lordSrc: 'https://cdn.lordicon.com/lrzdmsmx.json',
         children: [
           {
             id: 'expenses',
@@ -87,7 +106,13 @@ export const Layout = () => {
         href: '/trips',
         lordSrc: 'https://cdn.lordicon.com/qtzfwijv.json',
       },
-      { id: 'obd2', label: 'OBD-II', icon: Cpu, href: '/obd2' },
+      {
+        id: 'obd2',
+        label: 'OBD-II',
+        icon: Cpu,
+        href: '/obd2',
+        lordSrc: 'https://cdn.lordicon.com/fedbzost.json',
+      },
       {
         id: 'mechanics',
         label: 'Talleres',
@@ -101,7 +126,13 @@ export const Layout = () => {
         icon: Folder,
         lordSrc: 'https://cdn.lordicon.com/piurhpdv.json',
         children: [
-          { id: 'documents', label: 'Documentos', icon: FileText, href: '/documents' },
+          {
+            id: 'documents',
+            label: 'Documentos',
+            icon: FileText,
+            href: '/documents',
+            lordSrc: 'https://cdn.lordicon.com/jqqjtvlf.json',
+          },
           {
             id: 'sharing',
             label: 'Compartir',
@@ -111,7 +142,13 @@ export const Layout = () => {
           },
         ],
       },
-      { id: 'settings', label: 'Ajustes', icon: Settings, href: '/settings' },
+      {
+        id: 'settings',
+        label: 'Ajustes',
+        icon: Settings,
+        href: '/settings',
+        lordSrc: 'https://cdn.lordicon.com/asyunleq.json',
+      },
     ],
     [],
   );

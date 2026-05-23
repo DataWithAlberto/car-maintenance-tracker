@@ -28,8 +28,13 @@ interface TabDef {
 }
 
 const MAIN_TABS: TabDef[] = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
-  { to: '/car', icon: Car, label: 'Coche' },
+  {
+    to: '/dashboard',
+    icon: LayoutDashboard,
+    label: 'Inicio',
+    lordSrc: 'https://cdn.lordicon.com/dutqakce.json',
+  },
+  { to: '/car', icon: Car, label: 'Coche', lordSrc: 'https://cdn.lordicon.com/oeotfwsx.json' },
   {
     to: '/maintenance',
     icon: Wrench,
@@ -40,7 +45,12 @@ const MAIN_TABS: TabDef[] = [
 ];
 
 const MORE_ITEMS: TabDef[] = [
-  { to: '/maintenance-plan', icon: CalendarClock, label: 'Plan predictivo' },
+  {
+    to: '/maintenance-plan',
+    icon: CalendarClock,
+    label: 'Plan predictivo',
+    lordSrc: 'https://cdn.lordicon.com/uoljexdg.json',
+  },
   {
     to: '/expenses',
     icon: Receipt,
@@ -53,8 +63,13 @@ const MORE_ITEMS: TabDef[] = [
     label: 'Seguro',
     lordSrc: 'https://cdn.lordicon.com/yraqammt.json',
   },
-  { to: '/documents', icon: FileText, label: 'Documentos' },
-  { to: '/obd2', icon: Cpu, label: 'OBD-II' },
+  {
+    to: '/documents',
+    icon: FileText,
+    label: 'Documentos',
+    lordSrc: 'https://cdn.lordicon.com/jqqjtvlf.json',
+  },
+  { to: '/obd2', icon: Cpu, label: 'OBD-II', lordSrc: 'https://cdn.lordicon.com/fedbzost.json' },
   {
     to: '/mechanics',
     icon: Store,
@@ -67,7 +82,12 @@ const MORE_ITEMS: TabDef[] = [
     label: 'Compartir',
     lordSrc: 'https://cdn.lordicon.com/fhlrrido.json',
   },
-  { to: '/settings', icon: Settings, label: 'Ajustes' },
+  {
+    to: '/settings',
+    icon: Settings,
+    label: 'Ajustes',
+    lordSrc: 'https://cdn.lordicon.com/asyunleq.json',
+  },
 ];
 
 export const BottomNav = () => {
