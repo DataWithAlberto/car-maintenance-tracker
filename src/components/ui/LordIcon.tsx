@@ -1,3 +1,5 @@
+import { useThemeStore } from '../../store/themeStore';
+
 /**
  * LordIcon — Wrapper for Lordicon animated web components.
  * Browse icons at https://lordicon.com/icons (free filter available)
@@ -59,6 +61,14 @@ export const LORD_ICONS = {
 
 export type LordIconName = keyof typeof LORD_ICONS;
 
+// ─── Theme-aware defaults ─────────────────────────────────────────────────────
+// Lordicon doesn't accept CSS variables in `colors`, so we read the theme
+// from the store and map to hex values.
+const THEME_COLORS = {
+  light: { ink: '#1d1d1f', muted: '#6e6e73' },
+  dark: { ink: '#f5f5f7', muted: '#98989d' },
+} as const;
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -78,9 +88,12 @@ interface Props {
   size?: number;
   /** Icon stroke weight: light · regular · bold */
   stroke?: 'light' | 'regular' | 'bold';
-  /** Primary color (CSS value or hex) */
+  /**
+   * Primary color hex. Defaults to the theme's ink color automatically —
+   * pass an explicit value to override (e.g. for active/inverted states).
+   */
   primaryColor?: string;
-  /** Secondary color (CSS value or hex) */
+  /** Secondary color hex */
   secondaryColor?: string;
   /** Delay before animation starts (ms) */
   delay?: number;
@@ -93,17 +106,22 @@ export const LordIcon = ({
   trigger = 'hover',
   size = 24,
   stroke = 'regular',
-  primaryColor = '#1d1d1f',
+  primaryColor,
   secondaryColor,
   delay,
   className,
 }: Props) => {
+  // Read theme from store so icons automatically flip between light/dark
+  const theme = useThemeStore((s) => s.theme);
+  const themeInk = THEME_COLORS[theme].ink;
+
+  const resolvedPrimary = primaryColor ?? themeInk;
+  const resolvedSecondary = secondaryColor ?? themeInk;
+
   const iconSrc = src ?? (icon ? LORD_ICONS[icon] : undefined);
   if (!iconSrc) return null;
 
-  const colors = secondaryColor
-    ? `primary:${primaryColor},secondary:${secondaryColor}`
-    : `primary:${primaryColor}`;
+  const colors = `primary:${resolvedPrimary},secondary:${resolvedSecondary}`;
 
   return (
     <lord-icon

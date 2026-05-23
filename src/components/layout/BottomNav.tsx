@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useThemeStore } from '../../store/themeStore';
 import {
   Receipt,
   ShieldCheck,
@@ -32,12 +33,12 @@ const MORE_ITEMS = [
   { to: '/settings', icon: Settings, label: 'Ajustes' },
 ];
 
-const INK = '#1d1d1f';
-const MUTED = '#6e6e73';
-
 export const BottomNav = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const theme = useThemeStore((s) => s.theme);
+  const ink = theme === 'dark' ? '#f5f5f7' : '#1d1d1f';
+  const muted = theme === 'dark' ? '#98989d' : '#6e6e73';
 
   return (
     <>
@@ -138,8 +139,8 @@ export const BottomNav = () => {
                           src={lordSrc}
                           trigger={navActive ? 'loop' : 'click'}
                           size={26}
-                          primaryColor={navActive ? INK : MUTED}
-                          secondaryColor={navActive ? INK : MUTED}
+                          primaryColor={navActive ? ink : muted}
+                          secondaryColor={navActive ? ink : muted}
                           stroke="regular"
                         />
                       </span>
@@ -147,7 +148,7 @@ export const BottomNav = () => {
                         className="font-medium transition-colors"
                         style={{
                           fontSize: 10,
-                          color: navActive ? INK : MUTED,
+                          color: navActive ? ink : muted,
                         }}
                       >
                         {label}
@@ -175,13 +176,13 @@ export const BottomNav = () => {
                   src="https://cdn.lordicon.com/unvlvkmi.json"
                   trigger={open ? 'loop' : 'click'}
                   size={26}
-                  primaryColor={open ? INK : MUTED}
-                  secondaryColor={open ? INK : MUTED}
+                  primaryColor={open ? ink : muted}
+                  secondaryColor={open ? ink : muted}
                 />
               </span>
               <span
                 className="font-medium transition-colors"
-                style={{ fontSize: 10, color: open ? INK : MUTED }}
+                style={{ fontSize: 10, color: open ? ink : muted }}
               >
                 Más
               </span>
