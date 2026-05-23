@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calendar, MapPin, Ruler, HardDrive, Loader2, Check, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { GalleryImage } from '../../services/gallery.service';
@@ -81,7 +82,7 @@ export const GalleryLightbox = ({ image, onClose, onUpdate }: Props) => {
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[80] flex items-stretch justify-center"
       style={{ background: 'rgba(0,0,0,0.92)' }}
@@ -89,7 +90,23 @@ export const GalleryLightbox = ({ image, onClose, onUpdate }: Props) => {
       role="dialog"
       aria-modal="true"
     >
-      <div className="lightbox-topbar" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="lightbox-topbar"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '14px 16px',
+          background: 'rgba(0,0,0,0.85)',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
         <button
           type="button"
           aria-label="Volver"
@@ -97,7 +114,20 @@ export const GalleryLightbox = ({ image, onClose, onUpdate }: Props) => {
             e.stopPropagation();
             onClose();
           }}
-          className="lightbox-back-btn focus-ring"
+          className="focus-ring"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 16px 8px 12px',
+            borderRadius: 999,
+            border: '1px solid rgba(255,255,255,0.2)',
+            background: 'rgba(255,255,255,0.12)',
+            color: '#fff',
+            fontSize: 14,
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
         >
           <ArrowLeft className="w-4 h-4" strokeWidth={2} />
           Volver
@@ -109,7 +139,19 @@ export const GalleryLightbox = ({ image, onClose, onUpdate }: Props) => {
             e.stopPropagation();
             onClose();
           }}
-          className="lightbox-close-btn focus-ring"
+          className="focus-ring"
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 999,
+            border: '1px solid rgba(255,255,255,0.2)',
+            background: 'rgba(255,255,255,0.12)',
+            color: '#fff',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
         >
           <X className="w-5 h-5" />
         </button>
@@ -236,6 +278,7 @@ export const GalleryLightbox = ({ image, onClose, onUpdate }: Props) => {
           </div>
         </aside>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

@@ -1018,14 +1018,21 @@ body {
 }
 .lightbox-img {
   display: block;
-  max-width: 100%;
-  max-height: calc(100vh - 140px);
+  max-width: min(100%, 900px);
+  max-height: calc(100vh - 180px);
   width: auto;
   height: auto;
   object-fit: contain;
   border-radius: 14px;
   cursor: zoom-in;
-  transition: max-height var(--duration-base) var(--ease-out-expo);
+  transition:
+    max-height var(--duration-base) var(--ease-out-expo),
+    max-width var(--duration-base) var(--ease-out-expo);
+}
+@media (min-width: 1024px) {
+  .lightbox-img {
+    max-width: min(100%, 760px);
+  }
 }
 .lightbox-img.is-zoomed {
   max-height: none;
