@@ -1,3 +1,4 @@
+import exifr from 'exifr';
 import { supabase } from './supabase';
 
 const BUCKET = 'fotos-coche';
@@ -12,13 +13,12 @@ export interface GalleryImage {
   file_name: string | null;
   mime_type: string | null;
   size_bytes: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  taken_at: string | null;
+  width: number | null;
+  height: number | null;
   created_at: string;
-}
-
-export interface UploadProgress {
-  loaded: number;
-  total: number;
-  percent: number;
 }
 
 const slugify = (name: string) =>
@@ -33,6 +33,93 @@ const slugify = (name: string) =>
 const randomId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
+const isHeic = (file: File) => {
+  const t = (file.type || '').toLowerCase();
+  if (t === 'image/heic' || t === 'image/heif') return true;
+  const n = file.name.toLowerCase();
+  return n.endsWith('.heic') || n.endsWith('.heif');
+};
+
+interface ExifMeta {
+  latitude: number | null;
+  longitude: number | null;
+  taken_at: string | null;
+  width: number | null;
+  height: number | null;
+}
+
+/* Lee GPS + DateTimeOriginal del archivo *original* (HEIC o el que sea).
+ * exifr es tolerante: si no hay EXIF devuelve null en cada campo. */
+const readExif = async (file: File): Promise<ExifMeta> => {
+  const meta: ExifMeta = {
+    latitude: null,
+    longitude: null,
+    taken_at: null,
+    width: null,
+    height: null,
+  };
+  try {
+    const parsed = await exifr.parse(file, {
+      gps: true,
+      pick: ['DateTimeOriginal', 'CreateDate', 'ExifImageWidth', 'ExifImageHeight'],
+    });
+    if (parsed) {
+      if (typeof parsed.latitude === 'number') meta.latitude = parsed.latitude;
+      if (typeof parsed.longitude === 'number') meta.longitude = parsed.longitude;
+      const taken = parsed.DateTimeOriginal ?? parsed.CreateDate;
+      if (taken instanceof Date && !isNaN(taken.getTime())) {
+        meta.taken_at = taken.toISOString();
+      }
+      if (typeof parsed.ExifImageWidth === 'number') meta.width = parsed.ExifImageWidth;
+      if (typeof parsed.ExifImageHeight === 'number') meta.height = parsed.ExifImageHeight;
+    }
+  } catch {
+    /* sin EXIF → seguimos */
+  }
+  return meta;
+};
+
+/* Lee width/height reales del bitmap. Usamos createImageBitmap cuando exista
+ * (más rápido y soporta blobs HEIC convertidos), si no, <img> fallback. */
+const readImageDims = async (blob: Blob): Promise<{ width: number; height: number } | null> => {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bmp = await createImageBitmap(blob);
+      const dims = { width: bmp.width, height: bmp.height };
+      bmp.close?.();
+      return dims;
+    } catch {
+      /* fallback */
+    }
+  }
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+};
+
+/* Convierte HEIC → JPEG quality 1.0 (máxima). heic2any se carga dinámicamente
+ * para no entrar en el bundle de la página si el usuario no sube HEIC. */
+const convertHeicToJpeg = async (file: File): Promise<File> => {
+  const { default: heic2any } = await import('heic2any');
+  const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 1 });
+  const blob = Array.isArray(out) ? out[0] : out;
+  const baseName = file.name.replace(/\.(heic|heif)$/i, '');
+  return new File([blob], `${baseName}.jpg`, {
+    type: 'image/jpeg',
+    lastModified: file.lastModified,
+  });
 };
 
 export const galleryService = {
@@ -51,19 +138,35 @@ export const galleryService = {
     file: File,
     opts?: { vehicleId?: string | null },
   ): Promise<GalleryImage> {
-    const safeName = slugify(file.name || 'foto');
-    const path = `${userId}/${randomId()}-${safeName}`;
+    /* 1) EXIF se lee del original — la conversión HEIC→JPEG suele strippearlo */
+    const exif = await readExif(file);
 
-    const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, {
+    /* 2) HEIC → JPEG quality 1.0 (sin pérdida visual, compatible con todo navegador) */
+    const uploadFile = isHeic(file) ? await convertHeicToJpeg(file) : file;
+
+    /* 3) Dimensiones del bitmap final si EXIF no las tenía */
+    if (exif.width == null || exif.height == null) {
+      const dims = await readImageDims(uploadFile);
+      if (dims) {
+        exif.width = dims.width;
+        exif.height = dims.height;
+      }
+    }
+
+    /* 4) Subida a Storage */
+    const safeName = slugify(uploadFile.name || 'foto');
+    const path = `${userId}/${randomId()}-${safeName}`;
+    const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, uploadFile, {
       cacheControl: '3600',
       upsert: false,
-      contentType: file.type || undefined,
+      contentType: uploadFile.type || undefined,
     });
     if (upErr) throw upErr;
 
     const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
     const publicUrl = pub.publicUrl;
 
+    /* 5) Insert. Si falla, eliminamos el blob para no dejar huérfanos */
     const { data, error } = await supabase
       .from(TABLE)
       .insert({
@@ -71,15 +174,19 @@ export const galleryService = {
         vehicle_id: opts?.vehicleId ?? null,
         storage_path: path,
         public_url: publicUrl,
-        file_name: file.name,
-        mime_type: file.type || null,
-        size_bytes: file.size,
+        file_name: uploadFile.name,
+        mime_type: uploadFile.type || null,
+        size_bytes: uploadFile.size,
+        latitude: exif.latitude,
+        longitude: exif.longitude,
+        taken_at: exif.taken_at,
+        width: exif.width,
+        height: exif.height,
       })
       .select('*')
       .single();
 
     if (error) {
-      // rollback del fichero si el insert falla, para no dejar huérfanos
       await supabase.storage
         .from(BUCKET)
         .remove([path])

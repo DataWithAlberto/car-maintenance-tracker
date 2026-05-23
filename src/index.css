@@ -758,6 +758,168 @@ body {
     color var(--duration-base) var(--ease-out-expo);
 }
 
+/* ─── Galería masonry ─────────────────────────────────────────────────────
+ * Multi-column nativo de CSS. Cada item conserva su aspect-ratio real (los
+ * componentes lo pintan inline desde width/height de EXIF o del bitmap).
+ * 2/3/4 columnas según viewport.
+ * ────────────────────────────────────────────────────────────────────────── */
+.gallery-masonry {
+  column-count: 2;
+  column-gap: 12px;
+}
+@media (min-width: 640px) {
+  .gallery-masonry {
+    column-count: 3;
+    column-gap: 16px;
+  }
+}
+@media (min-width: 1024px) {
+  .gallery-masonry {
+    column-count: 4;
+  }
+}
+.gallery-masonry__item {
+  position: relative;
+  display: block;
+  break-inside: avoid;
+  margin: 0 0 12px;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: zoom-in;
+  background: var(--surface-canvas);
+  transition:
+    transform var(--duration-base) var(--ease-out-expo),
+    filter var(--duration-base) var(--ease-out-expo);
+}
+@media (min-width: 640px) {
+  .gallery-masonry__item {
+    margin-bottom: 16px;
+  }
+}
+.gallery-masonry__item:hover {
+  transform: translateY(-2px);
+}
+.gallery-masonry__item:hover .gallery-masonry__img {
+  transform: scale(1.03);
+  filter: brightness(1.04);
+}
+.gallery-masonry__media {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+}
+.gallery-masonry__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  transition:
+    transform 0.6s var(--ease-out-expo),
+    filter 0.4s var(--ease-out-expo);
+}
+.gallery-masonry__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+.gallery-masonry__delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity var(--duration-base) var(--ease-out-expo),
+    transform var(--duration-base) var(--ease-out-expo);
+}
+.gallery-masonry__item:hover .gallery-masonry__delete,
+.gallery-masonry__item:focus-within .gallery-masonry__delete,
+.gallery-masonry__delete:disabled {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── View segmented control (Cuadrícula / Mapa) ───────────────────────── */
+.gallery-view-toggle {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--color-silver-mist);
+  gap: 2px;
+}
+.gallery-view-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sf-pro-text);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-graphite);
+  transition:
+    background-color var(--duration-base) var(--ease-out-expo),
+    color var(--duration-base) var(--ease-out-expo);
+}
+.gallery-view-toggle__btn:hover {
+  color: var(--color-ink);
+}
+.gallery-view-toggle__btn[aria-pressed='true'] {
+  background: var(--surface-card);
+  color: var(--color-ink);
+}
+
+/* ─── Mapa de galería ─────────────────────────────────────────────────── */
+.gallery-map-marker {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--color-fog);
+  transform: translate(-50%, -50%);
+  transition:
+    transform var(--duration-base) var(--ease-out-expo),
+    border-color var(--duration-base) var(--ease-out-expo);
+}
+.gallery-map-marker:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+.gallery-map-marker img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+[data-theme='dark'] .gallery-map-marker {
+  border-color: #1e1e20;
+}
+
 /* ─── Editorial helpers (Indigo + Editorial dashboard) ─────────────────── */
 .mono {
   font-family: var(--font-mono);
