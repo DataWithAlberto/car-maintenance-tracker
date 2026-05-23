@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useThemeStore } from '../../store/themeStore';
 import {
+  LayoutDashboard,
+  Car,
+  Wrench,
+  Route,
+  MoreHorizontal,
   Receipt,
   ShieldCheck,
   FileText,
@@ -13,13 +17,12 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import { LordIcon } from '../ui/LordIcon';
 
 const MAIN_TABS = [
-  { to: '/dashboard', lordSrc: 'https://cdn.lordicon.com/wmwqvixz.json', label: 'Inicio' },
-  { to: '/car', lordSrc: 'https://cdn.lordicon.com/hbtheitu.json', label: 'Coche' },
-  { to: '/maintenance', lordSrc: 'https://cdn.lordicon.com/oaflahpk.json', label: 'Servicio' },
-  { to: '/trips', lordSrc: 'https://cdn.lordicon.com/nqtddedc.json', label: 'Viajes' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
+  { to: '/car', icon: Car, label: 'Coche' },
+  { to: '/maintenance', icon: Wrench, label: 'Servicio' },
+  { to: '/trips', icon: Route, label: 'Viajes' },
 ];
 
 const MORE_ITEMS = [
@@ -36,9 +39,6 @@ const MORE_ITEMS = [
 export const BottomNav = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const theme = useThemeStore((s) => s.theme);
-  const ink = theme === 'dark' ? '#f5f5f7' : '#1d1d1f';
-  const muted = theme === 'dark' ? '#98989d' : '#6e6e73';
 
   return (
     <>
@@ -82,7 +82,7 @@ export const BottomNav = () => {
                     setOpen(false);
                     navigate(to);
                   }}
-                  className="flex flex-col items-center gap-2 rounded-[16px] py-3 px-2"
+                  className="flex flex-col items-center gap-2 rounded-[16px] py-3 px-2 transition-transform active:scale-95"
                   style={{ background: 'var(--color-fog)' }}
                 >
                   <span
@@ -118,74 +118,56 @@ export const BottomNav = () => {
         aria-label="Navegación móvil"
       >
         <ul className="grid grid-cols-5 px-1">
-          {MAIN_TABS.map(({ to, lordSrc, label }) => {
-            return (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  onClick={() => setOpen(false)}
-                  className="focus-ring flex flex-col items-center justify-center gap-0.5 py-2.5"
-                  style={{ textDecoration: 'none' }}
-                >
-                  {({ isActive: navActive }) => (
-                    <>
-                      <span
-                        className={cn(
-                          'h-9 w-9 flex items-center justify-center rounded-xl transition-all',
-                          navActive && 'bg-ink/10',
-                        )}
-                      >
-                        <LordIcon
-                          src={lordSrc}
-                          trigger={navActive ? 'loop' : 'click'}
-                          size={26}
-                          primaryColor={navActive ? ink : muted}
-                          secondaryColor={navActive ? ink : muted}
-                          stroke="regular"
-                        />
-                      </span>
-                      <span
-                        className="font-medium transition-colors"
-                        style={{
-                          fontSize: 10,
-                          color: navActive ? ink : muted,
-                        }}
-                      >
-                        {label}
-                      </span>
-                    </>
-                  )}
-                </NavLink>
-              </li>
-            );
-          })}
+          {MAIN_TABS.map(({ to, icon: Icon, label }) => (
+            <li key={to}>
+              <NavLink
+                to={to}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    'focus-ring flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors',
+                    isActive ? 'text-ink' : 'text-graphite hover:text-ink',
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        'h-9 w-9 flex items-center justify-center rounded-xl transition-all duration-300',
+                        isActive ? 'bg-ink/10 scale-110' : 'scale-100',
+                      )}
+                    >
+                      <Icon
+                        className="h-5 w-5 transition-transform duration-300"
+                        strokeWidth={isActive ? 2.2 : 1.8}
+                      />
+                    </span>
+                    {label}
+                  </>
+                )}
+              </NavLink>
+            </li>
+          ))}
 
           {/* Más */}
           <li>
             <button
               onClick={() => setOpen((v) => !v)}
-              className="focus-ring w-full flex flex-col items-center justify-center gap-0.5 py-2.5"
+              className={cn(
+                'focus-ring w-full flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors',
+                open ? 'text-ink' : 'text-graphite hover:text-ink',
+              )}
             >
               <span
                 className={cn(
-                  'h-9 w-9 flex items-center justify-center rounded-xl transition-all',
-                  open && 'bg-ink/10',
+                  'h-9 w-9 flex items-center justify-center rounded-xl transition-all duration-300',
+                  open ? 'bg-ink/10 scale-110 rotate-90' : 'scale-100',
                 )}
               >
-                <LordIcon
-                  src="https://cdn.lordicon.com/unvlvkmi.json"
-                  trigger={open ? 'loop' : 'click'}
-                  size={26}
-                  primaryColor={open ? ink : muted}
-                  secondaryColor={open ? ink : muted}
-                />
+                <MoreHorizontal className="h-5 w-5" strokeWidth={open ? 2.2 : 1.8} />
               </span>
-              <span
-                className="font-medium transition-colors"
-                style={{ fontSize: 10, color: open ? ink : muted }}
-              >
-                Más
-              </span>
+              Más
             </button>
           </li>
         </ul>
