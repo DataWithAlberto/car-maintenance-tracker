@@ -87,6 +87,7 @@ const MORE_ITEMS: TabDef[] = [
     to: '/galeria',
     icon: Images,
     label: 'Galería',
+    lordSrc: 'https://cdn.lordicon.com/zczzhvwa.json',
   },
   {
     to: '/settings',
