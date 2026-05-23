@@ -9,8 +9,8 @@ import type {
 } from '../types';
 import { EXPENSE_CATEGORIES } from '../utils/constants';
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 const SYSTEM_PROMPT = `Eres un asesor mecánico experto integrado en una app de mantenimiento de coches.
 Recibes los datos de un vehículo, su historial de mantenimiento, un síntoma descrito por el usuario y una lista de talleres cercanos.
@@ -96,24 +96,34 @@ async function callGemini({
   maxTokens,
   signal,
 }: GeminiCall): Promise<string> {
-  const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-    method: 'POST',
-    signal,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: system }] },
-      contents: [{ role: 'user', parts: userParts }],
-      generationConfig: { maxOutputTokens: maxTokens, responseMimeType: 'application/json' },
-    }),
+  const body = JSON.stringify({
+    system_instruction: { parts: [{ text: system }] },
+    contents: [{ role: 'user', parts: userParts }],
+    generationConfig: { maxOutputTokens: maxTokens, responseMimeType: 'application/json' },
   });
 
-  if (!res.ok) {
+  let lastMessage = 'Error desconocido de la API de Gemini';
+  for (const model of GEMINI_MODELS) {
+    const res = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      signal,
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      return json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    }
+
     const errBody = await res.json().catch(() => null);
-    throw new Error(errBody?.error?.message ?? `Error ${res.status} de la API de Gemini`);
+    lastMessage = errBody?.error?.message ?? `Error ${res.status} de la API de Gemini`;
+
+    // Solo reintenta con otro modelo si es un error de cuota (429) o de acceso (403)
+    if (res.status !== 429 && res.status !== 403) break;
   }
 
-  const json = await res.json();
-  return json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  throw new Error(lastMessage);
 }
 
 export const aiService = {
