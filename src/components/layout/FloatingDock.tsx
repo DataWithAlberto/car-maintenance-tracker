@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { Car, ChevronDown } from 'lucide-react';
+import { LordIcon } from '../ui/LordIcon';
 
 export interface FloatingDockItem {
   id: string;
   label: string;
   icon: LucideIcon;
+  /** Optional Lordicon CDN URL — if provided, animated icon is shown instead of Lucide */
+  lordSrc?: string;
   href: string;
   badge?: number;
 }
@@ -15,6 +18,8 @@ export interface FloatingDockGroup {
   id: string;
   label: string;
   icon: LucideIcon;
+  /** Optional Lordicon CDN URL for the group header icon */
+  lordSrc?: string;
   children: FloatingDockItem[];
 }
 
@@ -53,6 +58,7 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
       (e): e is FloatingDockGroup => isGroup(e) && e.children.some((c) => c.id === activeId),
     );
     if (!owner) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpenGroups((prev) => {
       if (prev.has(owner.id)) return prev;
       const next = new Set(prev);
@@ -109,7 +115,18 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
             color: isActive ? 'var(--color-snow)' : 'var(--color-ink)',
           }}
         >
-          <Icon size={nested ? 16 : 18} strokeWidth={1.6} />
+          {it.lordSrc ? (
+            <LordIcon
+              src={it.lordSrc}
+              trigger={isActive ? 'loop' : 'hover'}
+              size={nested ? 16 : 18}
+              primaryColor={isActive ? '#ffffff' : '#1d1d1f'}
+              secondaryColor={isActive ? '#ffffff' : '#1d1d1f'}
+              stroke="regular"
+            />
+          ) : (
+            <Icon size={nested ? 16 : 18} strokeWidth={1.6} />
+          )}
         </span>
         {open && (
           <span style={{ flex: 1, textAlign: 'left', whiteSpace: 'nowrap' }}>{it.label}</span>
@@ -199,7 +216,18 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
               color: headerActive ? 'var(--color-snow)' : 'var(--color-ink)',
             }}
           >
-            <Icon size={18} strokeWidth={1.6} />
+            {g.lordSrc ? (
+              <LordIcon
+                src={g.lordSrc}
+                trigger="hover"
+                size={18}
+                primaryColor={headerActive ? '#ffffff' : '#1d1d1f'}
+                secondaryColor={headerActive ? '#ffffff' : '#1d1d1f'}
+                stroke="regular"
+              />
+            ) : (
+              <Icon size={18} strokeWidth={1.6} />
+            )}
           </span>
           {open && (
             <>
