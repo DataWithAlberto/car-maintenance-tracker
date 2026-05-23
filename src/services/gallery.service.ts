@@ -52,7 +52,11 @@ interface ExifMeta {
 }
 
 /* Lee GPS + DateTimeOriginal del archivo *original* (HEIC o el que sea).
- * exifr es tolerante: si no hay EXIF devuelve null en cada campo. */
+ *
+ * IMPORTANTE: GPS se lee con exifr.gps() porque pasar `pick` a parse()
+ * filtra también las tags raw (GPSLatitude/Ref/…) que exifr necesita para
+ * computar las propiedades virtuales latitude/longitude. exifr.gps() es un
+ * helper que sabe exactamente qué leer. */
 const readExif = async (file: File): Promise<ExifMeta> => {
   const meta: ExifMeta = {
     latitude: null,
@@ -61,14 +65,24 @@ const readExif = async (file: File): Promise<ExifMeta> => {
     width: null,
     height: null,
   };
+
+  // GPS
+  try {
+    const gps = await exifr.gps(file);
+    if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number') {
+      meta.latitude = gps.latitude;
+      meta.longitude = gps.longitude;
+    }
+  } catch (err) {
+    console.warn('[gallery] exifr.gps failed', err);
+  }
+
+  // Fecha + dimensiones (pick aquí sí es seguro porque no son virtuales)
   try {
     const parsed = await exifr.parse(file, {
-      gps: true,
       pick: ['DateTimeOriginal', 'CreateDate', 'ExifImageWidth', 'ExifImageHeight'],
     });
     if (parsed) {
-      if (typeof parsed.latitude === 'number') meta.latitude = parsed.latitude;
-      if (typeof parsed.longitude === 'number') meta.longitude = parsed.longitude;
       const taken = parsed.DateTimeOriginal ?? parsed.CreateDate;
       if (taken instanceof Date && !isNaN(taken.getTime())) {
         meta.taken_at = taken.toISOString();
@@ -76,9 +90,17 @@ const readExif = async (file: File): Promise<ExifMeta> => {
       if (typeof parsed.ExifImageWidth === 'number') meta.width = parsed.ExifImageWidth;
       if (typeof parsed.ExifImageHeight === 'number') meta.height = parsed.ExifImageHeight;
     }
-  } catch {
-    /* sin EXIF → seguimos */
+  } catch (err) {
+    console.warn('[gallery] exifr.parse (date/dims) failed', err);
   }
+
+  console.info('[gallery] EXIF extraído', {
+    file: file.name,
+    gps: meta.latitude != null ? `${meta.latitude}, ${meta.longitude}` : 'no',
+    taken_at: meta.taken_at ?? 'no',
+    dims_exif: meta.width && meta.height ? `${meta.width}x${meta.height}` : 'no',
+  });
+
   return meta;
 };
 
