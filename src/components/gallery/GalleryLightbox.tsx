@@ -35,10 +35,12 @@ export const GalleryLightbox = ({ image, onClose, onUpdate }: Props) => {
   const [caption, setCaption] = useState('');
   const [savingCaption, setSavingCaption] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
 
   useEffect(() => {
     setCaption(image?.caption ?? '');
     setDirty(false);
+    setZoomed(false);
   }, [image?.id]);
 
   useEffect(() => {
@@ -118,7 +120,12 @@ export const GalleryLightbox = ({ image, onClose, onUpdate }: Props) => {
           <img
             src={image.public_url}
             alt={image.caption ?? image.file_name ?? ''}
-            className="lightbox-img"
+            className={zoomed ? 'lightbox-img is-zoomed' : 'lightbox-img'}
+            onClick={(e) => {
+              e.stopPropagation();
+              setZoomed((z) => !z);
+            }}
+            title={zoomed ? 'Click para ajustar' : 'Click para ver a tamaño original'}
           />
         </div>
 
