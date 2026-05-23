@@ -672,6 +672,92 @@ a:hover {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* ─── Theme toggle ────────────────────────────────────────────────────────
+ * Botón circular fijo (bottom-left). Cross-fade + leve rotación entre los
+ * iconos sol/luna. Los tokens fluyen con [data-theme='dark'] así que el
+ * fondo y el color se invierten solos.
+ * ────────────────────────────────────────────────────────────────────────── */
+.theme-toggle {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  left: 20px;
+  z-index: 60;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid var(--color-silver-mist);
+  background: var(--surface-card);
+  color: var(--color-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    background-color var(--duration-base) var(--ease-out-expo),
+    border-color var(--duration-base) var(--ease-out-expo),
+    transform var(--duration-fast) var(--ease-default),
+    color var(--duration-base) var(--ease-out-expo);
+}
+.theme-toggle:hover {
+  transform: scale(1.05);
+}
+.theme-toggle:active {
+  transform: scale(0.96);
+}
+.theme-toggle__icon {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity var(--duration-base) var(--ease-out-expo),
+    transform var(--duration-base) var(--ease-out-expo);
+}
+.theme-toggle__icon--sun {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+.theme-toggle__icon--moon {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.6);
+}
+[data-theme='dark'] .theme-toggle__icon--sun {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.6);
+}
+[data-theme='dark'] .theme-toggle__icon--moon {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+/* Subir el toggle por encima de la BottomNav en móvil */
+@media (max-width: 767px) {
+  .theme-toggle {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle,
+  .theme-toggle__icon {
+    transition: none;
+  }
+}
+
+/* Transición global suave al cambiar de tema */
+html {
+  transition:
+    background-color var(--duration-base) var(--ease-out-expo),
+    color var(--duration-base) var(--ease-out-expo);
+}
+body {
+  transition:
+    background-color var(--duration-base) var(--ease-out-expo),
+    color var(--duration-base) var(--ease-out-expo);
+}
+
 /* ─── Editorial helpers (Indigo + Editorial dashboard) ─────────────────── */
 .mono {
   font-family: var(--font-mono);

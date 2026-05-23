@@ -15,11 +15,13 @@ import {
   Folder,
   Cpu,
   Store,
+  Images,
 } from 'lucide-react';
 import { FloatingDock, type FloatingDockEntry } from './FloatingDock';
 import { BottomNav } from './BottomNav';
 import { PageTransition } from '../ui/PageTransition';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
+import { ThemeToggle } from '../ui/ThemeToggle';
 import { useVehicleStore } from '../../store/vehicleStore';
 import { useAuthStore } from '../../store/authStore';
 import { useVehicle } from '../../hooks/useVehicle';
@@ -121,6 +123,13 @@ export const Layout = () => {
         lordSrc: 'https://cdn.lordicon.com/vwwysvjs.json',
       },
       {
+        id: 'gallery',
+        label: 'Galería',
+        icon: Images,
+        href: '/galeria',
+        lordSrc: 'https://cdn.lordicon.com/ggihhudh.json',
+      },
+      {
         id: 'management-group',
         label: 'Gestión',
         icon: Folder,
@@ -166,6 +175,7 @@ export const Layout = () => {
     if (p === '/obd2' || p.startsWith('/obd2/')) return 'obd2';
     if (p === '/mechanics' || p.startsWith('/mechanics/')) return 'mechanics';
     if (p === '/sharing' || p.startsWith('/sharing/')) return 'sharing';
+    if (p === '/galeria' || p.startsWith('/galeria/')) return 'gallery';
     if (p === '/settings' || p.startsWith('/settings/')) return 'settings';
     return '';
   }, [location.pathname]);
@@ -195,6 +205,7 @@ export const Layout = () => {
             </PageTransition>
           </ErrorBoundary>
         </main>
+        <ThemeToggle />
       </div>
     );
   }
@@ -225,6 +236,7 @@ export const Layout = () => {
         </ErrorBoundary>
       </main>
       <BottomNav />
+      <ThemeToggle />
     </div>
   );
 };

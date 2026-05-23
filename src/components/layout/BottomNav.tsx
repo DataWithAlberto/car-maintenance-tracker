@@ -15,6 +15,7 @@ import {
   Store,
   Share2,
   Settings,
+  Images,
   X,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
@@ -81,6 +82,11 @@ const MORE_ITEMS: TabDef[] = [
     icon: Share2,
     label: 'Compartir',
     lordSrc: 'https://cdn.lordicon.com/fhlrrido.json',
+  },
+  {
+    to: '/galeria',
+    icon: Images,
+    label: 'Galería',
   },
   {
     to: '/settings',
