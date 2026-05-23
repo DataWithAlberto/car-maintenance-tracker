@@ -162,6 +162,8 @@ export const OBD2Page = () => {
   const [clearLoading, setClearLoading] = useState(false);
   const [historyReadings, setHistoryReadings] = useState<OBD2Reading[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [autoConnecting, setAutoConnecting] = useState(false);
+  const [previousDevice, setPreviousDevice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedVehicle) return;
@@ -205,6 +207,40 @@ export const OBD2Page = () => {
     };
     load();
   }, [selectedVehicle, setReadings, setAnomalies]);
+
+  // Auto-reconnect: on mount check for previously permitted BLE devices
+  useEffect(() => {
+    if (status === 'connected') return; // already connected
+    let cancelled = false;
+
+    const run = async () => {
+      // First, show the previous device name as a hint even before connecting
+      const names = await obd2Service.getPreviousDevices();
+      if (cancelled) return;
+      if (names.length > 0) setPreviousDevice(names[0]);
+
+      // Try silent auto-connect
+      setAutoConnecting(true);
+      setStatus('connecting');
+      const name = await obd2Service.tryAutoConnect();
+      if (cancelled) return;
+      setAutoConnecting(false);
+
+      if (name) {
+        setDeviceName(name);
+        setStatus('connected');
+        toast.success(`Reconectado a ${name}`);
+      } else {
+        setStatus('disconnected');
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const chartReadings = useMemo<OBD2Reading[]>(() => {
     if (historyReadings.length > 0) return historyReadings;
@@ -499,7 +535,17 @@ export const OBD2Page = () => {
                 {errorMsg}
               </p>
             )}
-            {!connected && (
+            {autoConnecting && (
+              <p className="font-text text-graphite mt-1" style={{ fontSize: 13 }}>
+                Reconectando a {previousDevice ?? 'adaptador anterior'}…
+              </p>
+            )}
+            {!connected && !autoConnecting && previousDevice && (
+              <p className="font-text text-graphite mt-1" style={{ fontSize: 13 }}>
+                Último adaptador: <span className="text-ink font-medium">{previousDevice}</span>
+              </p>
+            )}
+            {!connected && !autoConnecting && !previousDevice && (
               <p className="font-text text-graphite mt-1" style={{ fontSize: 13 }}>
                 Necesitas un adaptador ELM327 BLE enchufado al puerto OBD-II del coche.
               </p>

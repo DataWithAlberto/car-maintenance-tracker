@@ -76,21 +76,12 @@ class OBD2Service {
 
   // ─── Connection ──────────────────────────────────────────────────────────────
 
-  async connect(): Promise<void> {
-    if (!this.isSupported) throw new Error('Web Bluetooth no está disponible en este navegador');
+  /** Shared GATT setup once we already have a BluetoothDevice handle. */
+  private async _connectDevice(device: BluetoothDevice): Promise<void> {
+    if (!device.gatt) throw new Error('Dispositivo no soporta GATT');
 
-    const optionalServices = BLE_PROFILES.map((p) => p.serviceUUID);
+    const server = await device.gatt.connect();
 
-    this.device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices,
-    });
-
-    if (!this.device.gatt) throw new Error('Dispositivo no soporta GATT');
-
-    const server = await this.device.gatt.connect();
-
-    // Try profiles in order
     let connected = false;
     for (const profile of BLE_PROFILES) {
       try {
@@ -100,31 +91,95 @@ class OBD2Service {
         connected = true;
         break;
       } catch {
-        // Try next profile
+        // try next profile
       }
     }
 
     if (!connected)
       throw new Error('Adaptador no reconocido. Asegúrate de que es un ELM327 compatible.');
 
-    // Subscribe to notifications
     await this.notifyChar!.startNotifications();
     this.notifyChar!.addEventListener('characteristicvaluechanged', this.onData);
 
-    // Init ELM327
-    await this.sendRaw('ATZ\r', 2000); // reset
-    await this.sendRaw('ATE0\r'); // echo off
-    await this.sendRaw('ATL0\r'); // linefeeds off
-    await this.sendRaw('ATS0\r'); // spaces off
-    await this.sendRaw('ATH0\r'); // headers off
-    await this.sendRaw('ATSP0\r'); // auto protocol
+    await this.sendRaw('ATZ\r', 2000);
+    await this.sendRaw('ATE0\r');
+    await this.sendRaw('ATL0\r');
+    await this.sendRaw('ATS0\r');
+    await this.sendRaw('ATH0\r');
+    await this.sendRaw('ATSP0\r');
 
-    // Listen for disconnect
-    this.device.addEventListener('gattserverdisconnected', () => {
+    device.addEventListener('gattserverdisconnected', () => {
       this.writeChar = null;
       this.notifyChar = null;
       this.stopPolling();
     });
+  }
+
+  /** First-time connection: shows the browser Bluetooth picker. */
+  async connect(): Promise<void> {
+    if (!this.isSupported) throw new Error('Web Bluetooth no está disponible en este navegador');
+
+    const optionalServices = BLE_PROFILES.map((p) => p.serviceUUID);
+    this.device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices,
+    });
+
+    await this._connectDevice(this.device);
+  }
+
+  /**
+   * Auto-reconnect: silently tries to reconnect to the last permitted device
+   * using navigator.bluetooth.getDevices() (Chrome 85+, no user gesture needed).
+   * Returns the device name on success, null if not possible.
+   */
+  async tryAutoConnect(): Promise<string | null> {
+    if (!this.isSupported) return null;
+
+    // getDevices() is a newer API — cast to avoid missing type declaration
+    const bt = navigator.bluetooth as Bluetooth & {
+      getDevices?: () => Promise<BluetoothDevice[]>;
+    };
+    if (typeof bt.getDevices !== 'function') return null;
+
+    let devices: BluetoothDevice[];
+    try {
+      devices = await bt.getDevices();
+    } catch {
+      return null;
+    }
+
+    if (devices.length === 0) return null;
+
+    // Try devices in order (most recently used is first in Chrome)
+    for (const device of devices) {
+      try {
+        this.device = device;
+        await this._connectDevice(device);
+        return device.name ?? 'Adaptador OBD-II';
+      } catch {
+        this.device = null;
+        this.writeChar = null;
+        this.notifyChar = null;
+      }
+    }
+
+    return null;
+  }
+
+  /** Returns names of previously permitted devices (for showing a reconnect hint). */
+  async getPreviousDevices(): Promise<string[]> {
+    if (!this.isSupported) return [];
+    const bt = navigator.bluetooth as Bluetooth & {
+      getDevices?: () => Promise<BluetoothDevice[]>;
+    };
+    if (typeof bt.getDevices !== 'function') return [];
+    try {
+      const devices = await bt.getDevices();
+      return devices.map((d) => d.name ?? 'Adaptador OBD-II');
+    } catch {
+      return [];
+    }
   }
 
   async disconnect(): Promise<void> {
