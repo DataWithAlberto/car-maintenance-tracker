@@ -97,15 +97,15 @@ export const TripPublicToggle = ({ isPublic, shareToken, onChange }: Props) => {
                 lineHeight: 1.2,
               }}
             >
-              {optimistic ? 'Visible para todos' : 'Solo para mí'}
+              {optimistic ? 'Compartido' : 'Solo para mí'}
             </p>
             <p
               className="text-graphite"
               style={{ fontSize: 12, margin: '2px 0 0', lineHeight: 1.4 }}
             >
               {optimistic
-                ? 'Cualquiera con el enlace puede ver el itinerario.'
-                : 'Solo tú puedes acceder a este viaje.'}
+                ? 'Visible para quienes tienen acceso al vehículo.'
+                : 'Solo tú puedes ver este viaje.'}
             </p>
           </div>
         </div>
