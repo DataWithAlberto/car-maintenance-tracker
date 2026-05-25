@@ -619,6 +619,22 @@ export const TripsPage = () => {
         {/* ─── Vista de planificación ─────────────────────────────────── */}
         {statusFilter === 'planning' && (
           <>
+            {/* ─── Privacidad + Sorpresa (planning) ─────────────────────── */}
+            {selectedTrip && selectedTrip.status === 'planning' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <TripPublicToggle
+                  isPublic={selectedTrip.is_public}
+                  shareToken={selectedTrip.share_token}
+                  onChange={handlePublicChange}
+                />
+                <TripSurpriseEditor
+                  enabled={selectedTrip.is_surprise}
+                  config={selectedTrip.surprise_config}
+                  onChange={handleSurpriseChange}
+                />
+              </div>
+            )}
+
             <div className="grid lg:grid-cols-[260px_1fr]" style={{ gap: 20 }}>
               {/* Lista de borradores */}
               <aside
@@ -765,22 +781,6 @@ export const TripsPage = () => {
                 </div>
               )}
             </div>
-
-            {/* ─── Privacidad + Sorpresa (planning) ─────────────────────── */}
-            {selectedTrip && selectedTrip.status === 'planning' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <TripPublicToggle
-                  isPublic={selectedTrip.is_public}
-                  shareToken={selectedTrip.share_token}
-                  onChange={handlePublicChange}
-                />
-                <TripSurpriseEditor
-                  enabled={selectedTrip.is_surprise}
-                  config={selectedTrip.surprise_config}
-                  onChange={handleSurpriseChange}
-                />
-              </div>
-            )}
           </>
         )}
 
