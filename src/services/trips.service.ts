@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Trip, CreateTripInput, TripWaypoint } from '../types';
+import type { Trip, CreateTripInput, CreateDraftTripInput, TripWaypoint } from '../types';
 
 export const tripsService = {
   async getByVehicle(vehicleId: string): Promise<Trip[]> {
@@ -25,11 +25,40 @@ export const tripsService = {
   async create(vehicleId: string, userId: string, input: CreateTripInput): Promise<Trip> {
     const { data, error } = await supabase
       .from('trips')
-      .insert({ ...input, vehicle_id: vehicleId, created_by: userId })
+      .insert({ ...input, vehicle_id: vehicleId, created_by: userId, status: 'completed' })
       .select()
       .single();
     if (error) throw error;
     return data;
+  },
+
+  async createDraft(vehicleId: string, userId: string, input: CreateDraftTripInput): Promise<Trip> {
+    const { data, error } = await supabase
+      .from('trips')
+      .insert({
+        ...input,
+        vehicle_id: vehicleId,
+        created_by: userId,
+        status: 'planning',
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async confirmTrip(tripId: string, keepBookingIds: string[]): Promise<Trip> {
+    const { data, error } = await supabase.rpc('confirm_trip', {
+      p_trip_id: tripId,
+      p_keep_ids: keepBookingIds,
+    });
+    if (error) throw error;
+    return data as Trip;
+  },
+
+  async markCompleted(tripId: string): Promise<void> {
+    const { error } = await supabase.from('trips').update({ status: 'completed' }).eq('id', tripId);
+    if (error) throw error;
   },
 
   async update(id: string, input: Partial<CreateTripInput>): Promise<Trip> {
@@ -77,9 +106,10 @@ export const tripsService = {
       const json = await res.json();
       return {
         weather_condition: json.weather?.[0]?.main ?? undefined,
-        weather_temp:      json.main?.temp ?? undefined,
-        weather_humidity:  json.main?.humidity ?? undefined,
-        weather_wind_speed: json.wind?.speed != null ? Math.round(json.wind.speed * 3.6) : undefined,
+        weather_temp: json.main?.temp ?? undefined,
+        weather_humidity: json.main?.humidity ?? undefined,
+        weather_wind_speed:
+          json.wind?.speed != null ? Math.round(json.wind.speed * 3.6) : undefined,
       };
     } catch {
       return null;
@@ -88,10 +118,21 @@ export const tripsService = {
 
   exportCSV(trips: Trip[]): void {
     const headers = [
-      'Título','Inicio','Fin','Fecha inicio','Fecha fin',
-      'Km inicio','Km fin','Km total','Combustible (L)',
-      'Velocidad media (km/h)','Tiempo conducción (min)',
-      'Altitud máx (m)','Clima','Temp (°C)','Notas',
+      'Título',
+      'Inicio',
+      'Fin',
+      'Fecha inicio',
+      'Fecha fin',
+      'Km inicio',
+      'Km fin',
+      'Km total',
+      'Combustible (L)',
+      'Velocidad media (km/h)',
+      'Tiempo conducción (min)',
+      'Altitud máx (m)',
+      'Clima',
+      'Temp (°C)',
+      'Notas',
     ];
     const rows = trips.map((t) => [
       t.title ?? '',
@@ -112,9 +153,11 @@ export const tripsService = {
     ]);
     const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = 'viajes.csv'; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'viajes.csv';
+    a.click();
     URL.revokeObjectURL(url);
   },
 
@@ -126,12 +169,14 @@ export const tripsService = {
       )
       .join('\n');
 
-    const startRte = trip.start_lat != null && trip.start_lng != null
-      ? `  <rtept lat="${trip.start_lat}" lon="${trip.start_lng}"><name>${trip.start_location}</name></rtept>\n`
-      : '';
-    const endRte = trip.end_lat != null && trip.end_lng != null
-      ? `  <rtept lat="${trip.end_lat}" lon="${trip.end_lng}"><name>${trip.end_location}</name></rtept>\n`
-      : '';
+    const startRte =
+      trip.start_lat != null && trip.start_lng != null
+        ? `  <rtept lat="${trip.start_lat}" lon="${trip.start_lng}"><name>${trip.start_location}</name></rtept>\n`
+        : '';
+    const endRte =
+      trip.end_lat != null && trip.end_lng != null
+        ? `  <rtept lat="${trip.end_lat}" lon="${trip.end_lng}"><name>${trip.end_location}</name></rtept>\n`
+        : '';
 
     const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="FocusHub" xmlns="http://www.topografix.com/GPX/1/1">
@@ -142,8 +187,8 @@ ${wpts}
 ${startRte}${endRte}  </rte>
 </gpx>`;
     const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
     a.href = url;
     a.download = `viaje-${trip.id.slice(0, 8)}.gpx`;
     a.click();

@@ -143,20 +143,26 @@ export interface TripWaypoint {
   created_at: string;
 }
 
+export type TripStatus = 'planning' | 'confirmed' | 'completed';
+
 export interface Trip {
   id: string;
   vehicle_id: string;
   created_by: string;
+  status: TripStatus;
   title?: string;
-  start_location: string;
-  end_location: string;
+  start_location?: string;
+  end_location?: string;
   start_lat?: number;
   start_lng?: number;
   end_lat?: number;
   end_lng?: number;
-  start_datetime: string;
+  start_datetime?: string;
   end_datetime?: string;
-  start_km: number;
+  start_date?: string;
+  end_date?: string;
+  estimated_budget?: number;
+  start_km?: number;
   end_km?: number;
   total_km?: number;
   fuel_consumed?: number;
@@ -232,9 +238,30 @@ export interface TripBooking {
   confirmation_code?: string;
   notes?: string;
   metadata: TripBookingMetadata;
+  is_idea: boolean;
   order_index: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface TripChecklistItem {
+  id: string;
+  trip_id: string;
+  created_by: string;
+  text: string;
+  done: boolean;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateDraftTripInput {
+  title?: string;
+  end_location: string;
+  estimated_budget?: number;
+  start_date?: string;
+  end_date?: string;
+  notes?: string;
 }
 
 export interface CreateTripBookingInput {
@@ -249,6 +276,7 @@ export interface CreateTripBookingInput {
   confirmation_code?: string;
   notes?: string;
   metadata?: TripBookingMetadata;
+  is_idea?: boolean;
   order_index?: number;
 }
 
