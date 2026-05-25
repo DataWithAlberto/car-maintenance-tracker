@@ -35,6 +35,9 @@ const InsurancePage = lazy(() =>
   import('./pages/InsurancePage').then((m) => ({ default: m.InsurancePage })),
 );
 const TripsPage = lazy(() => import('./pages/TripsPage').then((m) => ({ default: m.TripsPage })));
+const SurpriseRevealPage = lazy(() =>
+  import('./pages/SurpriseRevealPage').then((m) => ({ default: m.SurpriseRevealPage })),
+);
 const MechanicsPage = lazy(() =>
   import('./pages/MechanicsPage').then((m) => ({ default: m.MechanicsPage })),
 );
@@ -113,6 +116,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/invite/:token" element={lazyRoute(<InvitePage />)} />
         <Route path="/taller/:token" element={lazyRoute(<WorkshopPage />)} />
+        <Route path="/viajes/surprise/:token" element={lazyRoute(<SurpriseRevealPage />)} />
         <Route
           path="/"
           element={

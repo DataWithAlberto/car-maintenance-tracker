@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { BookingCard } from './BookingCard';
+import { TripActivityCard } from './TripActivityCard';
 import { BOOKING_TYPE_LABEL } from '../../utils/bookingTheme';
-import type { TripBooking, TripBookingType } from '../../types';
+import type { TripActivity, TripActivityType } from '../../types';
 
 interface Props {
-  bookings: TripBooking[];
+  bookings: TripActivity[];
   onConfirm: (keepIds: string[]) => Promise<void>;
   onClose: () => void;
 }
@@ -38,7 +38,7 @@ export const ConfirmTripModal = ({ bookings, onConfirm, onClose }: Props) => {
       return next;
     });
 
-  const grouped = bookings.reduce<Record<string, TripBooking[]>>((acc, b) => {
+  const grouped = bookings.reduce<Record<string, TripActivity[]>>((acc, b) => {
     (acc[b.type] ??= []).push(b);
     return acc;
   }, {});
@@ -67,7 +67,7 @@ export const ConfirmTripModal = ({ bookings, onConfirm, onClose }: Props) => {
               className="font-mono uppercase text-graphite"
               style={{ fontSize: 11, letterSpacing: '.16em', marginBottom: 8 }}
             >
-              {BOOKING_TYPE_LABEL[type as TripBookingType]}
+              {BOOKING_TYPE_LABEL[type as TripActivityType]}
               {list.length > 1 && type === 'lodging' && (
                 <span className="text-azure" style={{ marginLeft: 8 }}>
                   · selecciona 1
@@ -94,7 +94,7 @@ export const ConfirmTripModal = ({ bookings, onConfirm, onClose }: Props) => {
                       opacity: isKeep ? 1 : 0.55,
                     }}
                   >
-                    <BookingCard booking={b} />
+                    <TripActivityCard activity={b} editable={false} />
                   </button>
                 );
               })}

@@ -31,13 +31,10 @@ export const useTrips = (vehicleId?: string) => {
     [vehicleId],
   );
 
-  const updateTrip = useCallback(
-    async (id: string, input: Partial<CreateTripInput>): Promise<void> => {
-      const updated = await tripsService.update(id, input);
-      setTrips((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
-    },
-    [],
-  );
+  const updateTrip = useCallback(async (id: string, input: Partial<Trip>): Promise<void> => {
+    const updated = await tripsService.update(id, input);
+    setTrips((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
+  }, []);
 
   const deleteTrip = useCallback(async (id: string): Promise<void> => {
     await tripsService.delete(id);

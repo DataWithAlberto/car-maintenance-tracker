@@ -1,5 +1,13 @@
 import { supabase } from './supabase';
-import type { Trip, CreateTripInput, CreateDraftTripInput, TripWaypoint } from '../types';
+import type {
+  Trip,
+  CreateTripInput,
+  CreateDraftTripInput,
+  TripWaypoint,
+  TripVisibility,
+  SurpriseConfig,
+  PublicTripResponse,
+} from '../types';
 
 export const tripsService = {
   async getByVehicle(vehicleId: string): Promise<Trip[]> {
@@ -61,7 +69,7 @@ export const tripsService = {
     if (error) throw error;
   },
 
-  async update(id: string, input: Partial<CreateTripInput>): Promise<Trip> {
+  async update(id: string, input: Partial<Trip>): Promise<Trip> {
     const { data, error } = await supabase
       .from('trips')
       .update(input)
@@ -70,6 +78,37 @@ export const tripsService = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  async setVisibility(id: string, visibility: TripVisibility): Promise<Trip> {
+    const { data, error } = await supabase
+      .from('trips')
+      .update({ visibility })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async setSurprise(id: string, enabled: boolean, config?: SurpriseConfig | null): Promise<Trip> {
+    const { data, error } = await supabase
+      .from('trips')
+      .update({
+        is_surprise: enabled,
+        surprise_config: enabled ? (config ?? {}) : null,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getPublicByToken(token: string): Promise<PublicTripResponse> {
+    const { data, error } = await supabase.rpc('get_public_trip', { p_token: token });
+    if (error) throw error;
+    return data as PublicTripResponse;
   },
 
   async delete(id: string): Promise<void> {

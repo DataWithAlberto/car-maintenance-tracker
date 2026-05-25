@@ -8,17 +8,25 @@ import { TripForm } from '../components/trips/TripForm';
 import { TripBookingForm } from '../components/trips/TripBookingForm';
 import { QuickPlanTripForm } from '../components/trips/QuickPlanTripForm';
 import { TripPlanningBoard } from '../components/trips/TripPlanningBoard';
-import { BookingCard } from '../components/trips/BookingCard';
+import { TripVisibilityControl } from '../components/trips/TripVisibilityControl';
+import { TripSurpriseEditor } from '../components/trips/TripSurpriseEditor';
+import { TripActivityCard } from '../components/trips/TripActivityCard';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import { useTrips } from '../hooks/useTrips';
-import { useTripBookings } from '../hooks/useTripBookings';
+import { useTripActivities } from '../hooks/useTripActivities';
 import { useTripChecklist } from '../hooks/useTripChecklist';
 import { useVehicle } from '../hooks/useVehicle';
 import { tripsService } from '../services/trips.service';
 import { formatKm } from '../utils/formatters';
-import type { CreateTripInput, CreateTripBookingInput, CreateDraftTripInput } from '../types';
+import type {
+  CreateTripInput,
+  CreateTripActivityInput,
+  CreateDraftTripInput,
+  TripVisibility,
+  SurpriseConfig,
+} from '../types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -120,9 +128,16 @@ export const TripsPage = () => {
   const { selectedVehicle } = useVehicleStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const { trips, loading, fetchTrips, createTrip, deleteTrip, createDraft, confirmTrip } = useTrips(
-    selectedVehicle?.id,
-  );
+  const {
+    trips,
+    loading,
+    fetchTrips,
+    createTrip,
+    updateTrip,
+    deleteTrip,
+    createDraft,
+    confirmTrip,
+  } = useTrips(selectedVehicle?.id);
   const { updateVehicle } = useVehicle();
 
   const [showForm, setShowForm] = useState(false);
@@ -132,9 +147,13 @@ export const TripsPage = () => {
   const [statusFilter, setStatusFilter] = useState<'registered' | 'planning'>('registered');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const { bookings, fetchBookings, createBooking, deleteBooking } = useTripBookings(
-    selectedId ?? undefined,
-  );
+  const {
+    activities: bookings,
+    fetchActivities: fetchBookings,
+    createActivity: createBooking,
+    updateActivity: updateBooking,
+    deleteActivity: deleteBooking,
+  } = useTripActivities(selectedId ?? undefined);
   const {
     items: checklist,
     fetchItems: fetchChecklist,
@@ -335,11 +354,11 @@ export const TripsPage = () => {
     toast.success('CSV exportado');
   };
 
-  const handleCreateBooking = async (data: CreateTripBookingInput) => {
+  const handleCreateBooking = async (data: CreateTripActivityInput) => {
     if (!selectedId) return;
     const trip = trips.find((t) => t.id === selectedId);
     const isIdea = trip?.status === 'planning';
-    await createBooking(user.id, { ...data, is_idea: isIdea });
+    await createBooking(user.id, { ...data, is_candidate: isIdea });
     toast.success(isIdea ? 'Propuesta añadida' : 'Reserva añadida');
   };
 
@@ -363,9 +382,40 @@ export const TripsPage = () => {
   };
 
   const handleDeleteBooking = async (id: string) => {
-    if (!confirm('¿Eliminar esta reserva?')) return;
     await deleteBooking(id);
     toast.success('Reserva eliminada');
+  };
+
+  const handleSaveBooking = async (id: string, patch: Partial<CreateTripActivityInput>) => {
+    try {
+      await updateBooking(id, patch);
+      toast.success('Cambios guardados');
+    } catch {
+      toast.error('No se pudo guardar');
+    }
+  };
+
+  const handleVisibilityChange = async (next: TripVisibility) => {
+    if (!selectedId) return;
+    try {
+      await updateTrip(selectedId, { visibility: next });
+      toast.success('Privacidad actualizada');
+    } catch {
+      toast.error('No se pudo actualizar');
+    }
+  };
+
+  const handleSurpriseChange = async (enabled: boolean, config: SurpriseConfig | null) => {
+    if (!selectedId) return;
+    try {
+      await updateTrip(selectedId, {
+        is_surprise: enabled,
+        surprise_config: enabled ? config : null,
+      });
+      toast.success(enabled ? 'Sorpresa configurada' : 'Sorpresa desactivada');
+    } catch {
+      toast.error('No se pudo actualizar la sorpresa');
+    }
   };
 
   const selectedTrip = selectedId ? trips.find((t) => t.id === selectedId) : null;
@@ -600,6 +650,7 @@ export const TripsPage = () => {
                 checklist={checklist}
                 onAddBooking={() => setShowBookingForm(true)}
                 onDeleteBooking={handleDeleteBooking}
+                onSaveBooking={handleSaveBooking}
                 onAddChecklist={handleAddChecklist}
                 onToggleChecklist={toggleChecklistItem}
                 onDeleteChecklist={deleteChecklistItem}
@@ -1351,7 +1402,23 @@ export const TripsPage = () => {
               </div>
             </div>
 
-            {/* ─── [5] Reservas del viaje seleccionado ────────────────────── */}
+            {/* ─── [5] Privacidad + Sorpresa ──────────────────────────────── */}
+            {selectedTrip && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <TripVisibilityControl
+                  visibility={selectedTrip.visibility}
+                  shareToken={selectedTrip.share_token}
+                  onChange={handleVisibilityChange}
+                />
+                <TripSurpriseEditor
+                  enabled={selectedTrip.is_surprise}
+                  config={selectedTrip.surprise_config}
+                  onChange={handleSurpriseChange}
+                />
+              </div>
+            )}
+
+            {/* ─── [6] Reservas del viaje seleccionado ────────────────────── */}
             {selectedTrip && (
               <div
                 className="bg-snow"
@@ -1395,7 +1462,12 @@ export const TripsPage = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginTop: 18 }}>
                     {bookings.map((b) => (
-                      <BookingCard key={b.id} booking={b} onDelete={handleDeleteBooking} />
+                      <TripActivityCard
+                        key={b.id}
+                        activity={b}
+                        onDelete={handleDeleteBooking}
+                        onSave={handleSaveBooking}
+                      />
                     ))}
                   </div>
                 )}

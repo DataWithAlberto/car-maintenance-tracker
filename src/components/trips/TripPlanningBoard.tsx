@@ -2,19 +2,26 @@ import { useMemo, useState } from 'react';
 import { Sparkles, Wallet, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { BookingCard } from './BookingCard';
+import { TripActivityCard } from './TripActivityCard';
 import { TripChecklist } from './TripChecklist';
 import { TripStatusBadge } from './TripStatusBadge';
 import { ConfirmTripModal } from './ConfirmTripModal';
-import type { Trip, TripBooking, TripChecklistItem, TripBookingType } from '../../types';
+import type {
+  Trip,
+  TripActivity,
+  TripChecklistItem,
+  TripActivityType,
+  CreateTripActivityInput,
+} from '../../types';
 import { BOOKING_TYPE_LABEL } from '../../utils/bookingTheme';
 
 interface Props {
   trip: Trip;
-  bookings: TripBooking[];
+  bookings: TripActivity[];
   checklist: TripChecklistItem[];
   onAddBooking: () => void;
   onDeleteBooking: (id: string) => Promise<void>;
+  onSaveBooking?: (id: string, patch: Partial<CreateTripActivityInput>) => Promise<void>;
   onAddChecklist: (text: string) => Promise<void>;
   onToggleChecklist: (id: string, done: boolean) => Promise<void>;
   onDeleteChecklist: (id: string) => Promise<void>;
@@ -36,6 +43,7 @@ export const TripPlanningBoard = ({
   checklist,
   onAddBooking,
   onDeleteBooking,
+  onSaveBooking,
   onAddChecklist,
   onToggleChecklist,
   onDeleteChecklist,
@@ -43,8 +51,8 @@ export const TripPlanningBoard = ({
 }: Props) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const grouped = useMemo(() => {
-    const map = new Map<TripBookingType, TripBooking[]>();
+  const grouped = useMemo<Map<TripActivityType, TripActivity[]>>(() => {
+    const map = new Map<TripActivityType, TripActivity[]>();
     bookings.forEach((b) => {
       const arr = map.get(b.type) ?? [];
       arr.push(b);
@@ -187,7 +195,12 @@ export const TripPlanningBoard = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginTop: 14 }}>
             {list.map((b) => (
-              <BookingCard key={b.id} booking={b} onDelete={onDeleteBooking} />
+              <TripActivityCard
+                key={b.id}
+                activity={b}
+                onDelete={onDeleteBooking}
+                onSave={onSaveBooking}
+              />
             ))}
           </div>
         </section>

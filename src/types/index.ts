@@ -176,11 +176,48 @@ export interface Trip {
   weather_wind_speed?: number;
   spotify_playlist_url?: string;
   share_token?: string;
+  visibility: TripVisibility;
+  is_surprise: boolean;
+  surprise_config?: SurpriseConfig | null;
   created_at: string;
   updated_at: string;
   waypoints?: TripWaypoint[];
-  bookings?: TripBooking[];
+  activities?: TripActivity[];
+  /** @deprecated alias — usar `activities`. */
+  bookings?: TripActivity[];
 }
+
+export type TripVisibility = 'private' | 'public_link' | 'collaborative';
+export type SurpriseAnimation = 'gift' | 'scratch' | 'envelope';
+
+export interface SurpriseConfig {
+  message?: string;
+  reveal_date?: string;
+  animation?: SurpriseAnimation;
+}
+
+export interface TripCollaborator {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  role: 'editor' | 'viewer';
+  invited_by: string;
+  created_at: string;
+  user?: User;
+}
+
+export interface PublicTripPayload {
+  locked: false;
+  trip: Trip;
+  activities: TripActivity[];
+}
+export interface LockedSurprisePayload {
+  locked: true;
+  reveal_date: string;
+  animation: SurpriseAnimation;
+  message_preview: string;
+}
+export type PublicTripResponse = PublicTripPayload | LockedSurprisePayload;
 
 // ─── Trip bookings ──────────────────────────────────────────────────────────
 
@@ -223,13 +260,17 @@ export interface ActivityMetadata {
 
 export type TripBookingMetadata = LodgingMetadata & ActivityMetadata & Record<string, unknown>;
 
-export interface TripBooking {
+export type TripActivityType = TripBookingType;
+export type TripActivityProvider = TripBookingProvider;
+export type TripActivityMetadata = TripBookingMetadata;
+
+export interface TripActivity {
   id: string;
   trip_id: string;
   created_by: string;
   title: string;
-  type: TripBookingType;
-  provider: TripBookingProvider;
+  type: TripActivityType;
+  provider: TripActivityProvider;
   start_datetime: string;
   end_datetime?: string;
   price?: number;
@@ -237,12 +278,16 @@ export interface TripBooking {
   booking_url?: string;
   confirmation_code?: string;
   notes?: string;
-  metadata: TripBookingMetadata;
-  is_idea: boolean;
+  metadata: TripActivityMetadata;
+  is_candidate: boolean;
+  is_confirmed: boolean;
   order_index: number;
   created_at: string;
   updated_at: string;
 }
+
+/** @deprecated alias retro-compatible — usar TripActivity. */
+export type TripBooking = TripActivity;
 
 export interface TripChecklistItem {
   id: string;
@@ -264,10 +309,10 @@ export interface CreateDraftTripInput {
   notes?: string;
 }
 
-export interface CreateTripBookingInput {
+export interface CreateTripActivityInput {
   title: string;
-  type: TripBookingType;
-  provider: TripBookingProvider;
+  type: TripActivityType;
+  provider: TripActivityProvider;
   start_datetime: string;
   end_datetime?: string;
   price?: number;
@@ -275,10 +320,13 @@ export interface CreateTripBookingInput {
   booking_url?: string;
   confirmation_code?: string;
   notes?: string;
-  metadata?: TripBookingMetadata;
-  is_idea?: boolean;
+  metadata?: TripActivityMetadata;
+  is_candidate?: boolean;
   order_index?: number;
 }
+
+/** @deprecated alias retro-compatible — usar CreateTripActivityInput. */
+export type CreateTripBookingInput = CreateTripActivityInput;
 
 // ─── Mechanics (Talleres recomendados por IA) ───────────────────────────────
 

@@ -1,10 +1,10 @@
 import { supabase } from './supabase';
-import type { TripBooking, CreateTripBookingInput } from '../types';
+import type { TripActivity, CreateTripActivityInput } from '../types';
 
-export const tripBookingsService = {
-  async getByTrip(tripId: string): Promise<TripBooking[]> {
+export const tripActivitiesService = {
+  async getByTrip(tripId: string): Promise<TripActivity[]> {
     const { data, error } = await supabase
-      .from('trip_bookings')
+      .from('trip_activities')
       .select('*')
       .eq('trip_id', tripId)
       .order('start_datetime', { ascending: true });
@@ -15,10 +15,10 @@ export const tripBookingsService = {
   async create(
     tripId: string,
     userId: string,
-    input: CreateTripBookingInput,
-  ): Promise<TripBooking> {
+    input: CreateTripActivityInput,
+  ): Promise<TripActivity> {
     const { data, error } = await supabase
-      .from('trip_bookings')
+      .from('trip_activities')
       .insert({
         ...input,
         metadata: input.metadata ?? {},
@@ -31,10 +31,10 @@ export const tripBookingsService = {
     return data;
   },
 
-  async update(id: string, input: Partial<CreateTripBookingInput>): Promise<TripBooking> {
+  async update(id: string, patch: Partial<CreateTripActivityInput>): Promise<TripActivity> {
     const { data, error } = await supabase
-      .from('trip_bookings')
-      .update(input)
+      .from('trip_activities')
+      .update(patch)
       .eq('id', id)
       .select()
       .single();
@@ -43,7 +43,10 @@ export const tripBookingsService = {
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase.from('trip_bookings').delete().eq('id', id);
+    const { error } = await supabase.from('trip_activities').delete().eq('id', id);
     if (error) throw error;
   },
 };
+
+/** @deprecated alias retro-compatible. */
+export const tripBookingsService = tripActivitiesService;

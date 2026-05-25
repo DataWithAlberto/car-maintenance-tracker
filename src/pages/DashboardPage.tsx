@@ -250,7 +250,7 @@ export const DashboardPage = () => {
     let firstMs = Infinity;
     let sumWindow = 0;
 
-    const trips = primaryStats?.trips ?? [];
+    const trips = (primaryStats?.trips ?? []).filter((t) => !t.is_surprise);
     for (const t of trips) {
       if (!t.start_datetime) continue;
       const km = t.total_km ?? 0;
