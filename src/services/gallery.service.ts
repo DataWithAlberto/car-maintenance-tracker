@@ -8,6 +8,8 @@ export interface GalleryImage {
   id: string;
   user_id: string;
   vehicle_id: string | null;
+  trip_id: string | null;
+  activity_id: string | null;
   storage_path: string;
   public_url: string;
   file_name: string | null;
@@ -159,7 +161,11 @@ export const galleryService = {
   async upload(
     userId: string,
     file: File,
-    opts?: { vehicleId?: string | null },
+    opts?: {
+      vehicleId?: string | null;
+      tripId?: string | null;
+      activityId?: string | null;
+    },
   ): Promise<GalleryImage> {
     /* 1) EXIF se lee del original — la conversión HEIC→JPEG suele strippearlo */
     const exif = await readExif(file);
@@ -195,6 +201,8 @@ export const galleryService = {
       .insert({
         user_id: userId,
         vehicle_id: opts?.vehicleId ?? null,
+        trip_id: opts?.tripId ?? null,
+        activity_id: opts?.activityId ?? null,
         storage_path: path,
         public_url: publicUrl,
         file_name: uploadFile.name,
@@ -241,6 +249,45 @@ export const galleryService = {
         latitude: coords?.latitude ?? null,
         longitude: coords?.longitude ?? null,
       })
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data as GalleryImage;
+  },
+
+  async listByTrip(tripId: string): Promise<GalleryImage[]> {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('*')
+      .eq('trip_id', tripId)
+      .order('taken_at', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as GalleryImage[];
+  },
+
+  async listByActivity(activityId: string): Promise<GalleryImage[]> {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select('*')
+      .eq('activity_id', activityId)
+      .order('taken_at', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as GalleryImage[];
+  },
+
+  async link(
+    id: string,
+    links: { tripId?: string | null; activityId?: string | null },
+  ): Promise<GalleryImage> {
+    const patch: Record<string, string | null> = {};
+    if ('tripId' in links) patch.trip_id = links.tripId ?? null;
+    if ('activityId' in links) patch.activity_id = links.activityId ?? null;
+    const { data, error } = await supabase
+      .from(TABLE)
+      .update(patch)
       .eq('id', id)
       .select('*')
       .single();

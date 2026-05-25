@@ -206,10 +206,33 @@ export interface TripCollaborator {
   user?: User;
 }
 
+export interface PublicTripPhoto {
+  id: string;
+  public_url: string;
+  caption: string | null;
+  taken_at: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  width: number | null;
+  height: number | null;
+  activity_id: string | null;
+  created_at: string;
+}
+
 export interface PublicTripPayload {
   locked: false;
   trip: Trip;
   activities: TripActivity[];
+  photos: PublicTripPhoto[];
+}
+
+// ─── Albums (vista agregada sobre galeria_imagenes vinculadas a un trip) ────
+
+export interface TripAlbum {
+  trip: Trip;
+  cover_url: string | null;
+  photo_count: number;
+  last_photo_at: string | null;
 }
 export interface LockedSurprisePayload {
   locked: true;

@@ -1,24 +1,28 @@
 import { useEffect, useState } from 'react';
-import { Image as ImageIcon, LayoutGrid, Map as MapIcon } from 'lucide-react';
+import { Image as ImageIcon, LayoutGrid, Map as MapIcon, Album } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GalleryDropzone } from '../components/gallery/GalleryDropzone';
 import { GalleryMasonry } from '../components/gallery/GalleryMasonry';
 import { GalleryMap } from '../components/gallery/GalleryMap';
 import { GalleryLightbox } from '../components/gallery/GalleryLightbox';
+import { GalleryAlbumGrid } from '../components/gallery/GalleryAlbumGrid';
+import { AlbumDetailView } from '../components/gallery/AlbumDetailView';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useAuthStore } from '../store/authStore';
 import { useVehicleStore } from '../store/vehicleStore';
 import { galleryService, type GalleryImage } from '../services/gallery.service';
+import type { TripAlbum } from '../types';
 
-type View = 'grid' | 'map';
+type View = 'grid' | 'map' | 'albums';
 
 const VIEW_KEY = 'fh-gallery-view';
 
 const readInitialView = (): View => {
   if (typeof window === 'undefined') return 'grid';
   const stored = window.localStorage.getItem(VIEW_KEY);
-  return stored === 'map' ? 'map' : 'grid';
+  if (stored === 'map' || stored === 'albums') return stored;
+  return 'grid';
 };
 
 export const GalleryPage = () => {
@@ -35,6 +39,7 @@ export const GalleryPage = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [view, setView] = useState<View>(readInitialView);
   const [lightbox, setLightbox] = useState<GalleryImage | null>(null);
+  const [activeAlbum, setActiveAlbum] = useState<TripAlbum | null>(null);
 
   useEffect(() => {
     window.localStorage.setItem(VIEW_KEY, view);
@@ -167,35 +172,61 @@ export const GalleryPage = () => {
               </span>
             )}
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-pressed={view === 'albums'}
+            className="gallery-view-toggle__btn focus-ring"
+            onClick={() => {
+              setView('albums');
+              setActiveAlbum(null);
+            }}
+          >
+            <Album className="w-4 h-4" strokeWidth={1.8} />
+            Álbumes
+          </button>
         </div>
       </header>
 
-      <section className="mb-8 sm:mb-10">
-        <GalleryDropzone onFiles={handleFiles} uploading={uploading} />
-        {uploading && progress.total > 0 && (
-          <div className="mt-4">
-            <div
-              className="w-full h-1.5 rounded-full overflow-hidden"
-              style={{ background: 'var(--color-silver-mist)' }}
-              role="progressbar"
-              aria-valuenow={progressPct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
+      {view !== 'albums' && (
+        <section className="mb-8 sm:mb-10">
+          <GalleryDropzone onFiles={handleFiles} uploading={uploading} />
+          {uploading && progress.total > 0 && (
+            <div className="mt-4">
               <div
-                className="h-full transition-[width] duration-300"
-                style={{ width: `${progressPct}%`, background: 'var(--color-azure)' }}
-              />
+                className="w-full h-1.5 rounded-full overflow-hidden"
+                style={{ background: 'var(--color-silver-mist)' }}
+                role="progressbar"
+                aria-valuenow={progressPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className="h-full transition-[width] duration-300"
+                  style={{ width: `${progressPct}%`, background: 'var(--color-azure)' }}
+                />
+              </div>
+              <p className="text-graphite mt-2" style={{ fontSize: 'var(--text-body-sm)' }}>
+                {progress.done} de {progress.total} ({progressPct}%)
+              </p>
             </div>
-            <p className="text-graphite mt-2" style={{ fontSize: 'var(--text-body-sm)' }}>
-              {progress.done} de {progress.total} ({progressPct}%)
-            </p>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      )}
 
       <section>
-        {loading ? (
+        {view === 'albums' ? (
+          activeAlbum ? (
+            <AlbumDetailView
+              album={activeAlbum}
+              userId={user.id}
+              vehicleId={selectedVehicle?.id ?? null}
+              onBack={() => setActiveAlbum(null)}
+            />
+          ) : (
+            <GalleryAlbumGrid userId={user.id} onOpen={setActiveAlbum} />
+          )
+        ) : loading ? (
           <div className="gallery-masonry">
             {Array.from({ length: 8 }).map((_, i) => (
               <div

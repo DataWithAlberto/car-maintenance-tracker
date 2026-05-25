@@ -693,6 +693,8 @@ export const TripsPage = () => {
                 onToggleChecklist={toggleChecklistItem}
                 onDeleteChecklist={deleteChecklistItem}
                 onConfirm={handleConfirmTrip}
+                userId={user.id}
+                vehicleId={selectedVehicle.id}
               />
             ) : (
               <div
@@ -1505,6 +1507,8 @@ export const TripsPage = () => {
                         activity={b}
                         onDelete={handleDeleteBooking}
                         onSave={handleSaveBooking}
+                        userId={user.id}
+                        vehicleId={selectedVehicle.id}
                       />
                     ))}
                   </div>

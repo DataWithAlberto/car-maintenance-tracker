@@ -16,19 +16,30 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { TripActivity, CreateTripActivityInput } from '../../types';
 import { getBookingTheme, BOOKING_TYPE_LABEL, type BookingTheme } from '../../utils/bookingTheme';
+import { TripActivityPhotos } from './TripActivityPhotos';
 
 interface Props {
   activity: TripActivity;
   editable?: boolean;
   onSave?: (id: string, patch: Partial<CreateTripActivityInput>) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
+  /** Si se provee junto con userId, se renderiza el carrusel de fotos vinculadas. */
+  userId?: string | null;
+  vehicleId?: string | null;
 }
 
 const fmtMoney = (n: number, c = 'EUR') =>
   new Intl.NumberFormat('es-ES', { style: 'currency', currency: c }).format(n);
 const fmtDate = (iso: string) => format(parseISO(iso), 'd MMM · HH:mm', { locale: es });
 
-export const TripActivityCard = ({ activity, editable = true, onSave, onDelete }: Props) => {
+export const TripActivityCard = ({
+  activity,
+  editable = true,
+  onSave,
+  onDelete,
+  userId = null,
+  vehicleId = null,
+}: Props) => {
   const t = getBookingTheme(activity.provider);
   const isLodging = activity.type === 'lodging';
 
@@ -147,6 +158,17 @@ export const TripActivityCard = ({ activity, editable = true, onSave, onDelete }
           onCancel={cancel}
           onSave={save}
           saving={saving}
+        />
+      )}
+
+      {!confirmDelete && userId && (
+        <TripActivityPhotos
+          tripId={activity.trip_id}
+          activityId={activity.id}
+          userId={userId}
+          vehicleId={vehicleId}
+          theme={t}
+          editable={editable}
         />
       )}
 

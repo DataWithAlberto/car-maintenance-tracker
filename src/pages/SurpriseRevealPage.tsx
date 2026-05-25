@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Gift, Sparkles, Loader2 } from 'lucide-react';
+import { Gift, Sparkles, Loader2, Images } from 'lucide-react';
 import { tripsService } from '../services/trips.service';
 import { TripActivityCard } from '../components/trips/TripActivityCard';
-import type { PublicTripResponse } from '../types';
+import type { PublicTripResponse, PublicTripPhoto } from '../types';
 
 export const SurpriseRevealPage = () => {
   const { token } = useParams<{ token: string }>();
@@ -82,7 +82,7 @@ export const SurpriseRevealPage = () => {
 
       <section
         className="max-w-4xl mx-auto"
-        style={{ padding: '20px 24px 80px', display: 'grid', gap: 16 }}
+        style={{ padding: '20px 24px 40px', display: 'grid', gap: 16 }}
       >
         {data.activities.length === 0 ? (
           <p className="text-graphite text-center" style={{ fontSize: 14 }}>
@@ -92,7 +92,120 @@ export const SurpriseRevealPage = () => {
           data.activities.map((a) => <TripActivityCard key={a.id} activity={a} editable={false} />)
         )}
       </section>
+
+      <RevealAlbum photos={data.photos ?? []} />
     </main>
+  );
+};
+
+/* ─── Álbum de Recuerdos (público, share_token) ──────────────────────────
+ * Cubre los tres estados del viaje: planning (fotos del destino), confirmed
+ * (preparativos / extras de Booking/Airbnb subidas por el regalador) y
+ * completed (recuerdos del viaje). Lazy-loading nativo + reveal escalonado. */
+const RevealAlbum = ({ photos }: { photos: PublicTripPhoto[] }) => {
+  const items = useMemo(() => photos.filter((p) => p.public_url), [photos]);
+  if (items.length === 0) return null;
+
+  return (
+    <section
+      className="max-w-5xl mx-auto"
+      style={{ padding: '0 24px 96px', display: 'grid', gap: 18 }}
+    >
+      <style>{`
+        @keyframes album-up {
+          from { opacity: 0; transform: translateY(12px) scale(.985); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .album-tile {
+          animation: album-up .6s cubic-bezier(.16,.84,.36,1) both;
+        }
+      `}</style>
+
+      <header
+        className="flex items-center"
+        style={{
+          gap: 12,
+          paddingTop: 32,
+          borderTop: '1px solid var(--color-silver-mist, #e5e5ea)',
+        }}
+      >
+        <Images className="w-5 h-5" color="#FF5A5F" strokeWidth={1.8} />
+        <h2
+          className="text-ink"
+          style={{
+            fontFamily: 'Inter, var(--font-sf-pro-display)',
+            fontWeight: 700,
+            fontSize: 'clamp(22px, 3vw, 30px)',
+            letterSpacing: '-0.01em',
+            margin: 0,
+          }}
+        >
+          Álbum de Recuerdos
+        </h2>
+        <span className="font-mono text-graphite" style={{ fontSize: 11, letterSpacing: '.10em' }}>
+          {items.length} {items.length === 1 ? 'foto' : 'fotos'}
+        </span>
+      </header>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gap: 12,
+        }}
+      >
+        {items.map((p, i) => (
+          <figure
+            key={p.id}
+            className="album-tile"
+            style={{
+              animationDelay: `${Math.min(i, 12) * 60}ms`,
+              margin: 0,
+              borderRadius: 16,
+              overflow: 'hidden',
+              background: 'var(--color-fog, #f5f5f7)',
+              aspectRatio: '4 / 3',
+              position: 'relative',
+            }}
+          >
+            <img
+              src={p.public_url}
+              alt={p.caption ?? 'Recuerdo del viaje'}
+              loading="lazy"
+              decoding="async"
+              width={p.width ?? undefined}
+              height={p.height ?? undefined}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+                transition: 'transform .5s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.04)')}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = '')}
+            />
+            {p.caption && (
+              <figcaption
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  padding: '24px 12px 10px',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,.55) 100%)',
+                }}
+              >
+                {p.caption}
+              </figcaption>
+            )}
+          </figure>
+        ))}
+      </div>
+    </section>
   );
 };
 

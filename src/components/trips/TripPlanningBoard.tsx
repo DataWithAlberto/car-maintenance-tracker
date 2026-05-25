@@ -26,6 +26,8 @@ interface Props {
   onToggleChecklist: (id: string, done: boolean) => Promise<void>;
   onDeleteChecklist: (id: string) => Promise<void>;
   onConfirm: (keepBookingIds: string[]) => Promise<void>;
+  userId?: string | null;
+  vehicleId?: string | null;
 }
 
 const fmtMoney = (n: number) =>
@@ -48,6 +50,8 @@ export const TripPlanningBoard = ({
   onToggleChecklist,
   onDeleteChecklist,
   onConfirm,
+  userId = null,
+  vehicleId = null,
 }: Props) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -200,6 +204,8 @@ export const TripPlanningBoard = ({
                 activity={b}
                 onDelete={onDeleteBooking}
                 onSave={onSaveBooking}
+                userId={userId}
+                vehicleId={vehicleId}
               />
             ))}
           </div>
