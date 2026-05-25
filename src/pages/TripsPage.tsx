@@ -233,11 +233,11 @@ export const TripsPage = () => {
 
   /* Hub: origen más frecuente con coordenadas ────────────────────────────── */
   const hubCoords = useMemo(() => {
-    const withCoords = stats.list.filter((r) => r.trip.start_lat != null);
+    const withCoords = stats.list.filter((r) => r.trip.start_lat != null && r.trip.start_location);
     if (!withCoords.length) return null;
     const counts = new Map<string, { count: number; lat: number; lng: number }>();
     withCoords.forEach((r) => {
-      const key = r.trip.start_location;
+      const key = r.trip.start_location!;
       const ex = counts.get(key);
       if (ex) ex.count++;
       else counts.set(key, { count: 1, lat: r.trip.start_lat!, lng: r.trip.start_lng! });
@@ -261,6 +261,7 @@ export const TripsPage = () => {
   const hubName = useMemo(() => {
     const counts: Record<string, number> = {};
     trips.forEach((t) => {
+      if (!t.start_location) return;
       counts[t.start_location] = (counts[t.start_location] ?? 0) + 1;
     });
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Origen';
@@ -1196,7 +1197,7 @@ export const TripsPage = () => {
                                     marginTop: 6,
                                   }}
                                 >
-                                  {dotDate(r.trip.start_datetime)}
+                                  {r.trip.start_datetime ? dotDate(r.trip.start_datetime) : '—'}
                                 </p>
                               </div>
                               <div className="flex items-center" style={{ gap: 10, minWidth: 0 }}>
