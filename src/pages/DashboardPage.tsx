@@ -252,6 +252,7 @@ export const DashboardPage = () => {
 
     const trips = primaryStats?.trips ?? [];
     for (const t of trips) {
+      if (!t.start_datetime) continue;
       const km = t.total_km ?? 0;
       totalTripKm += km;
       const d = new Date(t.start_datetime);
