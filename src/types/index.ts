@@ -173,6 +173,83 @@ export interface Trip {
   created_at: string;
   updated_at: string;
   waypoints?: TripWaypoint[];
+  bookings?: TripBooking[];
+}
+
+// ─── Trip bookings ──────────────────────────────────────────────────────────
+
+export type TripBookingType =
+  | 'lodging'
+  | 'museum'
+  | 'activity'
+  | 'restaurant'
+  | 'transport'
+  | 'ticket'
+  | 'other';
+
+export type TripBookingProvider =
+  | 'booking'
+  | 'airbnb'
+  | 'vrbo'
+  | 'hotels'
+  | 'tripadvisor'
+  | 'getyourguide'
+  | 'civitatis'
+  | 'standard';
+
+export interface LodgingMetadata {
+  address?: string;
+  room_type?: string;
+  guests?: number;
+  rating?: number;
+  photo_url?: string;
+  check_in_time?: string;
+  check_out_time?: string;
+}
+
+export interface ActivityMetadata {
+  address?: string;
+  meeting_point?: string;
+  duration_min?: number;
+  language?: string;
+  audio_guide_lang?: string;
+}
+
+export type TripBookingMetadata = LodgingMetadata & ActivityMetadata & Record<string, unknown>;
+
+export interface TripBooking {
+  id: string;
+  trip_id: string;
+  created_by: string;
+  title: string;
+  type: TripBookingType;
+  provider: TripBookingProvider;
+  start_datetime: string;
+  end_datetime?: string;
+  price?: number;
+  currency?: string;
+  booking_url?: string;
+  confirmation_code?: string;
+  notes?: string;
+  metadata: TripBookingMetadata;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateTripBookingInput {
+  title: string;
+  type: TripBookingType;
+  provider: TripBookingProvider;
+  start_datetime: string;
+  end_datetime?: string;
+  price?: number;
+  currency?: string;
+  booking_url?: string;
+  confirmation_code?: string;
+  notes?: string;
+  metadata?: TripBookingMetadata;
+  order_index?: number;
 }
 
 // ─── Mechanics (Talleres recomendados por IA) ───────────────────────────────
