@@ -618,156 +618,190 @@ export const TripsPage = () => {
 
         {/* ─── Vista de planificación ─────────────────────────────────── */}
         {statusFilter === 'planning' && (
-          <div className="grid lg:grid-cols-[260px_1fr]" style={{ gap: 20 }}>
-            {/* Lista de borradores */}
-            <aside
-              className="bg-snow"
-              style={{
-                border: '1px solid var(--color-silver-mist)',
-                borderRadius: 18,
-                padding: '18px 16px',
-                alignSelf: 'start',
-              }}
-            >
-              <span style={mistMono}>§ Borradores</span>
-              {planningTrips.length === 0 ? (
-                <p
-                  className="text-graphite"
-                  style={{ fontSize: 13, marginTop: 14, lineHeight: 1.5 }}
-                >
-                  Aún no tienes borradores. Empieza con un destino y un presupuesto aproximado.
-                </p>
-              ) : (
-                <ul style={{ listStyle: 'none', padding: 0, marginTop: 12 }}>
-                  {planningTrips.map((t) => {
-                    const active = selectedId === t.id;
-                    return (
-                      <li key={t.id} className="group" style={{ position: 'relative' }}>
-                        <button
-                          onClick={() => setSelectedId(t.id)}
-                          className="w-full text-left transition-colors"
-                          style={{
-                            padding: '10px 12px',
-                            paddingRight: 32,
-                            borderRadius: 12,
-                            border: 'none',
-                            background: active ? 'var(--color-fog)' : 'transparent',
-                            cursor: 'pointer',
-                            marginBottom: 4,
-                          }}
-                        >
-                          <p
+          <>
+            <div className="grid lg:grid-cols-[260px_1fr]" style={{ gap: 20 }}>
+              {/* Lista de borradores */}
+              <aside
+                className="bg-snow"
+                style={{
+                  border: '1px solid var(--color-silver-mist)',
+                  borderRadius: 18,
+                  padding: '18px 16px',
+                  alignSelf: 'start',
+                }}
+              >
+                <span style={mistMono}>§ Borradores</span>
+                {planningTrips.length === 0 ? (
+                  <p
+                    className="text-graphite"
+                    style={{ fontSize: 13, marginTop: 14, lineHeight: 1.5 }}
+                  >
+                    Aún no tienes borradores. Empieza con un destino y un presupuesto aproximado.
+                  </p>
+                ) : (
+                  <ul style={{ listStyle: 'none', padding: 0, marginTop: 12 }}>
+                    {planningTrips.map((t) => {
+                      const active = selectedId === t.id;
+                      return (
+                        <li key={t.id} className="group" style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => setSelectedId(t.id)}
+                            className="w-full text-left transition-colors"
                             style={{
-                              fontSize: 14,
-                              fontWeight: 600,
-                              color: 'var(--color-ink)',
-                              margin: 0,
+                              padding: '10px 12px',
+                              paddingRight: 32,
+                              borderRadius: 12,
+                              border: 'none',
+                              background: active ? 'var(--color-fog)' : 'transparent',
+                              cursor: 'pointer',
+                              marginBottom: 4,
                             }}
                           >
-                            {t.title ?? t.end_location ?? 'Sin destino'}
-                          </p>
-                          <p className="text-graphite" style={{ fontSize: 12, marginTop: 2 }}>
-                            {t.estimated_budget != null
-                              ? `${nf0.format(t.estimated_budget)} €`
-                              : 'Sin presupuesto'}
-                          </p>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(t.id);
-                          }}
-                          aria-label="Eliminar borrador"
-                          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                          style={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 6,
-                            width: 22,
-                            height: 22,
-                            borderRadius: 999,
-                            border: 'none',
-                            background: 'var(--color-snow)',
-                            color: '#a1a1a6',
-                            cursor: 'pointer',
-                            fontSize: 13,
-                            lineHeight: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = '#b64400';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = '#a1a1a6';
-                          }}
-                        >
-                          ✕
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              <button
-                onClick={() => setShowQuickPlan(true)}
-                className="w-full transition-colors hover:bg-fog"
-                style={{
-                  marginTop: 12,
-                  background: '#fff',
-                  border: '1.5px dashed var(--color-silver-mist)',
-                  borderRadius: 12,
-                  padding: '10px',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: '#707070',
-                  cursor: 'pointer',
-                }}
-              >
-                ✦ Bocetar otro
-              </button>
-            </aside>
+                            <p
+                              style={{
+                                fontSize: 14,
+                                fontWeight: 600,
+                                color: 'var(--color-ink)',
+                                margin: 0,
+                              }}
+                            >
+                              {t.title ?? t.end_location ?? 'Sin destino'}
+                            </p>
+                            <p className="text-graphite" style={{ fontSize: 12, marginTop: 2 }}>
+                              {t.estimated_budget != null
+                                ? `${nf0.format(t.estimated_budget)} €`
+                                : 'Sin presupuesto'}
+                            </p>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(t.id);
+                            }}
+                            aria-label="Eliminar borrador"
+                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                            style={{
+                              position: 'absolute',
+                              top: 8,
+                              right: 6,
+                              width: 22,
+                              height: 22,
+                              borderRadius: 999,
+                              border: 'none',
+                              background: 'var(--color-snow)',
+                              color: '#a1a1a6',
+                              cursor: 'pointer',
+                              fontSize: 13,
+                              lineHeight: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = '#b64400';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = '#a1a1a6';
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                <button
+                  onClick={() => setShowQuickPlan(true)}
+                  className="w-full transition-colors hover:bg-fog"
+                  style={{
+                    marginTop: 12,
+                    background: '#fff',
+                    border: '1.5px dashed var(--color-silver-mist)',
+                    borderRadius: 12,
+                    padding: '10px',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: '#707070',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✦ Bocetar otro
+                </button>
+              </aside>
 
-            {/* Tablero del borrador seleccionado */}
-            {selectedTrip && selectedTrip.status === 'planning' ? (
-              <TripPlanningBoard
-                trip={selectedTrip}
-                bookings={bookings}
-                checklist={checklist}
-                onAddBooking={() => setShowBookingForm(true)}
-                onDeleteBooking={handleDeleteBooking}
-                onSaveBooking={handleSaveBooking}
-                onAddChecklist={handleAddChecklist}
-                onToggleChecklist={toggleChecklistItem}
-                onDeleteChecklist={deleteChecklistItem}
-                onConfirm={handleConfirmTrip}
-                userId={user.id}
-                vehicleId={selectedVehicle.id}
-              />
-            ) : (
-              <div
-                className="bg-snow flex items-center justify-center"
-                style={{
-                  border: '1.5px dashed var(--color-silver-mist)',
-                  borderRadius: 18,
-                  padding: '60px 24px',
-                  textAlign: 'center',
-                  minHeight: 280,
-                }}
-              >
-                <p className="text-graphite" style={{ fontSize: 14 }}>
-                  {planningTrips.length === 0
-                    ? 'Crea tu primer borrador para empezar a planificar.'
-                    : 'Selecciona un borrador para abrirlo.'}
-                </p>
+              {/* Tablero del borrador seleccionado */}
+              {selectedTrip && selectedTrip.status === 'planning' ? (
+                <TripPlanningBoard
+                  trip={selectedTrip}
+                  bookings={bookings}
+                  checklist={checklist}
+                  onAddBooking={() => setShowBookingForm(true)}
+                  onDeleteBooking={handleDeleteBooking}
+                  onSaveBooking={handleSaveBooking}
+                  onAddChecklist={handleAddChecklist}
+                  onToggleChecklist={toggleChecklistItem}
+                  onDeleteChecklist={deleteChecklistItem}
+                  onConfirm={handleConfirmTrip}
+                  userId={user.id}
+                  vehicleId={selectedVehicle.id}
+                />
+              ) : (
+                <div
+                  className="bg-snow flex items-center justify-center"
+                  style={{
+                    border: '1.5px dashed var(--color-silver-mist)',
+                    borderRadius: 18,
+                    padding: '60px 24px',
+                    textAlign: 'center',
+                    minHeight: 280,
+                  }}
+                >
+                  <p className="text-graphite" style={{ fontSize: 14 }}>
+                    {planningTrips.length === 0
+                      ? 'Crea tu primer borrador para empezar a planificar.'
+                      : 'Selecciona un borrador para abrirlo.'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* ─── Privacidad + Sorpresa (planning) ─────────────────────── */}
+            {selectedTrip && selectedTrip.status === 'planning' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <TripPublicToggle
+                  isPublic={selectedTrip.is_public}
+                  shareToken={selectedTrip.share_token}
+                  onChange={handlePublicChange}
+                />
+                <TripSurpriseEditor
+                  enabled={selectedTrip.is_surprise}
+                  config={selectedTrip.surprise_config}
+                  onChange={handleSurpriseChange}
+                />
               </div>
             )}
-          </div>
+          </>
         )}
 
         {statusFilter === 'registered' && (
           <>
+            {/* ─── [5] Privacidad + Sorpresa ──────────────────────────────── */}
+            {selectedTrip && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <TripPublicToggle
+                  isPublic={selectedTrip.is_public}
+                  shareToken={selectedTrip.share_token}
+                  onChange={handlePublicChange}
+                />
+                <TripSurpriseEditor
+                  enabled={selectedTrip.is_surprise}
+                  config={selectedTrip.surprise_config}
+                  onChange={handleSurpriseChange}
+                />
+              </div>
+            )}
+
             {/* ─── [2] Editorial + Distribución ───────────────────────────── */}
             <div className="grid lg:grid-cols-[1.1fr_0.9fr] items-end" style={{ gap: 48 }}>
               <div>
@@ -1490,22 +1524,6 @@ export const TripsPage = () => {
                 )}
               </div>
             </div>
-
-            {/* ─── [5] Privacidad + Sorpresa ──────────────────────────────── */}
-            {selectedTrip && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <TripPublicToggle
-                  isPublic={selectedTrip.is_public}
-                  shareToken={selectedTrip.share_token}
-                  onChange={handlePublicChange}
-                />
-                <TripSurpriseEditor
-                  enabled={selectedTrip.is_surprise}
-                  config={selectedTrip.surprise_config}
-                  onChange={handleSurpriseChange}
-                />
-              </div>
-            )}
 
             {/* ─── [6] Reservas del viaje seleccionado ────────────────────── */}
             {selectedTrip && (
