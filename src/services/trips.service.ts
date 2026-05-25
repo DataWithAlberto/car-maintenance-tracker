@@ -112,8 +112,11 @@ export const tripsService = {
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase.from('trips').delete().eq('id', id);
+    const { error, count } = await supabase.from('trips').delete({ count: 'exact' }).eq('id', id);
     if (error) throw error;
+    if (count === 0) {
+      throw new Error('No se pudo eliminar: el viaje no existe o no tienes permisos.');
+    }
   },
 
   async addWaypoint(

@@ -343,9 +343,13 @@ export const TripsPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Eliminar este viaje?')) return;
-    await deleteTrip(id);
-    if (selectedId === id) setSelectedId(null);
-    toast.success('Viaje eliminado');
+    try {
+      await deleteTrip(id);
+      if (selectedId === id) setSelectedId(null);
+      toast.success('Viaje eliminado');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo eliminar');
+    }
   };
 
   const handleExportCSV = () => {
@@ -589,12 +593,13 @@ export const TripsPage = () => {
                   {planningTrips.map((t) => {
                     const active = selectedId === t.id;
                     return (
-                      <li key={t.id}>
+                      <li key={t.id} className="group" style={{ position: 'relative' }}>
                         <button
                           onClick={() => setSelectedId(t.id)}
                           className="w-full text-left transition-colors"
                           style={{
                             padding: '10px 12px',
+                            paddingRight: 32,
                             borderRadius: 12,
                             border: 'none',
                             background: active ? 'var(--color-fog)' : 'transparent',
@@ -617,6 +622,39 @@ export const TripsPage = () => {
                               ? `${nf0.format(t.estimated_budget)} €`
                               : 'Sin presupuesto'}
                           </p>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(t.id);
+                          }}
+                          aria-label="Eliminar borrador"
+                          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                          style={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 6,
+                            width: 22,
+                            height: 22,
+                            borderRadius: 999,
+                            border: 'none',
+                            background: 'var(--color-snow)',
+                            color: '#a1a1a6',
+                            cursor: 'pointer',
+                            fontSize: 13,
+                            lineHeight: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = '#b64400';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = '#a1a1a6';
+                          }}
+                        >
+                          ✕
                         </button>
                       </li>
                     );

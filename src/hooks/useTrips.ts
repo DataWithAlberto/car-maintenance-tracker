@@ -37,8 +37,18 @@ export const useTrips = (vehicleId?: string) => {
   }, []);
 
   const deleteTrip = useCallback(async (id: string): Promise<void> => {
-    await tripsService.delete(id);
-    setTrips((prev) => prev.filter((t) => t.id !== id));
+    // Optimistic: quita el viaje, restaura si falla
+    let snapshot: Trip[] = [];
+    setTrips((prev) => {
+      snapshot = prev;
+      return prev.filter((t) => t.id !== id);
+    });
+    try {
+      await tripsService.delete(id);
+    } catch (e) {
+      setTrips(snapshot);
+      throw e;
+    }
   }, []);
 
   const createDraft = useCallback(
