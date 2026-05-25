@@ -8,7 +8,7 @@ import { TripForm } from '../components/trips/TripForm';
 import { TripBookingForm } from '../components/trips/TripBookingForm';
 import { QuickPlanTripForm } from '../components/trips/QuickPlanTripForm';
 import { TripPlanningBoard } from '../components/trips/TripPlanningBoard';
-import { TripVisibilityControl } from '../components/trips/TripVisibilityControl';
+import { TripPublicToggle } from '../components/trips/TripPublicToggle';
 import { TripSurpriseEditor } from '../components/trips/TripSurpriseEditor';
 import { TripActivityCard } from '../components/trips/TripActivityCard';
 import { SkeletonCard } from '../components/ui/Skeleton';
@@ -177,9 +177,25 @@ export const TripsPage = () => {
     fetchTrips();
   }, [selectedVehicle?.id]);
 
+  /* Modo creador: los viajes sorpresa permanecen ocultos del listado principal
+   * por defecto (anti-spoiler si alguien mira por encima del hombro). Se
+   * pueden revelar manualmente desde el panel «Sorpresas activas». */
+  const [showSurprises, setShowSurprises] = useState(false);
+  const surpriseTrips = useMemo(() => trips.filter((t) => t.is_surprise), [trips]);
+  const visibleTrips = useMemo(
+    () => (showSurprises ? trips : trips.filter((t) => !t.is_surprise)),
+    [trips, showSurprises],
+  );
+
   /* Separa borradores de viajes ya registrados ─────────────────────────────── */
-  const planningTrips = useMemo(() => trips.filter((t) => t.status === 'planning'), [trips]);
-  const registeredTrips = useMemo(() => trips.filter((t) => t.status !== 'planning'), [trips]);
+  const planningTrips = useMemo(
+    () => visibleTrips.filter((t) => t.status === 'planning'),
+    [visibleTrips],
+  );
+  const registeredTrips = useMemo(
+    () => visibleTrips.filter((t) => t.status !== 'planning'),
+    [visibleTrips],
+  );
 
   /* ─── Datos agregados ───────────────────────────────────────────────────── */
   const stats = useMemo(() => {
@@ -399,13 +415,20 @@ export const TripsPage = () => {
     }
   };
 
-  const handleVisibilityChange = async (next: TripVisibility) => {
-    if (!selectedId) return;
+  const handlePublicChange = async (next: boolean) => {
+    if (!selectedId || !selectedTrip) return;
+    const fromVisibility = selectedTrip.visibility;
+    const targetVisibility: TripVisibility = next
+      ? fromVisibility === 'collaborative'
+        ? 'collaborative'
+        : 'public_link'
+      : 'private';
     try {
-      await updateTrip(selectedId, { visibility: next });
-      toast.success('Privacidad actualizada');
+      await updateTrip(selectedId, { visibility: targetVisibility });
+      toast.success(next ? 'Viaje visible para todos' : 'Viaje privado');
     } catch {
       toast.error('No se pudo actualizar');
+      throw new Error('update_failed');
     }
   };
 
@@ -565,6 +588,32 @@ export const TripsPage = () => {
               </button>
             );
           })}
+
+          {surpriseTrips.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowSurprises((v) => !v)}
+              className="transition-colors focus-ring"
+              style={{
+                marginLeft: 'auto',
+                padding: '7px 14px',
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 600,
+                border: '1px dashed #FF5A5F',
+                color: '#FF5A5F',
+                background: showSurprises ? 'rgba(255,90,95,.10)' : 'transparent',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+              aria-pressed={showSurprises}
+            >
+              ✦{' '}
+              {showSurprises ? 'Ocultar sorpresas' : `Mostrar sorpresas (${surpriseTrips.length})`}
+            </button>
+          )}
         </div>
 
         {/* ─── Vista de planificación ─────────────────────────────────── */}
@@ -1445,10 +1494,10 @@ export const TripsPage = () => {
             {/* ─── [5] Privacidad + Sorpresa ──────────────────────────────── */}
             {selectedTrip && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <TripVisibilityControl
-                  visibility={selectedTrip.visibility}
+                <TripPublicToggle
+                  isPublic={selectedTrip.is_public}
                   shareToken={selectedTrip.share_token}
-                  onChange={handleVisibilityChange}
+                  onChange={handlePublicChange}
                 />
                 <TripSurpriseEditor
                   enabled={selectedTrip.is_surprise}

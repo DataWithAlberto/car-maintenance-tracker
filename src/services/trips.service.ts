@@ -80,6 +80,15 @@ export const tripsService = {
     return data;
   },
 
+  /** Toggle binario público/privado. Conserva 'collaborative' si ya lo era y
+   *  el caller pide ON; solo el caso explícito OFF fuerza 'private'. */
+  async setPublic(id: string, isPublic: boolean, current?: TripVisibility): Promise<Trip> {
+    let next: TripVisibility;
+    if (!isPublic) next = 'private';
+    else next = current === 'collaborative' ? 'collaborative' : 'public_link';
+    return this.setVisibility(id, next);
+  },
+
   async setVisibility(id: string, visibility: TripVisibility): Promise<Trip> {
     const { data, error } = await supabase
       .from('trips')

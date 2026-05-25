@@ -177,6 +177,8 @@ export interface Trip {
   spotify_playlist_url?: string;
   share_token?: string;
   visibility: TripVisibility;
+  /** Columna generada en SQL: `visibility <> 'private'`. Solo lectura. */
+  is_public: boolean;
   is_surprise: boolean;
   surprise_config?: SurpriseConfig | null;
   created_at: string;
