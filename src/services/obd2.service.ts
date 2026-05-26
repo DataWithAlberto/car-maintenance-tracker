@@ -32,27 +32,52 @@ export interface DTC {
   raw: string;
 }
 
-// ─── Known ELM327 BLE profiles ─────────────────────────────────────────────────
-const BLE_PROFILES = [
+// ─── Known ELM327 / STN BLE profiles ───────────────────────────────────────────
+// Listado en orden de prioridad: primero los perfiles "premium" (OBDLink),
+// después los genéricos. El método _connectDevice los prueba en secuencia.
+export interface BLEProfile {
+  /** Nombre legible para logs y depuración. */
+  name: string;
+  serviceUUID: string;
+  writeUUID: string;
+  notifyUUID: string;
+}
+
+const BLE_PROFILES: BLEProfile[] = [
   {
-    // Nordic UART Service (most common BLE adapters)
+    // OBDLink MX+ / LX / CX (chipset STN2120 con módulo BLE Microchip RN4870/71).
+    // Servicio "Microchip Transparent UART" — el mismo que usan todas las
+    // herramientas oficiales de OBDLink Suite, OBDLink app y BlueDriver.
+    name: 'OBDLink (Microchip BLE)',
+    serviceUUID: '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+    writeUUID: '49535343-8841-43f4-a8d4-ecbe34729bb3',
+    notifyUUID: '49535343-1e4d-4bd9-ba61-23c647249616',
+  },
+  {
+    // Nordic UART Service (adaptadores BLE genéricos basados en nRF).
+    name: 'Nordic UART',
     serviceUUID: '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
     writeUUID: '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
     notifyUUID: '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
   },
   {
-    // Common Chinese ELM327 adapters
+    // ELM327 chinos baratos basados en SPP-over-BLE (Vgate iCar Pro, Veepeak…).
+    name: 'ELM327 generic (FFF0)',
     serviceUUID: '0000fff0-0000-1000-8000-00805f9b34fb',
     writeUUID: '0000fff2-0000-1000-8000-00805f9b34fb',
     notifyUUID: '0000fff1-0000-1000-8000-00805f9b34fb',
   },
   {
-    // BTLE-miniOBD / some clones
+    // BTLE-miniOBD / TI CC254x clones (servicio FFE0, único char read/write).
+    name: 'TI CC254x / miniOBD (FFE0)',
     serviceUUID: '0000ffe0-0000-1000-8000-00805f9b34fb',
     writeUUID: '0000ffe1-0000-1000-8000-00805f9b34fb',
     notifyUUID: '0000ffe1-0000-1000-8000-00805f9b34fb',
   },
 ];
+
+/** Solo lectura, útil para UI/diagnóstico. */
+export const getKnownBLEProfiles = (): ReadonlyArray<BLEProfile> => BLE_PROFILES;
 
 class OBD2Service {
   private device: BluetoothDevice | null = null;
@@ -61,6 +86,19 @@ class OBD2Service {
   private rxBuffer = '';
   private pendingResolve: ((v: string) => void) | null = null;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
+  private matchedProfile: BLEProfile | null = null;
+
+  /** Perfil BLE que casó en la última conexión exitosa (para diagnóstico). */
+  get connectedProfile(): BLEProfile | null {
+    return this.matchedProfile;
+  }
+
+  /** ¿Es probable que el dispositivo conectado sea un OBDLink MX+/LX? */
+  get isOBDLinkDevice(): boolean {
+    const name = this.device?.name?.toLowerCase() ?? '';
+    if (name.includes('obdlink')) return true;
+    return this.matchedProfile?.name.includes('OBDLink') ?? false;
+  }
 
   get isSupported(): boolean {
     return 'bluetooth' in navigator;
@@ -83,12 +121,17 @@ class OBD2Service {
     const server = await device.gatt.connect();
 
     let connected = false;
+    this.matchedProfile = null;
     for (const profile of BLE_PROFILES) {
       try {
         const service = await server.getPrimaryService(profile.serviceUUID);
         this.writeChar = await service.getCharacteristic(profile.writeUUID);
         this.notifyChar = await service.getCharacteristic(profile.notifyUUID);
+        this.matchedProfile = profile;
         connected = true;
+        if (import.meta.env.DEV) {
+          console.info(`[obd2] Conectado usando perfil: ${profile.name}`);
+        }
         break;
       } catch {
         // try next profile
@@ -96,17 +139,28 @@ class OBD2Service {
     }
 
     if (!connected)
-      throw new Error('Adaptador no reconocido. Asegúrate de que es un ELM327 compatible.');
+      throw new Error('Adaptador no reconocido. Asegúrate de que es un ELM327/STN compatible.');
 
     await this.notifyChar!.startNotifications();
     this.notifyChar!.addEventListener('characteristicvaluechanged', this.onData);
 
-    await this.sendRaw('ATZ\r', 2000);
-    await this.sendRaw('ATE0\r');
-    await this.sendRaw('ATL0\r');
-    await this.sendRaw('ATS0\r');
-    await this.sendRaw('ATH0\r');
-    await this.sendRaw('ATSP0\r');
+    // ── Inicialización ELM327/STN estándar ─────────────────────────────────
+    await this.sendRaw('ATZ\r', 2000); // reset
+    await this.sendRaw('ATE0\r'); // echo off
+    await this.sendRaw('ATL0\r'); // linefeeds off
+    await this.sendRaw('ATS0\r'); // spaces off
+    await this.sendRaw('ATH0\r'); // headers off
+    await this.sendRaw('ATSP0\r'); // auto protocol detection
+
+    // ── Optimizaciones específicas STN (OBDLink MX+/LX/CX) ────────────────
+    // El chip STN2120 acepta extensiones AT/ST para reducir la latencia y
+    // forzar timing más agresivo que la ELM327 base. Las ignora cualquier
+    // adaptador no-STN, así que es seguro enviarlas siempre.
+    if (this.matchedProfile?.name.includes('OBDLink')) {
+      await this.sendRaw('STBR115200\r', 500).catch(() => null); // baud rate alta
+      await this.sendRaw('ATAT2\r', 500).catch(() => null); // adaptive timing agresivo
+      await this.sendRaw('ATST32\r', 500).catch(() => null); // timeout 200ms (50ms*4)
+    }
 
     device.addEventListener('gattserverdisconnected', () => {
       this.writeChar = null;

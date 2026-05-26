@@ -7,6 +7,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { SkeletonCard } from './components/ui/Skeleton';
 import { authService } from './services/auth.service';
+import { syncQueueService } from './services/syncQueue.service';
 import { useAuthStore } from './store/authStore';
 import { useThemeStore } from './store/themeStore';
 
@@ -93,7 +94,13 @@ function App() {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Arranca el reintento automático de escrituras OBD2 fallidas.
+    syncQueueService.startAutoSync();
+
+    return () => {
+      subscription.unsubscribe();
+      syncQueueService.stopAutoSync();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

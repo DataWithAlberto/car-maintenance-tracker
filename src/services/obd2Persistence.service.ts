@@ -1,15 +1,12 @@
 import { supabase } from './supabase';
 import type { LiveData } from './obd2.service';
-import type { OBD2Anomaly, OBD2Reading } from '../types';
-
-const ANOMALY_THRESHOLDS = {
-  coolantTemp: { warn: 95, critical: 110 },
-  engineLoad: { critical: 100 },
-  oilPressure: { warn: 30, critical: 20 },
-  batteryVoltage: { warn: 11.5, critical: 10 },
-  rpm: { warn: 6500 },
-  fuelLevel: { critical: 5 },
-};
+import { syncQueueService } from './syncQueue.service';
+import {
+  DEFAULT_VEHICLE_THRESHOLDS,
+  type OBD2Anomaly,
+  type OBD2Reading,
+  type VehicleThresholds,
+} from '../types';
 
 export const obd2PersistenceService = {
   async saveReading(vehicleId: string, reading: LiveData): Promise<OBD2Reading | null> {
@@ -52,7 +49,11 @@ export const obd2PersistenceService = {
       if (error) throw error;
       return data;
     } catch (err) {
-      console.error('Error saving OBD2 reading:', err);
+      if (import.meta.env.DEV) {
+        console.error('Error saving OBD2 reading, queueing for retry:', err);
+      }
+      // Fallback: encolar para reenvío automático cuando vuelva la red.
+      syncQueueService.enqueueReading(vehicleId, reading);
       return null;
     }
   },
@@ -75,60 +76,65 @@ export const obd2PersistenceService = {
     }
   },
 
-  detectAnomalies(reading: LiveData): OBD2Anomaly[] {
+  /**
+   * Detecta anomalías en una lectura usando los umbrales configurables del
+   * vehículo. Si no se pasan `thresholds`, usa los `DEFAULT_VEHICLE_THRESHOLDS`
+   * para preservar compatibilidad con llamadas legacy.
+   */
+  detectAnomalies(
+    reading: LiveData,
+    thresholds: VehicleThresholds = DEFAULT_VEHICLE_THRESHOLDS,
+  ): OBD2Anomaly[] {
     const anomalies: OBD2Anomaly[] = [];
 
     // Temperature warnings
     if (reading.coolantTemp !== null) {
-      if (reading.coolantTemp >= ANOMALY_THRESHOLDS.coolantTemp.critical) {
+      if (reading.coolantTemp >= thresholds.coolantTempCritical) {
         anomalies.push({
           type: 'overtemp',
           severity: 'critical',
           value: reading.coolantTemp,
-          threshold: ANOMALY_THRESHOLDS.coolantTemp.critical,
+          threshold: thresholds.coolantTempCritical,
           message: `Motor sobrecalentado: ${reading.coolantTemp}°C`,
         });
-      } else if (reading.coolantTemp >= ANOMALY_THRESHOLDS.coolantTemp.warn) {
+      } else if (reading.coolantTemp >= thresholds.coolantTempWarn) {
         anomalies.push({
           type: 'overtemp',
           severity: 'warn',
           value: reading.coolantTemp,
-          threshold: ANOMALY_THRESHOLDS.coolantTemp.warn,
+          threshold: thresholds.coolantTempWarn,
           message: `Temperatura alta: ${reading.coolantTemp}°C`,
         });
       }
     }
 
     // Engine load warning
-    if (
-      reading.engineLoad !== null &&
-      reading.engineLoad >= ANOMALY_THRESHOLDS.engineLoad.critical
-    ) {
+    if (reading.engineLoad !== null && reading.engineLoad >= thresholds.engineLoadCritical) {
       anomalies.push({
         type: 'engine_load_high',
         severity: 'critical',
         value: reading.engineLoad,
-        threshold: ANOMALY_THRESHOLDS.engineLoad.critical,
+        threshold: thresholds.engineLoadCritical,
         message: `Carga del motor anormalmente alta: ${reading.engineLoad}%`,
       });
     }
 
     // Oil pressure warning
     if (reading.oilPressure !== null) {
-      if (reading.oilPressure <= ANOMALY_THRESHOLDS.oilPressure.critical) {
+      if (reading.oilPressure <= thresholds.oilPressureCritical) {
         anomalies.push({
           type: 'oil_pressure_low',
           severity: 'critical',
           value: reading.oilPressure,
-          threshold: ANOMALY_THRESHOLDS.oilPressure.critical,
+          threshold: thresholds.oilPressureCritical,
           message: `Presión de aceite crítica: ${reading.oilPressure} kPa`,
         });
-      } else if (reading.oilPressure <= ANOMALY_THRESHOLDS.oilPressure.warn) {
+      } else if (reading.oilPressure <= thresholds.oilPressureWarn) {
         anomalies.push({
           type: 'oil_pressure_low',
           severity: 'warn',
           value: reading.oilPressure,
-          threshold: ANOMALY_THRESHOLDS.oilPressure.warn,
+          threshold: thresholds.oilPressureWarn,
           message: `Presión de aceite baja: ${reading.oilPressure} kPa`,
         });
       }
@@ -136,43 +142,43 @@ export const obd2PersistenceService = {
 
     // Battery voltage warning
     if (reading.batteryVoltage !== null) {
-      if (reading.batteryVoltage <= ANOMALY_THRESHOLDS.batteryVoltage.critical) {
+      if (reading.batteryVoltage <= thresholds.batteryVoltageCritical) {
         anomalies.push({
           type: 'low_battery',
           severity: 'critical',
           value: reading.batteryVoltage,
-          threshold: ANOMALY_THRESHOLDS.batteryVoltage.critical,
+          threshold: thresholds.batteryVoltageCritical,
           message: `Voltaje de batería crítico: ${reading.batteryVoltage}V`,
         });
-      } else if (reading.batteryVoltage <= ANOMALY_THRESHOLDS.batteryVoltage.warn) {
+      } else if (reading.batteryVoltage <= thresholds.batteryVoltageWarn) {
         anomalies.push({
           type: 'low_battery',
           severity: 'warn',
           value: reading.batteryVoltage,
-          threshold: ANOMALY_THRESHOLDS.batteryVoltage.warn,
+          threshold: thresholds.batteryVoltageWarn,
           message: `Voltaje de batería bajo: ${reading.batteryVoltage}V`,
         });
       }
     }
 
     // RPM warning
-    if (reading.rpm !== null && reading.rpm >= ANOMALY_THRESHOLDS.rpm.warn) {
+    if (reading.rpm !== null && reading.rpm >= thresholds.rpmWarn) {
       anomalies.push({
         type: 'high_rpms',
         severity: 'warn',
         value: reading.rpm,
-        threshold: ANOMALY_THRESHOLDS.rpm.warn,
+        threshold: thresholds.rpmWarn,
         message: `RPM muy altas: ${reading.rpm} rev/min`,
       });
     }
 
     // Fuel level warning
-    if (reading.fuelLevel !== null && reading.fuelLevel <= ANOMALY_THRESHOLDS.fuelLevel.critical) {
+    if (reading.fuelLevel !== null && reading.fuelLevel <= thresholds.fuelLevelCritical) {
       anomalies.push({
         type: 'low_fuel',
         severity: 'critical',
         value: reading.fuelLevel,
-        threshold: ANOMALY_THRESHOLDS.fuelLevel.critical,
+        threshold: thresholds.fuelLevelCritical,
         message: `Combustible crítico: ${reading.fuelLevel}%`,
       });
     }
@@ -201,7 +207,10 @@ export const obd2PersistenceService = {
       if (error) throw error;
       return data;
     } catch (err) {
-      console.error('Error saving OBD2 anomaly:', err);
+      if (import.meta.env.DEV) {
+        console.error('Error saving OBD2 anomaly, queueing for retry:', err);
+      }
+      syncQueueService.enqueueAnomaly(vehicleId, anomaly);
       return null;
     }
   },

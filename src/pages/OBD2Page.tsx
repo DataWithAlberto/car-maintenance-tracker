@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Cpu,
@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useOBD2Store } from '../store/obd2Store';
+import { useOBD2ThresholdsStore } from '../store/obd2ThresholdsStore';
 import { useVehicle } from '../hooks/useVehicle';
 import { obd2Service } from '../services/obd2.service';
 import { obd2PersistenceService } from '../services/obd2Persistence.service';
@@ -38,6 +39,8 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { KpiCard } from '../components/ui/KpiCard';
 import { OBD2HistoryChart } from '../components/obd2/OBD2HistoryChart';
 import { OBD2AnomalyLog } from '../components/obd2/OBD2AnomalyLog';
+import { OBD2ThresholdsPanel } from '../components/obd2/OBD2ThresholdsPanel';
+import { SyncStatusBadge } from '../components/obd2/SyncStatusBadge';
 import type { OBD2Reading } from '../types';
 import toast from 'react-hot-toast';
 
@@ -127,7 +130,8 @@ const PIDCard = ({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export const OBD2Page = () => {
-  const { selectedVehicle } = useVehicleStore();
+  const selectedVehicle = useVehicleStore((s) => s.selectedVehicle);
+  const updateOdometerFromOBD2 = useVehicleStore((s) => s.updateOdometerFromOBD2);
   const { updateVehicle } = useVehicle();
   const navigate = useNavigate();
   const {
@@ -272,6 +276,19 @@ export const OBD2Page = () => {
     }));
   }, [historyReadings, readings]);
 
+  // Hiper-conectividad: cada vez que el ELM327 nos entrega un odómetro real
+  // (PID A6), se propaga al vehicleStore — que recalcula en cascada el plan
+  // predictivo y persiste el kilometraje en Supabase en segundo plano. El
+  // ref evita reenvíos para el mismo valor cuando el polling sigue activo.
+  const lastSyncedOdometerRef = useRef<number | null>(null);
+  useEffect(() => {
+    const km = liveData.odometer;
+    if (km == null || !selectedVehicle) return;
+    if (lastSyncedOdometerRef.current === km) return;
+    lastSyncedOdometerRef.current = km;
+    updateOdometerFromOBD2(km);
+  }, [liveData.odometer, selectedVehicle, updateOdometerFromOBD2]);
+
   const handleDismissAnomaly = async (anomalyId: string) => {
     const success = await obd2PersistenceService.dismissAnomaly(anomalyId);
     if (success && selectedVehicle) {
@@ -336,7 +353,8 @@ export const OBD2Page = () => {
       if (isRecording && selectedVehicle) {
         const savedReading = await obd2PersistenceService.saveReading(selectedVehicle.id, data);
         if (savedReading) {
-          const anomalies = obd2PersistenceService.detectAnomalies(data);
+          const thresholds = useOBD2ThresholdsStore.getState().getFor(selectedVehicle.id);
+          const anomalies = obd2PersistenceService.detectAnomalies(data, thresholds);
           for (const anomaly of anomalies) {
             await obd2PersistenceService.saveAnomaly(selectedVehicle.id, anomaly);
             addAnomaly(anomaly);
@@ -529,6 +547,7 @@ export const OBD2Page = () => {
                 {connected ? deviceName : 'Sin conexión'}
               </p>
               <StatusBadge status={status} />
+              <SyncStatusBadge />
             </div>
             {errorMsg && (
               <p className="font-text mt-1" style={{ fontSize: 13, color: '#b64400' }}>
@@ -956,6 +975,9 @@ export const OBD2Page = () => {
           <OBD2HistoryChart readings={chartReadings} />
         </section>
       )}
+
+      {/* Umbrales de anomalías configurables */}
+      {selectedVehicle && <OBD2ThresholdsPanel vehicleId={selectedVehicle.id} />}
 
       {/* Registro de anomalías */}
       {selectedVehicle && (

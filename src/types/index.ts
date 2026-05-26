@@ -467,6 +467,54 @@ export interface OBD2Reading {
   created_at?: string;
 }
 
+/**
+ * Snapshot OBD2 capturado al planificar o confirmar un viaje. Sirve para
+ * registrar las condiciones de partida del vehículo y derivar consumo,
+ * variación de batería o desgaste tras el viaje.
+ */
+export interface TripOBD2Snapshot {
+  captured_at: string;
+  odometer: number | null;
+  fuel_level: number | null;
+  battery_voltage: number | null;
+  coolant_temp: number | null;
+  engine_runtime: number | null;
+  rpm: number | null;
+  speed: number | null;
+  /** Etiqueta libre para distinguir tipos de snapshot (start, mid, end). */
+  label?: 'start' | 'end' | 'midpoint';
+}
+
+/**
+ * Umbrales configurables por vehículo para la detección de anomalías OBD2.
+ * Se persisten en localStorage por id de vehículo (cliente-side) hasta que
+ * exista una columna dedicada en Supabase para que se sincronicen entre
+ * dispositivos.
+ */
+export interface VehicleThresholds {
+  coolantTempWarn: number;
+  coolantTempCritical: number;
+  oilPressureWarn: number;
+  oilPressureCritical: number;
+  batteryVoltageWarn: number;
+  batteryVoltageCritical: number;
+  rpmWarn: number;
+  engineLoadCritical: number;
+  fuelLevelCritical: number;
+}
+
+export const DEFAULT_VEHICLE_THRESHOLDS: VehicleThresholds = {
+  coolantTempWarn: 95,
+  coolantTempCritical: 110,
+  oilPressureWarn: 30,
+  oilPressureCritical: 20,
+  batteryVoltageWarn: 11.5,
+  batteryVoltageCritical: 10,
+  rpmWarn: 6500,
+  engineLoadCritical: 100,
+  fuelLevelCritical: 5,
+};
+
 export interface OBD2Anomaly {
   id?: string;
   vehicle_id?: string;

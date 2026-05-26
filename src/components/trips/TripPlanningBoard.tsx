@@ -7,6 +7,7 @@ import { TripChecklist } from './TripChecklist';
 import { TripBudgetCard } from './TripBudgetCard';
 import { TripStatusPills } from './TripStatusPills';
 import { TripVehicleSummaryCard } from './TripVehicleSummaryCard';
+import { TripOBD2SnapshotCard } from './TripOBD2SnapshotCard';
 import { TripStatusBadge } from './TripStatusBadge';
 import { ConfirmTripModal } from './ConfirmTripModal';
 import type {
@@ -166,6 +167,7 @@ export const TripPlanningBoard = ({
               isPublic={trip.is_public}
             />
             <TripVehicleSummaryCard vehicle={vehicle} />
+            <TripOBD2SnapshotCard tripId={trip.id} label="start" />
           </aside>
         </div>
       </div>
