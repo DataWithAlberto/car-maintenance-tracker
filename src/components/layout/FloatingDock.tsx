@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { Car, ChevronDown } from 'lucide-react';
@@ -51,6 +51,25 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
   const [hovered, setHovered] = useState(false);
   const open = hovered;
   const theme = useThemeStore((s) => s.theme);
+
+  // Debounce del cierre: cuando react-router navega a una ruta lazy-loaded,
+  // el Suspense fallback puede desplazar el layout 1-2px, disparando un
+  // mouseleave transitorio sobre el rail que colapsa el submenu antes de
+  // que el usuario complete la interacción. 220ms es suficiente para
+  // absorber esos rebotes sin que se note "pegajoso" si el usuario se va
+  // de verdad.
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelClose = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  };
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setHovered(false), 220);
+  };
+  useEffect(() => () => cancelClose(), []);
 
   // Hex colors for Lordicon (no CSS vars allowed). When item is "active" we
   // invert the icon to match the inverted background (--color-ink).
@@ -280,10 +299,16 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
   return (
     <aside
       className="hidden md:flex"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocusCapture={() => setHovered(true)}
-      onBlurCapture={() => setHovered(false)}
+      onMouseEnter={() => {
+        cancelClose();
+        setHovered(true);
+      }}
+      onMouseLeave={scheduleClose}
+      onFocusCapture={() => {
+        cancelClose();
+        setHovered(true);
+      }}
+      onBlurCapture={scheduleClose}
       style={{
         position: 'fixed',
         left: 20,
