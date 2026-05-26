@@ -527,6 +527,8 @@ export interface PrestamoMovimiento {
   usuario: PrestamoUsuario;
   descripcion?: string;
   created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 }
 
 export interface PrestamoStats {

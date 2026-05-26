@@ -1,15 +1,25 @@
 import { useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Landmark, Calendar, Trash2 } from 'lucide-react';
+import {
+  Plus,
+  Landmark,
+  Calendar,
+  Trash2,
+  RefreshCw,
+  Settings,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { KpiCard } from '../components/ui/KpiCard';
 import { Modal } from '../components/ui/Modal';
 import { EmptyState } from '../components/ui/EmptyState';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
-import { usePrestamo } from '../hooks/usePrestamo';
+import { usePrestamo, type SyncStatus } from '../hooks/usePrestamo';
 import { IMPORTE_INICIAL } from '../services/prestamo.service';
-import { formatCurrency, formatDate } from '../utils/formatters';
+import { prestamoSyncStorage } from '../services/prestamoSync.service';
+import { formatCurrency, formatDate, formatRelative } from '../utils/formatters';
 import toast from 'react-hot-toast';
 
 // ─── SVG progress ring ────────────────────────────────────────────────────────
@@ -343,13 +353,237 @@ const AddPaymentForm = ({ open, onClose, onSubmit }: AddPaymentFormProps) => {
   );
 };
 
+// ─── Sync settings modal ──────────────────────────────────────────────────────
+
+interface SyncSettingsModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+const SyncSettingsModal = ({ open, onClose, onSaved }: SyncSettingsModalProps) => {
+  const existing = prestamoSyncStorage.load();
+  const [url, setUrl] = useState(existing?.url ?? '');
+  const [secret, setSecret] = useState(existing?.secret ?? '');
+
+  const inputStyle: CSSProperties = {
+    width: '100%',
+    padding: '12px 16px',
+    background: 'var(--color-fog)',
+    border: '1px solid var(--color-silver-mist)',
+    borderRadius: 14,
+    fontFamily: 'Inter, var(--font-sf-pro-text)',
+    fontSize: 14,
+    color: 'var(--color-ink)',
+    outline: 'none',
+  };
+  const labelStyle: CSSProperties = {
+    display: 'block',
+    fontFamily: 'var(--font-mono)',
+    fontSize: 10,
+    fontWeight: 500,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'var(--color-graphite)',
+    marginBottom: 6,
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimUrl = url.trim();
+    const trimSecret = secret.trim();
+    if (!trimUrl || !trimSecret) {
+      toast.error('URL y secreto son obligatorios');
+      return;
+    }
+    if (!trimUrl.startsWith('https://script.google.com/')) {
+      toast.error('La URL debe ser la de despliegue de Apps Script');
+      return;
+    }
+    prestamoSyncStorage.save({ url: trimUrl, secret: trimSecret });
+    toast.success('Sync configurado');
+    onSaved();
+    onClose();
+  };
+
+  const handleDisconnect = () => {
+    if (!confirm('¿Desconectar la sincronización con Google Sheets?')) return;
+    prestamoSyncStorage.clear();
+    setUrl('');
+    setSecret('');
+    toast.success('Sync desconectado');
+    onSaved();
+    onClose();
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Sincronizar con Google Sheets"
+      description="Pega aquí la URL de despliegue del Apps Script y el secreto que configuraste."
+      size="md"
+    >
+      <form onSubmit={handleSave} className="space-y-5">
+        <div
+          className="rounded-[14px] p-4 text-sm"
+          style={{
+            background: 'var(--color-fog)',
+            border: '1px solid var(--color-silver-mist)',
+            color: 'var(--color-graphite)',
+            lineHeight: 1.5,
+          }}
+        >
+          <strong className="text-ink">¿Primera vez?</strong> Crea una hoja de Google Sheets, pega
+          el script <code>scripts/prestamo-sheets-sync.gs</code> en Extensiones → Apps Script,
+          despliega como Web App («Cualquier usuario») y copia aquí la URL terminada en{' '}
+          <code>/exec</code>.
+        </div>
+
+        <div>
+          <label style={labelStyle}>URL del Web App</label>
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://script.google.com/macros/s/.../exec"
+            required
+            style={inputStyle}
+          />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Secreto compartido</label>
+          <input
+            type="text"
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            placeholder="El mismo valor que pusiste en SECRET dentro del .gs"
+            required
+            style={inputStyle}
+          />
+        </div>
+
+        <div className="flex gap-3 pt-1">
+          {prestamoSyncStorage.load() && (
+            <button
+              type="button"
+              onClick={handleDisconnect}
+              style={{
+                padding: '12px 16px',
+                borderRadius: 14,
+                border: '1px solid var(--color-silver-mist)',
+                background: 'var(--color-fog)',
+                fontFamily: 'Inter, var(--font-sf-pro-text)',
+                fontWeight: 500,
+                fontSize: 14,
+                color: '#b64400',
+                cursor: 'pointer',
+              }}
+            >
+              Desconectar
+            </button>
+          )}
+          <button
+            type="submit"
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              borderRadius: 14,
+              border: 'none',
+              background: 'var(--color-ink)',
+              fontFamily: 'Inter, var(--font-sf-pro-text)',
+              fontWeight: 600,
+              fontSize: 15,
+              color: 'var(--color-snow)',
+              cursor: 'pointer',
+            }}
+          >
+            Guardar
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+// ─── Sync indicator chip ──────────────────────────────────────────────────────
+
+const SyncIndicator = ({
+  status,
+  lastSync,
+  onSync,
+  onConfigure,
+}: {
+  status: SyncStatus;
+  lastSync: string | null;
+  onSync: () => void;
+  onConfigure: () => void;
+}) => {
+  if (status === 'unconfigured') {
+    return (
+      <button
+        onClick={onConfigure}
+        className="inline-flex items-center gap-2 px-3 h-9 rounded-full border border-silver-mist bg-snow text-ink hover:bg-fog transition-colors"
+        style={{ fontSize: 13 }}
+      >
+        <Settings className="h-3.5 w-3.5" strokeWidth={1.8} />
+        <span className="font-text">Conectar Google Sheets</span>
+      </button>
+    );
+  }
+
+  const Icon = status === 'syncing' ? RefreshCw : status === 'error' ? AlertCircle : CheckCircle2;
+  const color = status === 'syncing' ? '#0071e3' : status === 'error' ? '#d70015' : '#1a9e3f';
+  const label =
+    status === 'syncing'
+      ? 'Sincronizando…'
+      : status === 'error'
+        ? 'Error de sync'
+        : lastSync
+          ? `Sync ${formatRelative(lastSync)}`
+          : 'Sincronizado';
+
+  return (
+    <div className="inline-flex items-center gap-1">
+      <button
+        onClick={onSync}
+        disabled={status === 'syncing'}
+        className="inline-flex items-center gap-2 px-3 h-9 rounded-full border border-silver-mist bg-snow text-ink hover:bg-fog transition-colors disabled:opacity-60"
+        style={{ fontSize: 13 }}
+      >
+        <Icon
+          className="h-3.5 w-3.5"
+          strokeWidth={1.8}
+          style={{
+            color,
+            animation: status === 'syncing' ? 'spin 1.2s linear infinite' : undefined,
+          }}
+        />
+        <span className="font-text">{label}</span>
+      </button>
+      <button
+        onClick={onConfigure}
+        className="h-9 w-9 inline-flex items-center justify-center rounded-full border border-silver-mist bg-snow text-graphite hover:text-ink hover:bg-fog transition-colors"
+        aria-label="Ajustes de sincronización"
+      >
+        <Settings className="h-3.5 w-3.5" strokeWidth={1.8} />
+      </button>
+    </div>
+  );
+};
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export const PrestamoPage = () => {
   const { selectedVehicle } = useVehicleStore();
   const navigate = useNavigate();
-  const { movimientos, stats, loading, create, remove } = usePrestamo(selectedVehicle?.id);
+  const { movimientos, stats, loading, syncStatus, lastSync, create, remove, sync } = usePrestamo(
+    selectedVehicle?.id,
+  );
   const [showForm, setShowForm] = useState(false);
+  const [showSyncSettings, setShowSyncSettings] = useState(false);
+  const [, forceRender] = useState(0);
 
   if (!selectedVehicle) {
     navigate('/dashboard');
@@ -409,13 +643,21 @@ export const PrestamoPage = () => {
             amortizado
           </p>
         </div>
-        <Button
-          variant="accent"
-          onClick={() => setShowForm(true)}
-          iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
-        >
-          Añadir pago
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <SyncIndicator
+            status={syncStatus}
+            lastSync={lastSync}
+            onSync={sync}
+            onConfigure={() => setShowSyncSettings(true)}
+          />
+          <Button
+            variant="accent"
+            onClick={() => setShowForm(true)}
+            iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
+          >
+            Añadir pago
+          </Button>
+        </div>
       </header>
 
       {/* ── KPI cards ── */}
@@ -577,6 +819,18 @@ export const PrestamoPage = () => {
       )}
 
       <AddPaymentForm open={showForm} onClose={() => setShowForm(false)} onSubmit={handleCreate} />
+
+      <SyncSettingsModal
+        open={showSyncSettings}
+        onClose={() => setShowSyncSettings(false)}
+        onSaved={() => {
+          // El hook lee `prestamoSyncService.isConfigured()` desde estado interno.
+          // Forzamos un re-render del padre para que la URL recién guardada se
+          // refleje en el indicador; el siguiente sync() recoge la config.
+          forceRender((n) => n + 1);
+          sync();
+        }}
+      />
     </div>
   );
 };
