@@ -1,19 +1,21 @@
 import { useMemo, useState } from 'react';
-import { Sparkles, Wallet, Calendar } from 'lucide-react';
+import { Sparkles, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { TripActivityCard } from './TripActivityCard';
+import { TripTimeline } from './TripTimeline';
 import { TripChecklist } from './TripChecklist';
+import { TripBudgetCard } from './TripBudgetCard';
+import { TripStatusPills } from './TripStatusPills';
+import { TripVehicleSummaryCard } from './TripVehicleSummaryCard';
 import { TripStatusBadge } from './TripStatusBadge';
 import { ConfirmTripModal } from './ConfirmTripModal';
 import type {
   Trip,
   TripActivity,
   TripChecklistItem,
-  TripActivityType,
   CreateTripActivityInput,
+  Vehicle,
 } from '../../types';
-import { BOOKING_TYPE_LABEL } from '../../utils/bookingTheme';
 
 interface Props {
   trip: Trip;
@@ -28,14 +30,8 @@ interface Props {
   onConfirm: (keepBookingIds: string[]) => Promise<void>;
   userId?: string | null;
   vehicleId?: string | null;
+  vehicle?: Vehicle | null;
 }
-
-const fmtMoney = (n: number) =>
-  new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n);
 
 const fmtDate = (iso: string) => format(parseISO(iso), 'd MMM yyyy', { locale: es });
 
@@ -52,52 +48,59 @@ export const TripPlanningBoard = ({
   onConfirm,
   userId = null,
   vehicleId = null,
+  vehicle = null,
 }: Props) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const grouped = useMemo<Map<TripActivityType, TripActivity[]>>(() => {
-    const map = new Map<TripActivityType, TripActivity[]>();
-    bookings.forEach((b) => {
-      const arr = map.get(b.type) ?? [];
-      arr.push(b);
-      map.set(b.type, arr);
-    });
-    return map;
-  }, [bookings]);
-
   const totalEstimate = useMemo(() => bookings.reduce((s, b) => s + (b.price ?? 0), 0), [bookings]);
   const budget = trip.estimated_budget ?? 0;
-  const overBudget = budget > 0 && totalEstimate > budget;
 
   return (
     <div className="space-y-5">
-      {/* Cabecera */}
+      {/* Header */}
       <div
         className="bg-snow"
         style={{
           border: '1px solid var(--color-silver-mist)',
-          borderLeft: '3px solid #febb02',
-          borderRadius: 18,
+          borderRadius: 24,
           padding: '24px 28px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.04)',
         }}
       >
         <div className="flex items-start justify-between flex-wrap" style={{ gap: 14 }}>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <TripStatusBadge status="planning" />
             <h2
+              className="text-ink"
               style={{
                 fontFamily: 'Inter, var(--font-sf-pro-display)',
                 fontWeight: 700,
                 fontSize: 36,
                 letterSpacing: '-0.8px',
                 lineHeight: 1.1,
-                margin: '10px 0 4px',
+                margin: '12px 0 6px',
               }}
             >
               {trip.title ?? trip.end_location ?? 'Nuevo viaje'}
             </h2>
-            <p className="text-graphite" style={{ fontSize: 14 }}>
-              {trip.end_location ?? 'Destino por definir'}
+            <p
+              className="text-graphite inline-flex items-center"
+              style={{ fontSize: 14, gap: 8, flexWrap: 'wrap' }}
+            >
+              {trip.end_location && <span>{trip.end_location}</span>}
+              {(trip.start_date || trip.end_date) && (
+                <>
+                  <span className="text-mist">·</span>
+                  <span className="inline-flex items-center" style={{ gap: 4 }}>
+                    <Calendar className="h-3.5 w-3.5" strokeWidth={1.6} />
+                    {trip.start_date && trip.end_date
+                      ? `${fmtDate(trip.start_date)} → ${fmtDate(trip.end_date)}`
+                      : trip.start_date
+                        ? fmtDate(trip.start_date)
+                        : ''}
+                  </span>
+                </>
+              )}
             </p>
           </div>
 
@@ -123,118 +126,49 @@ export const TripPlanningBoard = ({
             Confirmar y lanzar viaje
           </button>
         </div>
-
-        <dl className="grid grid-cols-2 sm:grid-cols-3" style={{ gap: 14, marginTop: 18 }}>
-          <div>
-            <dt
-              className="font-mono uppercase text-graphite"
-              style={{ fontSize: 10, letterSpacing: '.16em' }}
-            >
-              <Calendar className="inline h-3 w-3 mr-1" strokeWidth={1.6} /> Fechas
-            </dt>
-            <dd className="text-ink" style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>
-              {trip.start_date && trip.end_date
-                ? `${fmtDate(trip.start_date)} → ${fmtDate(trip.end_date)}`
-                : trip.start_date
-                  ? fmtDate(trip.start_date)
-                  : 'Por decidir'}
-            </dd>
-          </div>
-          <div>
-            <dt
-              className="font-mono uppercase text-graphite"
-              style={{ fontSize: 10, letterSpacing: '.16em' }}
-            >
-              <Wallet className="inline h-3 w-3 mr-1" strokeWidth={1.6} /> Presupuesto
-            </dt>
-            <dd style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>
-              {budget > 0 ? (
-                <span style={{ color: overBudget ? '#b64400' : 'var(--color-ink)' }}>
-                  {fmtMoney(totalEstimate)}
-                  <span style={{ color: '#a1a1a6' }}> / {fmtMoney(budget)}</span>
-                </span>
-              ) : (
-                <span className="text-graphite">Sin definir</span>
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt
-              className="font-mono uppercase text-graphite"
-              style={{ fontSize: 10, letterSpacing: '.16em' }}
-            >
-              Ideas guardadas
-            </dt>
-            <dd className="text-ink" style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>
-              {bookings.length} {bookings.length === 1 ? 'propuesta' : 'propuestas'}
-            </dd>
-          </div>
-        </dl>
       </div>
 
-      {/* Grupos de candidatos */}
-      {[...grouped.entries()].map(([type, list]) => (
-        <section
-          key={type}
-          className="bg-snow"
-          style={{
-            border: '1px solid var(--color-silver-mist)',
-            borderRadius: 18,
-            padding: '20px 24px',
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <span
-              className="font-mono uppercase text-graphite"
-              style={{ fontSize: 11, letterSpacing: '.16em' }}
-            >
-              §{' '}
-              {type === 'lodging'
-                ? 'Alojamientos en la mira'
-                : `${BOOKING_TYPE_LABEL[type]} en estudio`}
-            </span>
-            <span className="font-mono text-graphite" style={{ fontSize: 11 }}>
-              {list.length} {list.length === 1 ? 'opción' : 'opciones'}
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginTop: 14 }}>
-            {list.map((b) => (
-              <TripActivityCard
-                key={b.id}
-                activity={b}
-                onDelete={onDeleteBooking}
-                onSave={onSaveBooking}
-                userId={userId}
-                vehicleId={vehicleId}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
-
-      <button
-        onClick={onAddBooking}
-        className="w-full transition-colors hover:bg-fog"
+      {/* Two-column body: Timeline + Sidebar */}
+      <div
+        className="grid"
         style={{
-          background: '#fff',
-          border: '1.5px dashed var(--color-silver-mist)',
-          borderRadius: 18,
-          padding: '18px',
-          fontSize: 14,
-          fontWeight: 500,
-          color: '#707070',
-          cursor: 'pointer',
+          gridTemplateColumns: '1fr',
+          gap: 20,
         }}
       >
-        ＋ Añadir candidato (alojamiento, actividad…)
-      </button>
+        <div className="grid lg:grid-cols-[1fr_320px]" style={{ gap: 20, alignItems: 'start' }}>
+          {/* Main column */}
+          <div className="space-y-5" style={{ minWidth: 0 }}>
+            <TripTimeline
+              trip={trip}
+              bookings={bookings}
+              onAddBooking={onAddBooking}
+              onDeleteBooking={onDeleteBooking}
+              onSaveBooking={onSaveBooking}
+              userId={userId}
+              vehicleId={vehicleId}
+            />
 
-      <TripChecklist
-        items={checklist}
-        onAdd={onAddChecklist}
-        onToggle={onToggleChecklist}
-        onDelete={onDeleteChecklist}
-      />
+            <TripChecklist
+              items={checklist}
+              onAdd={onAddChecklist}
+              onToggle={onToggleChecklist}
+              onDelete={onDeleteChecklist}
+            />
+          </div>
+
+          {/* Sidebar */}
+          <aside className="space-y-4 lg:sticky" style={{ top: 16, alignSelf: 'start' }}>
+            <TripBudgetCard spent={totalEstimate} budget={budget} itemCount={bookings.length} />
+            <TripStatusPills
+              status={trip.status}
+              isSurprise={trip.is_surprise}
+              isPublic={trip.is_public}
+            />
+            <TripVehicleSummaryCard vehicle={vehicle} />
+          </aside>
+        </div>
+      </div>
 
       {showConfirm && (
         <ConfirmTripModal

@@ -112,11 +112,14 @@ export const BottomNav = () => {
             onClick={() => setOpen(false)}
           />
           <div
-            className="md:hidden fixed inset-x-0 bottom-[65px] z-50 rounded-t-[28px] pb-safe"
+            className="md:hidden fixed inset-x-0 z-50 rounded-t-[28px] pb-safe"
             style={{
-              background: 'var(--color-snow)',
+              bottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 80px)',
+              background: 'rgba(255, 255, 255, 0.92)',
               border: '1px solid var(--color-silver-mist)',
               borderBottom: 'none',
+              backdropFilter: 'saturate(180%) blur(22px)',
+              WebkitBackdropFilter: 'saturate(180%) blur(22px)',
             }}
           >
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
@@ -172,17 +175,24 @@ export const BottomNav = () => {
         </>
       )}
 
-      {/* ─── Tab bar ───────────────────────────────────────────────────────── */}
+      {/* ─── Tab bar (floating glassmorphism) ─────────────────────────────── */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 pb-safe"
+        className="md:hidden fixed z-40"
         style={{
-          background: 'var(--color-snow)',
-          borderTop: '1px solid var(--color-silver-mist)',
-          backdropFilter: 'blur(12px)',
+          left: 12,
+          right: 12,
+          bottom: 'max(12px, env(safe-area-inset-bottom))',
+          background: 'rgba(255, 255, 255, 0.72)',
+          border: '1px solid rgba(232, 232, 237, 0.7)',
+          borderRadius: 28,
+          backdropFilter: 'saturate(180%) blur(22px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(22px)',
+          boxShadow:
+            '0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)',
         }}
         aria-label="Navegación móvil"
       >
-        <ul className="grid grid-cols-5 px-1">
+        <ul className="grid grid-cols-5 px-1.5 py-1">
           {MAIN_TABS.map(({ to, icon: Icon, lordSrc, label }) => (
             <li key={to}>
               <NavLink

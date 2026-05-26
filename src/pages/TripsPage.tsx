@@ -761,6 +761,7 @@ export const TripsPage = () => {
                   onConfirm={handleConfirmTrip}
                   userId={user.id}
                   vehicleId={selectedVehicle.id}
+                  vehicle={selectedVehicle}
                 />
               ) : (
                 <div
