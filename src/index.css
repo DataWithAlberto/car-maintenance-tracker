@@ -309,10 +309,52 @@
 }
 @keyframes shimmer {
   0% {
-    background-position: -1000px 0;
+    background-position: -700px 0;
   }
   100% {
-    background-position: 1000px 0;
+    background-position: 700px 0;
+  }
+}
+@keyframes btn-shimmer {
+  0%,
+  65% {
+    transform: translateX(-160%) skewX(-14deg);
+  }
+  100% {
+    transform: translateX(420%) skewX(-14deg);
+  }
+}
+@keyframes reveal-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes pop-in {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 20;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
 }
 @keyframes slide-in-right {
@@ -623,7 +665,18 @@ a:hover {
 /* Respect user's reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
-  .stagger-item {
+  .stagger-item,
+  .skeleton-reveal-item,
+  .animate-pop-in,
+  .animate-reveal-up {
+    animation: none;
+  }
+  .btn-shimmer::before,
+  .pulse-ring::after {
+    animation: none;
+    opacity: 0;
+  }
+  .skeleton {
     animation: none;
   }
 }
@@ -654,18 +707,100 @@ a:hover {
   background: rgba(0, 113, 227, 0.05);
 }
 
-/* Skeleton loader */
+/* Skeleton loader — shimmer entre superficies para que dark/light usen el tono
+   correcto sin extra tokens. */
 .skeleton {
   position: relative;
   overflow: hidden;
   background: linear-gradient(
     90deg,
-    var(--color-fog) 0%,
-    var(--color-silver-mist) 50%,
-    var(--color-fog) 100%
+    var(--surface-canvas) 0%,
+    var(--surface-card) 50%,
+    var(--surface-canvas) 100%
   );
-  background-size: 800px 100%;
-  animation: var(--animate-shimmer);
+  background-size: 700px 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ─── Microinteracciones ────────────────────────────────────────────────── */
+
+/* Entrada con rebote */
+.animate-pop-in {
+  animation: pop-in 0.42s var(--ease-out-expo) both;
+}
+
+/* Reveal desde abajo (overlays, sheets) */
+.animate-reveal-up {
+  animation: reveal-up 0.44s var(--ease-out-expo) both;
+}
+
+/* Reveal de contenido tras un skeleton; el padre asigna --i en cada hijo. */
+.skeleton-reveal-item {
+  animation: stagger-in 0.4s var(--ease-out-expo) both;
+  animation-delay: calc(var(--i, 0) * 65ms);
+}
+
+/* Shimmer periódico para el CTA primario */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: translateX(-160%) skewX(-14deg);
+  animation: btn-shimmer 3.5s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Glow sutil para el CTA primario en hover */
+.btn-primary-glow:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 3px rgba(0, 113, 227, 0.18),
+    0 8px 24px rgba(0, 113, 227, 0.22);
+}
+[data-theme='dark'] .btn-primary-glow:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 3px rgba(43, 143, 255, 0.28),
+    0 8px 24px rgba(43, 143, 255, 0.32);
+}
+
+/* Rail lateral: solo animamos el ancho — el resto de transiciones del
+   .liquid-glass colisionan con el morphing de 60→232 px. */
+.dock-rail {
+  transition: width 0.38s var(--ease-out-expo);
+}
+.dock-leaf-icon {
+  transition: transform 0.22s var(--ease-out-expo);
+}
+.dock-leaf:hover .dock-leaf-icon {
+  transform: translateX(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dock-rail,
+  .dock-leaf-icon {
+    transition: none;
+  }
+}
+
+/* Pulse ring para indicadores críticos (alertas severity=high) */
+.pulse-ring {
+  position: relative;
+}
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  animation: pulse-ring 2.4s ease-out infinite;
+  pointer-events: none;
 }
 
 .pb-safe {

@@ -10,12 +10,21 @@ import { FloatingInput, FloatingTextarea, FloatingSelect } from '../ui/FloatingI
 interface Props {
   initialType?: string;
   currentKm?: number;
+  /** Texto pre-rellenado en el campo descripción (p. ej. el DTC detectado). */
+  initialDescription?: string;
   initialData?: Partial<MaintenanceInput>;
   onSubmit: (data: MaintenanceInput) => Promise<void>;
   onClose: () => void;
 }
 
-export const MaintenanceForm = ({ initialType, currentKm = 0, initialData, onSubmit, onClose }: Props) => {
+export const MaintenanceForm = ({
+  initialType,
+  currentKm = 0,
+  initialDescription,
+  initialData,
+  onSubmit,
+  onClose,
+}: Props) => {
   const isEdit = initialData != null;
   const [form, setForm] = useState<Partial<MaintenanceInput>>(
     initialData ?? {
@@ -23,6 +32,7 @@ export const MaintenanceForm = ({ initialType, currentKm = 0, initialData, onSub
       date: format(new Date(), 'yyyy-MM-dd'),
       km_at_service: currentKm,
       next_service_km: initialType ? getNextServiceKm(initialType, currentKm) : undefined,
+      description: initialDescription,
     },
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,7 +64,9 @@ export const MaintenanceForm = ({ initialType, currentKm = 0, initialData, onSub
     const result = maintenanceSchema.safeParse(coerced);
     if (!result.success) {
       const errs: Record<string, string> = {};
-      result.error.issues.forEach((e) => { errs[e.path[0] as string] = e.message; });
+      result.error.issues.forEach((e) => {
+        errs[e.path[0] as string] = e.message;
+      });
       setErrors(errs);
       return;
     }
@@ -76,7 +88,9 @@ export const MaintenanceForm = ({ initialType, currentKm = 0, initialData, onSub
       size="lg"
       footer={
         <div className="flex gap-3">
-          <Button type="button" variant="secondary" onClick={onClose} fullWidth>Cancelar</Button>
+          <Button type="button" variant="secondary" onClick={onClose} fullWidth>
+            Cancelar
+          </Button>
           <Button type="submit" form="maintenance-form" loading={loading} fullWidth>
             {loading ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Guardar registro'}
           </Button>

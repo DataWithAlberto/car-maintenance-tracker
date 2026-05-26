@@ -92,7 +92,9 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
       <Link
         key={it.id}
         to={it.href}
-        className={isActive ? 'focus-ring liquid-glass-secondary' : 'focus-ring'}
+        className={
+          isActive ? 'dock-leaf focus-ring liquid-glass-secondary' : 'dock-leaf focus-ring'
+        }
         aria-current={isActive ? 'page' : undefined}
         title={!open ? it.label : undefined}
         style={{
@@ -110,10 +112,31 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
           fontSize: nested ? 13 : 14,
           lineHeight: 1,
           justifyContent: open ? 'flex-start' : 'center',
-          transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
+          transition:
+            'padding 0.3s var(--ease-out-expo), color 0.2s ease-out, background-color 0.2s ease-out',
         }}
       >
+        {/* Indicador del item activo — barrita pulsante a la izquierda.
+            Solo en items top-level (no anidados) para no competir con la
+            línea vertical del submenu. */}
+        {isActive && !nested && (
+          <span
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: -2,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 3,
+              height: 18,
+              borderRadius: 999,
+              background: 'var(--color-azure)',
+              animation: 'var(--animate-counter-in)',
+            }}
+          />
+        )}
         <span
+          className="dock-leaf-icon"
           style={{
             width: nested ? 20 : 24,
             height: nested ? 20 : 24,
@@ -122,7 +145,6 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
             justifyContent: 'center',
             flexShrink: 0,
             color: isActive ? 'var(--color-azure)' : 'var(--color-ink)',
-            transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
           }}
         >
           {it.lordSrc ? (
@@ -138,9 +160,26 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
             <Icon size={nested ? 16 : 18} strokeWidth={1.6} />
           )}
         </span>
-        {open && (
-          <span style={{ flex: 1, textAlign: 'left', whiteSpace: 'nowrap' }}>{it.label}</span>
-        )}
+        {/* Label: siempre montado, su visibilidad y desplazamiento se animan.
+            maxWidth colapsa el espacio cuando el rail está cerrado para que
+            el icono pueda centrarse. */}
+        <span
+          aria-hidden={!open}
+          style={{
+            flex: open ? 1 : '0 0 auto',
+            textAlign: 'left',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            maxWidth: open ? 320 : 0,
+            opacity: open ? 1 : 0,
+            transform: open ? 'translateX(0)' : 'translateX(-6px)',
+            transition:
+              'opacity 0.22s ease-out, transform 0.28s var(--ease-out-expo), max-width 0.32s var(--ease-out-expo)',
+            transitionDelay: open ? '0.12s' : '0s',
+          }}
+        >
+          {it.label}
+        </span>
         {it.badge != null && open && (
           <span
             style={{
@@ -157,6 +196,10 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
+              opacity: open ? 1 : 0,
+              transform: open ? 'translateX(0)' : 'translateX(-6px)',
+              transition: 'opacity 0.22s ease-out, transform 0.28s var(--ease-out-expo)',
+              transitionDelay: open ? '0.18s' : '0s',
             }}
           >
             {it.badge}
@@ -197,7 +240,9 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
       >
         <button
           type="button"
-          className={headerActive ? 'focus-ring liquid-glass-secondary' : 'focus-ring'}
+          className={
+            headerActive ? 'dock-leaf focus-ring liquid-glass-secondary' : 'dock-leaf focus-ring'
+          }
           aria-expanded={showChildren}
           title={!open ? g.label : undefined}
           style={{
@@ -214,10 +259,12 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
             fontSize: 14,
             lineHeight: 1,
             justifyContent: open ? 'flex-start' : 'center',
-            transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
+            transition:
+              'padding 0.3s var(--ease-out-expo), color 0.2s ease-out, background-color 0.2s ease-out',
           }}
         >
           <span
+            className="dock-leaf-icon"
             style={{
               width: 24,
               height: 24,
@@ -226,7 +273,6 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
               justifyContent: 'center',
               flexShrink: 0,
               color: headerActive ? 'var(--color-azure)' : 'var(--color-ink)',
-              transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
             }}
           >
             {g.lordSrc ? (
@@ -242,20 +288,36 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
               <Icon size={18} strokeWidth={1.6} />
             )}
           </span>
+          <span
+            aria-hidden={!open}
+            style={{
+              flex: open ? 1 : '0 0 auto',
+              textAlign: 'left',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              maxWidth: open ? 320 : 0,
+              opacity: open ? 1 : 0,
+              transform: open ? 'translateX(0)' : 'translateX(-6px)',
+              transition:
+                'opacity 0.22s ease-out, transform 0.28s var(--ease-out-expo), max-width 0.32s var(--ease-out-expo)',
+              transitionDelay: open ? '0.12s' : '0s',
+            }}
+          >
+            {g.label}
+          </span>
           {open && (
-            <>
-              <span style={{ flex: 1, textAlign: 'left', whiteSpace: 'nowrap' }}>{g.label}</span>
-              <ChevronDown
-                size={15}
-                strokeWidth={1.8}
-                style={{
-                  flexShrink: 0,
-                  transform: showChildren ? 'rotate(0deg)' : 'rotate(-90deg)',
-                  transition: 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
-                  color: headerActive ? 'var(--color-azure)' : 'var(--color-mist)',
-                }}
-              />
-            </>
+            <ChevronDown
+              size={15}
+              strokeWidth={1.8}
+              style={{
+                flexShrink: 0,
+                transform: showChildren ? 'rotate(0deg)' : 'rotate(-90deg)',
+                transition: 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                color: headerActive ? 'var(--color-azure)' : 'var(--color-mist)',
+                opacity: open ? 1 : 0,
+                transitionDelay: open ? '0.18s' : '0s',
+              }}
+            />
           )}
         </button>
 
@@ -296,7 +358,7 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
 
   return (
     <aside
-      className="liquid-glass hidden md:flex"
+      className="liquid-glass dock-rail hidden md:flex"
       onMouseEnter={() => {
         cancelClose();
         setHovered(true);

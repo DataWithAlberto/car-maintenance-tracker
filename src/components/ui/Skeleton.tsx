@@ -1,3 +1,4 @@
+import { Children, isValidElement, cloneElement, type ReactNode } from 'react';
 import { cn } from '../../utils/cn';
 
 interface SkeletonProps {
@@ -7,9 +8,9 @@ interface SkeletonProps {
 
 /* ─── Apple-style skeletons ──────────────────────────────────────────────────
  *
- * Achromatic shimmer over the fog → silver pair (defined in index.css).
- * Card containers match the 20px / 14px radii used by KpiCard / row variants.
- * Zero shadows.
+ * Achromatic shimmer over surface tokens — el gradiente fluye con dark/light
+ * sin necesidad de overrides. Card containers match the 20/14px radii used
+ * por KpiCard / row variants. Zero shadows.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export const Skeleton = ({ className = '', rounded = true }: SkeletonProps) => (
@@ -17,8 +18,12 @@ export const Skeleton = ({ className = '', rounded = true }: SkeletonProps) => (
 );
 
 export const SkeletonText = ({
-  lines = 3, className = '',
-}: { lines?: number; className?: string }) => (
+  lines = 3,
+  className = '',
+}: {
+  lines?: number;
+  className?: string;
+}) => (
   <div className={cn('space-y-2', className)}>
     {Array.from({ length: lines }).map((_, i) => (
       <Skeleton key={i} className="h-3" />
@@ -27,12 +32,7 @@ export const SkeletonText = ({
 );
 
 export const SkeletonCard = ({ className = '' }: { className?: string }) => (
-  <div
-    className={cn(
-      'bg-snow border border-silver-mist rounded-[20px] p-5',
-      className,
-    )}
-  >
+  <div className={cn('bg-snow border border-silver-mist rounded-[20px] p-5', className)}>
     <div className="flex items-start justify-between mb-4 gap-3">
       <div className="space-y-2 flex-1">
         <Skeleton className="h-5 w-2/3" />
@@ -54,3 +54,47 @@ export const SkeletonRow = () => (
     <Skeleton className="h-4 w-20" />
   </div>
 );
+
+interface SkeletonRevealProps {
+  loading: boolean;
+  skeleton: ReactNode;
+  children: ReactNode;
+  className?: string;
+}
+
+/**
+ * SkeletonReveal — muestra `skeleton` mientras `loading=true` y, cuando pasa
+ * a `false`, los `children` aparecen con un stagger (cada hijo top-level
+ * recibe `--i` para escalonar 65 ms). El cambio de `key` re-monta el árbol
+ * de contenido real para que la animación dispare incluso en re-renders.
+ */
+export const SkeletonReveal = ({ loading, skeleton, children, className }: SkeletonRevealProps) => {
+  if (loading) {
+    return <div className={className}>{skeleton}</div>;
+  }
+
+  const stamped = Children.map(children, (child, i) => {
+    if (!isValidElement<{ style?: React.CSSProperties; className?: string }>(child)) {
+      return (
+        <span
+          className="skeleton-reveal-item"
+          style={{ ['--i' as string]: i } as React.CSSProperties}
+        >
+          {child}
+        </span>
+      );
+    }
+    const prevStyle = child.props.style ?? {};
+    const prevClass = child.props.className ?? '';
+    return cloneElement(child, {
+      className: cn('skeleton-reveal-item', prevClass),
+      style: { ...prevStyle, ['--i' as string]: i } as React.CSSProperties,
+    });
+  });
+
+  return (
+    <div key="content" className={className}>
+      {stamped}
+    </div>
+  );
+};

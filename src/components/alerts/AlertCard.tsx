@@ -19,9 +19,9 @@ import { cn } from '../../utils/cn';
  * ──────────────────────────────────────────────────────────────────────────── */
 
 const severityConfig = {
-  high:   { label: 'CRÍTICO', color: '#b64400' /* ember  */ },
-  medium: { label: 'AVISO',   color: '#c77700' /* warn   */ },
-  low:    { label: 'INFO',    color: '#0066cc' /* cobalt */ },
+  high: { label: 'CRÍTICO', color: '#b64400' /* ember  */ },
+  medium: { label: 'AVISO', color: '#c77700' /* warn   */ },
+  low: { label: 'INFO', color: '#0066cc' /* cobalt */ },
 };
 
 interface Props {
@@ -31,14 +31,20 @@ interface Props {
 
 export const AlertCard = ({ alert, onDismiss }: Props) => {
   const cfg = severityConfig[alert.severity ?? 'low'];
+  const isHigh = (alert.severity ?? 'low') === 'high';
 
   return (
     <div
       className={cn(
-        'relative flex items-start gap-3',
+        'stagger-item relative flex items-start gap-3',
         'pl-4 pr-3 py-3',
         'bg-snow border border-silver-mist rounded-[14px]',
-        'overflow-hidden',
+        // El overflow se quita para que el pulse-ring del dot crítico
+        // pueda expandirse fuera del card sin recortarse.
+        isHigh ? '' : 'overflow-hidden',
+        'transition-[transform,box-shadow] duration-[380ms] ease-[var(--ease-out-expo)]',
+        'hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.12)]',
+        'dark:hover:shadow-[0_16px_48px_rgba(0,0,0,0.55)]',
       )}
     >
       {/* Severity bar */}
@@ -52,8 +58,8 @@ export const AlertCard = ({ alert, onDismiss }: Props) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <span
-            className="rounded-full inline-block"
-            style={{ width: 6, height: 6, background: cfg.color }}
+            className={cn('rounded-full inline-block', isHigh && 'pulse-ring')}
+            style={{ width: 6, height: 6, background: cfg.color, color: cfg.color }}
             aria-hidden="true"
           />
           <span

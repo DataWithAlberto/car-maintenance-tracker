@@ -1,9 +1,23 @@
 import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
+import {
+  OrbitControls,
+  Environment,
+  ContactShadows,
+  Html,
+  useGLTF,
+  Center,
+} from '@react-three/drei';
 import * as THREE from 'three';
 import { CAR_PARTS } from '../../utils/constants';
+import { useOBD2Store } from '../../store/obd2Store';
+import {
+  computePartAlerts,
+  partFromMeshName,
+  type PartAlert,
+  type PartKey,
+} from '../../types/obd2Mapping';
 
 // Preload of the model is now delegated to CarPage (resolveModelUrl) so that
 // the right .glb — profesional o genérico — entra en caché solo cuando se
@@ -13,80 +27,8 @@ import { CAR_PARTS } from '../../utils/constants';
 interface PartClickInfo {
   partKey: string;
   position: [number, number, number];
+  alert?: PartAlert;
 }
-
-// Map mesh name prefixes → part keys for ford_focus.glb (Sketchfab)
-// Mesh names from GLB (lowercased): TIRE_LF_rubber_0, WHEEL_RF_chrome_0, etc.
-// Strategy: exact prefix match first, then substring fallback.
-const MESH_PART_MAP: Record<string, string> = {
-  // ── Tyres (rubber meshes) ──────────────────────────────────────────────────
-  'tire_lf': 'tires_front_left',
-  'tire_rf': 'tires_front_right',
-  'tire_lr': 'tires_rear_left',
-  'tire_rr': 'tires_rear_right',
-
-  // ── Lug nuts (chrome accent on wheels) ───────────────────────────────────
-  'lugs_lf': 'tires_front_left',
-  'lugs_rf': 'tires_front_right',
-  'lugs_lr': 'tires_rear_left',
-  'lugs_rr': 'tires_rear_right',
-
-  // ── Wheels / rims ─────────────────────────────────────────────────────────
-  'wheel_lf': 'tires_front_left',
-  'wheel_rf': 'tires_front_right',
-  'wheel_lr': 'tires_rear_left',
-  'wheel_rr': 'tires_rear_right',
-
-  // ── Body panels → engine area ─────────────────────────────────────────────
-  'body':   'engine',
-  'bod2':   'engine',
-  'cowl':   'engine',    // firewall / front cowl
-  'fin':    'engine',    // front panel
-
-  // ── Lights → brake system ─────────────────────────────────────────────────
-  'braklght': 'brakes_rear',
-  'hedlght':  'brakes_front',
-  'hlght_tr': 'brakes_rear',
-  'revlght':  'brakes_rear',
-  'foglight': 'brakes_front',
-
-  // ── Misc panels / trim → suspension (floor/underbody) ────────────────────
-  'under':    'suspension',
-  'whlwells': 'suspension',
-  'rbbrtrim': 'suspension',
-  'rbbrtrm2': 'suspension',
-
-  // ── Chrome / badge → battery (bonnet area) ───────────────────────────────
-  'chrome':   'battery',
-  'badge':    'battery',
-  'badge2':   'battery',
-  'badge_fa': 'battery',
-
-  // ── Generic fallbacks (any model) ────────────────────────────────────────
-  tire:       'tires_front_left',
-  wheel:      'tires_front_left',
-  rim:        'tires_front_left',
-  engine:     'engine',
-  hood:       'engine',
-  bonnet:     'engine',
-  brake:      'brakes_front',
-  disk:       'brakes_front',
-  caliper:    'brakes_front',
-  battery:    'battery',
-  suspension: 'suspension',
-};
-
-const guessPartFromMesh = (name: string): string | null => {
-  const lower = name.toLowerCase();
-  // Exact match first, then substring
-  for (const [key, partKey] of Object.entries(MESH_PART_MAP)) {
-    if (lower === key) return partKey;
-  }
-  for (const [key, partKey] of Object.entries(MESH_PART_MAP)) {
-    if (lower.includes(key)) return partKey;
-  }
-  return null;
-};
 
 // ─── GLTF Model ──────────────────────────────────────────────────────────────
 interface GLTFCarProps {
@@ -107,18 +49,121 @@ const GLTFCarSafe = ({ url, onPartClick, onError }: GLTFCarProps) => {
     <GLTFCar
       url={url}
       onPartClick={onPartClick}
-      onError={(u, err) => { setFailed(true); onError?.(u, err); }}
+      onError={(u, err) => {
+        setFailed(true);
+        onError?.(u, err);
+      }}
     />
   );
 };
 
+// Color emisivo por severidad (rojo crítico, naranja warn).
+const EMISSIVE_BY_SEVERITY = {
+  critical: new THREE.Color('#ff2d2d'),
+  warn: new THREE.Color('#ff8a00'),
+} as const;
+
+/** Registro de una malla resaltada: referencia + material clonado + base. */
+interface HighlightedMesh {
+  mesh: THREE.Mesh;
+  /** Material clonado (no compartido) que recibe la pulsación. */
+  material: THREE.MeshStandardMaterial;
+  /** Material original al que se restaura al desactivar la alerta. */
+  originalMaterial: THREE.Material | THREE.Material[];
+  /** Color emisivo original (puede ser negro). */
+  originalEmissive: THREE.Color;
+  /** Intensidad emisiva original. */
+  originalEmissiveIntensity: number;
+  severity: 'critical' | 'warn';
+}
+
 const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
   // useGLTF will throw/suspend on network error — caught by Suspense or ErrorBoundary.
-  // We also add a runtime guard via useEffect.
   const { scene } = useGLTF(url);
   const [hovered, setHovered] = useState<string | null>(null);
   // Clone once per loaded scene — never during every render.
   const cloned = useMemo(() => scene.clone(true), [scene]);
+
+  // Suscripción reactiva a la store OBD2. Recalcular alertas dentro de la
+  // store no es viable (las reglas viven en /types/obd2Mapping), así que
+  // tomamos las dos entradas y derivamos aquí con useMemo.
+  const dtcs = useOBD2Store((s) => s.dtcs);
+  const liveData = useOBD2Store((s) => s.liveData);
+  const alerts: PartAlert[] = useMemo(() => computePartAlerts(dtcs, liveData), [dtcs, liveData]);
+  const alertsByPart = useMemo(() => {
+    const map = new Map<PartKey, PartAlert>();
+    for (const a of alerts) map.set(a.partKey, a);
+    return map;
+  }, [alerts]);
+
+  // Mallas actualmente resaltadas — ref para no provocar re-renders y poder
+  // animar dentro de useFrame mutando propiedades de material.
+  const highlightedRef = useRef<HighlightedMesh[]>([]);
+
+  // (Re)construir el conjunto de mallas a resaltar cuando cambien las alertas
+  // o se cargue una escena nueva. Restaura siempre las anteriores primero.
+  useEffect(() => {
+    // Restaurar las mallas previas.
+    for (const h of highlightedRef.current) {
+      h.mesh.material = h.originalMaterial;
+    }
+    highlightedRef.current = [];
+
+    if (alertsByPart.size === 0) return;
+
+    cloned.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const partKey = partFromMeshName(mesh.name);
+      if (!partKey) return;
+      const alert = alertsByPart.get(partKey);
+      if (!alert) return;
+
+      // Solo clonamos el material para esta malla concreta — no tocamos
+      // mallas que compartan material y no estén en alerta.
+      const baseMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      if (!(baseMat instanceof THREE.MeshStandardMaterial)) return;
+      const clonedMat = baseMat.clone();
+
+      highlightedRef.current.push({
+        mesh,
+        material: clonedMat,
+        originalMaterial: mesh.material,
+        originalEmissive: clonedMat.emissive.clone(),
+        originalEmissiveIntensity: clonedMat.emissiveIntensity,
+        severity: alert.severity,
+      });
+      mesh.material = clonedMat;
+    });
+
+    return () => {
+      // Limpieza si el efecto vuelve a correr: restaurar para evitar fugas
+      // visuales si la siguiente pasada no encuentra las mallas.
+      for (const h of highlightedRef.current) {
+        h.mesh.material = h.originalMaterial;
+        h.material.dispose();
+      }
+    };
+  }, [alertsByPart, cloned]);
+
+  // Pulso emisivo síncrono con el reloj global de R3F. Sinusoide en [0,1].
+  // La mutación per-frame de propiedades del material es el patrón canónico
+  // de animación imperativa en R3F — no provoca re-renders de React.
+  useFrame((state) => {
+    const list = highlightedRef.current;
+    if (list.length === 0) return;
+    const t = state.clock.getElapsedTime();
+    // ~1.4 Hz para warn, 2.2 Hz para critical — la urgencia se nota.
+    for (const h of list) {
+      const freq = h.severity === 'critical' ? 2.2 : 1.4;
+      const peak = h.severity === 'critical' ? 2.4 : 1.4;
+      const pulse = (Math.sin(t * freq * Math.PI * 2) + 1) / 2; // 0..1
+      const mat = h.material;
+      mat.emissive.copy(EMISSIVE_BY_SEVERITY[h.severity]);
+      // eslint-disable-next-line react-hooks/immutability -- three.js material mutation per frame
+      mat.emissiveIntensity = 0.15 + pulse * peak;
+    }
+  });
 
   useEffect(() => {
     if (!scene) {
@@ -130,12 +175,14 @@ const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
 
   useEffect(() => {
     document.body.style.cursor = hovered ? 'pointer' : 'auto';
-    return () => { document.body.style.cursor = 'auto'; };
+    return () => {
+      document.body.style.cursor = 'auto';
+    };
   }, [hovered]);
 
   const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    const part = guessPartFromMesh((e.object as THREE.Mesh).name);
+    const part = partFromMeshName((e.object as THREE.Mesh).name);
     if (part) setHovered(part);
   };
 
@@ -143,10 +190,14 @@ const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    const part = guessPartFromMesh((e.object as THREE.Mesh).name);
+    const part = partFromMeshName((e.object as THREE.Mesh).name);
     if (part) {
       const p = e.point;
-      onPartClick({ partKey: part, position: [p.x, p.y, p.z] });
+      onPartClick({
+        partKey: part,
+        position: [p.x, p.y, p.z],
+        alert: alertsByPart.get(part),
+      });
     }
   };
 
@@ -160,8 +211,24 @@ const GLTFCar = ({ url, onPartClick, onError }: GLTFCarProps) => {
       />
       {hovered && CAR_PARTS[hovered] && (
         <Html position={[0, 2, 0]} center>
-          <div className="bg-snow border border-silver-mist font-text font-medium text-ink px-3 py-1.5 rounded-full whitespace-nowrap pointer-events-none" style={{ fontSize: 13 }}>
+          <div
+            className="bg-snow border border-silver-mist font-text font-medium text-ink px-3 py-1.5 rounded-full whitespace-nowrap pointer-events-none"
+            style={{ fontSize: 13 }}
+          >
             {CAR_PARTS[hovered].label}
+            {alertsByPart.has(hovered as PartKey) && (
+              <span
+                className="ml-2 inline-block rounded-full align-middle"
+                style={{
+                  width: 8,
+                  height: 8,
+                  background:
+                    alertsByPart.get(hovered as PartKey)!.severity === 'critical'
+                      ? '#d70015'
+                      : '#ff8a00',
+                }}
+              />
+            )}
           </div>
         </Html>
       )}
@@ -176,7 +243,10 @@ const CarLoader = () => (
       <div className="relative h-16 w-16">
         <div className="absolute inset-0 rounded-full border-2 border-blue-500/20" />
         <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 border-r-blue-400 animate-spin" />
-        <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-lime-300/70 animate-spin" style={{ animationDuration: '1.4s', animationDirection: 'reverse' }} />
+        <div
+          className="absolute inset-2 rounded-full border-2 border-transparent border-b-lime-300/70 animate-spin"
+          style={{ animationDuration: '1.4s', animationDirection: 'reverse' }}
+        />
       </div>
       <div className="text-center">
         <p className="text-ink-black text-sm font-medium">Cargando modelo 3D</p>
@@ -213,8 +283,11 @@ const ModelMissingFallback = ({ url, variant }: { url: string; variant: 'missing
         style={{
           background: 'var(--surface-frosted-control, rgba(255,255,255,0.7))',
           backdropFilter: 'blur(20px)',
-          fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 500,
-          letterSpacing: '0.1em', color: 'var(--color-graphite)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: '0.1em',
+          color: 'var(--color-graphite)',
         }}
       >
         VISTA PREVIA · REFERENCIA
@@ -228,14 +301,19 @@ const ModelMissingFallback = ({ url, variant }: { url: string; variant: 'missing
         <span
           className="inline-block rounded-full"
           style={{
-            width: 7, height: 7,
-            background: variant === 'error' ? 'var(--color-caution, #b64400)' : 'var(--color-azure, #0071e3)',
+            width: 7,
+            height: 7,
+            background:
+              variant === 'error' ? 'var(--color-caution, #b64400)' : 'var(--color-azure, #0071e3)',
           }}
         />
         <span
           style={{
-            fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.1em',
-            color: 'var(--color-graphite)', textTransform: 'uppercase',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10.5,
+            letterSpacing: '0.1em',
+            color: 'var(--color-graphite)',
+            textTransform: 'uppercase',
           }}
         >
           {variant === 'error' ? 'Error al cargar el modelo' : 'Modelo 3D no disponible'}
@@ -248,15 +326,18 @@ const ModelMissingFallback = ({ url, variant }: { url: string; variant: 'missing
         Coloca un modelo profesional en{' '}
         <code
           style={{
-            fontFamily: 'var(--font-mono)', fontSize: '0.86em',
-            background: 'var(--color-silver-mist)', color: 'var(--color-ink)',
-            padding: '1px 6px', borderRadius: 6,
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.86em',
+            background: 'var(--color-silver-mist)',
+            color: 'var(--color-ink)',
+            padding: '1px 6px',
+            borderRadius: 6,
           }}
         >
           {url}
         </code>{' '}
-        para activar el visor interactivo. La click-detection sobre piezas
-        funcionará automáticamente al cargar el .glb.
+        para activar el visor interactivo. La click-detection sobre piezas funcionará
+        automáticamente al cargar el .glb.
       </p>
     </div>
   </div>
@@ -264,19 +345,19 @@ const ModelMissingFallback = ({ url, variant }: { url: string; variant: 'missing
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 interface CarViewerProps {
-  onPartClick?: (partKey: string) => void;
+  onPartClick?: (partKey: string, alert?: PartAlert) => void;
   autoRotate?: boolean;
   modelUrl?: string; // e.g. '/models/ford-focus-st-line-2023.glb'
 }
 
 export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarViewerProps) => {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
-  const [loadError, setLoadError]       = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const controlsRef = useRef<{ autoRotate: boolean }>(null);
 
   const handlePartClick = (info: PartClickInfo) => {
     setSelectedPart(info.partKey);
-    onPartClick?.(info.partKey);
+    onPartClick?.(info.partKey, info.alert);
   };
 
   const handleGLTFError = (url: string, err: unknown) => {
@@ -306,17 +387,17 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
         style={{ background: 'transparent' }}
       >
         <ambientLight intensity={0.6} />
-        <directionalLight position={[5, 8, 5]} intensity={1.5} castShadow
-          shadow-mapSize={[2048, 2048]} />
+        <directionalLight
+          position={[5, 8, 5]}
+          intensity={1.5}
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+        />
         <directionalLight position={[-5, 3, -5]} intensity={0.5} />
         <pointLight position={[0, 6, 0]} intensity={0.4} />
 
         <Suspense fallback={<CarLoader />}>
-          <GLTFCarSafe
-            url={modelUrl}
-            onPartClick={handlePartClick}
-            onError={handleGLTFError}
-          />
+          <GLTFCarSafe url={modelUrl} onPartClick={handlePartClick} onError={handleGLTFError} />
           <ContactShadows position={[0, -0.8, 0]} opacity={0.5} scale={12} blur={2} />
           <Environment preset="city" />
         </Suspense>
@@ -334,7 +415,10 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
       </Canvas>
 
       {selectedPart && (
-        <div className="absolute top-4 left-4 bg-snow border border-silver-mist text-ink font-text font-medium px-3 py-1.5 rounded-full" style={{ fontSize: 13 }}>
+        <div
+          className="absolute top-4 left-4 bg-snow border border-silver-mist text-ink font-text font-medium px-3 py-1.5 rounded-full"
+          style={{ fontSize: 13 }}
+        >
           {CAR_PARTS[selectedPart]?.label ?? selectedPart}
         </div>
       )}

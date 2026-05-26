@@ -26,16 +26,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * ──────────────────────────────────────────────────────────────────────────── */
 
 const variantStyles: Record<Variant, string> = {
-  primary:
-    'bg-azure text-snow hover:opacity-85',
-  accent:
-    'bg-obsidian text-snow hover:opacity-85',
-  secondary:
-    'bg-snow text-ink border border-silver-mist hover:bg-fog',
-  ghost:
-    'bg-transparent text-ink hover:opacity-70',
-  danger:
-    'bg-caution text-snow hover:opacity-85',
+  primary: 'bg-azure text-snow hover:opacity-95',
+  accent: 'bg-obsidian text-snow hover:opacity-85',
+  secondary: 'bg-snow text-ink border border-silver-mist hover:bg-fog',
+  ghost: 'bg-transparent text-ink hover:opacity-70',
+  danger: 'bg-caution text-snow hover:opacity-85',
 };
 
 const sizeStyles: Record<Size, string> = {
@@ -43,6 +38,10 @@ const sizeStyles: Record<Size, string> = {
   md: 'h-10 px-5  text-body    gap-2   rounded-full',
   lg: 'h-12 px-10 text-body    gap-2   rounded-full',
 };
+
+/* Altura por tamaño → usada como min-width cuadrada cuando loading=true,
+ * para el morphing a píldora circular. */
+const sizeHeightPx: Record<Size, number> = { sm: 32, md: 40, lg: 48 };
 
 export const Button = ({
   variant = 'primary',
@@ -54,30 +53,50 @@ export const Button = ({
   className = '',
   children,
   disabled,
+  style,
   ...rest
-}: ButtonProps) => (
-  <button
-    {...rest}
-    disabled={disabled || loading}
-    className={cn(
-      'relative inline-flex items-center justify-center font-text font-medium',
-      'border-0 cursor-pointer select-none',
-      'transition-[opacity,transform] duration-150 ease-out focus-ring',
-      'active:scale-[0.98]',
-      'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
-      variantStyles[variant],
-      sizeStyles[size],
-      fullWidth && 'w-full',
-      className,
-    )}
-    style={{ letterSpacing: '-0.1px' }}
-  >
-    {loading ? (
-      <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-    ) : (
-      iconLeft
-    )}
-    {children}
-    {!loading && iconRight}
-  </button>
-);
+}: ButtonProps) => {
+  const isDisabled = disabled || loading;
+  const isPrimaryInteractive = variant === 'primary' && !loading && !disabled;
+  const heightPx = sizeHeightPx[size];
+
+  return (
+    <button
+      {...rest}
+      disabled={isDisabled}
+      className={cn(
+        'relative inline-flex items-center justify-center font-text font-medium',
+        'border-0 cursor-pointer select-none',
+        'transition-[opacity,transform,min-width,padding,box-shadow,filter] duration-[280ms] ease-out focus-ring',
+        'active:scale-[0.96] active:brightness-[0.92]',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
+        variantStyles[variant],
+        sizeStyles[size],
+        fullWidth && !loading && 'w-full',
+        isPrimaryInteractive && 'btn-shimmer btn-primary-glow',
+        className,
+      )}
+      style={{
+        letterSpacing: '-0.1px',
+        // Morphing a píldora cuadrada cuando loading=true. Animar min-width y
+        // padding es la excepción justificada al "solo transform/opacity": el
+        // efecto de morph requiere medir tamaño real, no puede hacerse con
+        // transform sin distorsionar el contenido.
+        minWidth: loading ? heightPx : undefined,
+        paddingLeft: loading ? 0 : undefined,
+        paddingRight: loading ? 0 : undefined,
+        ...style,
+      }}
+    >
+      {loading ? (
+        <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      ) : (
+        <>
+          {iconLeft}
+          {children}
+          {iconRight}
+        </>
+      )}
+    </button>
+  );
+};

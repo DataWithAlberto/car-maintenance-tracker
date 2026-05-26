@@ -2,7 +2,9 @@ import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Plus, AlertTriangle, Gauge } from 'lucide-react';
-const CarViewer = lazy(() => import('../components/3d/CarViewer').then(m => ({ default: m.CarViewer })));
+const CarViewer = lazy(() =>
+  import('../components/3d/CarViewer').then((m) => ({ default: m.CarViewer })),
+);
 
 // Resolución del modelo 3D para CarPage:
 //   1) Primero intenta el modelo profesional ST-Line 2023 (definitivo).
@@ -36,6 +38,7 @@ import { useVehicle } from '../hooks/useVehicle';
 import { calculateAlerts } from '../utils/calculations';
 import { formatKm } from '../utils/formatters';
 import { CAR_PARTS } from '../utils/constants';
+import type { PartAlert } from '../types/obd2Mapping';
 import toast from 'react-hot-toast';
 
 export const CarPage = () => {
@@ -47,6 +50,7 @@ export const CarPage = () => {
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
   const [prefilledType, setPrefilledType] = useState('');
+  const [prefilledDescription, setPrefilledDescription] = useState('');
   const [modelUrl, setModelUrl] = useState<string | undefined>(undefined);
   const [modelResolved, setModelResolved] = useState(false);
 
@@ -57,7 +61,9 @@ export const CarPage = () => {
       setModelUrl(url);
       setModelResolved(true);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -106,12 +112,23 @@ export const CarPage = () => {
 
   if (!selectedVehicle) return null;
 
-  const handlePartClick = (partKey: string) => {
+  // Cuando el click viene de una pieza con alerta OBD2 activa, abrimos el
+  // formulario directamente con el tipo y la descripción sugeridos por el DTC
+  // de mayor prioridad — saltándonos el overlay de historial.
+  const handlePartClick = (partKey: string, alert?: PartAlert) => {
+    if (alert && alert.triggers.length > 0) {
+      const primary = alert.triggers.find((t) => t.severity === 'critical') ?? alert.triggers[0];
+      setPrefilledType(primary.suggestedMaintenanceType);
+      setPrefilledDescription(`[${primary.code}] ${primary.description}`);
+      setShowMaintenanceForm(true);
+      return;
+    }
     setSelectedPart(partKey);
   };
 
   const handleAddMaintenance = (type: string) => {
     setPrefilledType(type);
+    setPrefilledDescription('');
     setShowMaintenanceForm(true);
   };
 
@@ -152,7 +169,9 @@ export const CarPage = () => {
           >
             <span className="inline-flex items-center gap-1.5">
               <Gauge className="h-4 w-4" strokeWidth={1.6} />
-              <span className="text-ink font-medium tabular-nums">{formatKm(selectedVehicle.current_km)}</span>
+              <span className="text-ink font-medium tabular-nums">
+                {formatKm(selectedVehicle.current_km)}
+              </span>
             </span>
             {alerts.length > 0 && (
               <>
@@ -168,7 +187,11 @@ export const CarPage = () => {
         </div>
         <Button
           variant="accent"
-          onClick={() => { setPrefilledType(''); setShowMaintenanceForm(true); }}
+          onClick={() => {
+            setPrefilledType('');
+            setPrefilledDescription('');
+            setShowMaintenanceForm(true);
+          }}
           iconLeft={<Plus className="h-4 w-4" strokeWidth={1.8} />}
         >
           Añadir
@@ -180,20 +203,18 @@ export const CarPage = () => {
         className="relative rounded-[28px] overflow-hidden border border-silver-mist"
         style={{ height: 'min(70vh, 600px)', background: 'var(--color-fog)' }}
       >
-        <Suspense fallback={
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative h-10 w-10">
-              <div className="absolute inset-0 rounded-full border border-silver-mist" />
-              <div className="absolute inset-0 rounded-full border border-transparent border-t-ink animate-spin" />
+        <Suspense
+          fallback={
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative h-10 w-10">
+                <div className="absolute inset-0 rounded-full border border-silver-mist" />
+                <div className="absolute inset-0 rounded-full border border-transparent border-t-ink animate-spin" />
+              </div>
             </div>
-          </div>
-        }>
+          }
+        >
           {modelResolved && (
-            <CarViewer
-              onPartClick={handlePartClick}
-              autoRotate={false}
-              modelUrl={modelUrl}
-            />
+            <CarViewer onPartClick={handlePartClick} autoRotate={false} modelUrl={modelUrl} />
           )}
         </Suspense>
 
@@ -208,8 +229,14 @@ export const CarPage = () => {
             style={{ backdropFilter: 'blur(20px)' }}
           >
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: '#b64400', animation: 'pulse-ring 2.4s ease-out infinite' }} />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: '#b64400' }} />
+              <span
+                className="absolute inline-flex h-full w-full rounded-full opacity-60"
+                style={{ background: '#b64400', animation: 'pulse-ring 2.4s ease-out infinite' }}
+              />
+              <span
+                className="relative inline-flex h-1.5 w-1.5 rounded-full"
+                style={{ background: '#b64400' }}
+              />
             </span>
             <span className="font-text font-medium text-ink tabular-nums" style={{ fontSize: 13 }}>
               {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'}
@@ -218,19 +245,21 @@ export const CarPage = () => {
         )}
       </div>
 
-      {selectedPart && createPortal(
-        <PartInfoOverlay
-          partKey={selectedPart}
-          records={records}
-          onClose={() => setSelectedPart(null)}
-          onAddMaintenance={handleAddMaintenance}
-        />,
-        document.body,
-      )}
+      {selectedPart &&
+        createPortal(
+          <PartInfoOverlay
+            partKey={selectedPart}
+            records={records}
+            onClose={() => setSelectedPart(null)}
+            onAddMaintenance={handleAddMaintenance}
+          />,
+          document.body,
+        )}
 
       {showMaintenanceForm && (
         <MaintenanceForm
           initialType={prefilledType}
+          initialDescription={prefilledDescription || undefined}
           currentKm={selectedVehicle.current_km}
           onSubmit={handleCreateRecord}
           onClose={() => setShowMaintenanceForm(false)}
