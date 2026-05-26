@@ -93,42 +93,55 @@ function toNum_(v) {
 
 /**
  * Lee todas las filas con Importe no vacío y devuelve movimientos normalizados.
- * Si encuentra filas sin id o sin updated_at, las rellena en sitio para que
- * cualquier edición manual sea sincronizable.
+ * Si encuentra filas sin id o sin updated_at, las rellena usando setValues
+ * en BATCH (una sola llamada por columna) para no tardar siglos.
  */
 function readMovements_() {
   const sh = getSheet_();
   const lastRow = sh.getLastRow();
   if (lastRow < 2) return [];
 
-  const rng = sh.getRange(2, 1, lastRow - 1, LAST_COL).getValues();
-  const out = [];
+  const numRows = lastRow - 1;
+  const rng = sh.getRange(2, 1, numRows, LAST_COL).getValues();
   const now = new Date().toISOString();
+  let needsWrite = false;
 
   for (let i = 0; i < rng.length; i++) {
     const row = rng[i];
     const importe = row[COL_IMPORTE - 1];
     if (importe === '' || importe == null) continue;
 
-    let id = row[COL_ID - 1];
-    let updated = row[COL_UPDATED - 1];
-
-    if (!id) {
-      id = Utilities.getUuid();
-      sh.getRange(i + 2, COL_ID).setValue(id);
+    if (!row[COL_ID - 1]) {
+      row[COL_ID - 1] = Utilities.getUuid();
+      needsWrite = true;
     }
-    if (!updated) {
-      updated = now;
-      sh.getRange(i + 2, COL_UPDATED).setValue(updated);
+    if (!row[COL_UPDATED - 1]) {
+      row[COL_UPDATED - 1] = now;
+      needsWrite = true;
     }
+  }
 
+  // Un solo setValues por columna en lugar de N setValue individuales:
+  // escribe SOLO G (id) y H (updated_at) para no tocar A-F ni fórmulas del panel.
+  if (needsWrite) {
+    const idCol      = rng.map(function(r) { return [r[COL_ID - 1]]; });
+    const updatedCol = rng.map(function(r) { return [r[COL_UPDATED - 1]]; });
+    sh.getRange(2, COL_ID,      numRows, 1).setValues(idCol);
+    sh.getRange(2, COL_UPDATED, numRows, 1).setValues(updatedCol);
+  }
+
+  const out = [];
+  for (let i = 0; i < rng.length; i++) {
+    const row = rng[i];
+    const importe = row[COL_IMPORTE - 1];
+    if (importe === '' || importe == null) continue;
     out.push({
       _row: i + 2,
-      id: id,
+      id: row[COL_ID - 1],
       fecha: toDate_(row[COL_FECHA - 1]),
       importe: toNum_(importe),
       usuario: String(row[COL_QUIEN - 1] || '').trim(),
-      updated_at: toIso_(updated),
+      updated_at: toIso_(row[COL_UPDATED - 1]),
       deleted_at: toIso_(row[COL_DELETED - 1]),
     });
   }
@@ -192,23 +205,18 @@ function doPost(e) {
     if (!row.id) continue;
     const cur = byId[row.id];
     if (!cur) {
+      // Fila nueva: 2 setValues en lugar de 6 setValue
       const append = sh.getLastRow() + 1;
-      sh.getRange(append, COL_FECHA).setValue(row.fecha);
-      sh.getRange(append, COL_IMPORTE).setValue(toNum_(row.importe));
-      sh.getRange(append, COL_QUIEN).setValue(row.usuario);
-      sh.getRange(append, COL_ID).setValue(row.id);
-      sh.getRange(append, COL_UPDATED).setValue(row.updated_at);
-      sh.getRange(append, COL_DELETED).setValue(row.deleted_at || '');
+      sh.getRange(append, COL_FECHA, 1, 3).setValues([[row.fecha, toNum_(row.importe), row.usuario]]);
+      sh.getRange(append, COL_ID,    1, 3).setValues([[row.id, row.updated_at, row.deleted_at || '']]);
       applied.push(row.id);
     } else {
       const incTs = Date.parse(row.updated_at) || 0;
       const curTs = Date.parse(cur.updated_at) || 0;
       if (incTs > curTs) {
-        sh.getRange(cur._row, COL_FECHA).setValue(row.fecha);
-        sh.getRange(cur._row, COL_IMPORTE).setValue(toNum_(row.importe));
-        sh.getRange(cur._row, COL_QUIEN).setValue(row.usuario);
-        sh.getRange(cur._row, COL_UPDATED).setValue(row.updated_at);
-        sh.getRange(cur._row, COL_DELETED).setValue(row.deleted_at || '');
+        // Actualización: 2 setValues en lugar de 5 setValue
+        sh.getRange(cur._row, COL_FECHA,   1, 3).setValues([[row.fecha, toNum_(row.importe), row.usuario]]);
+        sh.getRange(cur._row, COL_UPDATED, 1, 2).setValues([[row.updated_at, row.deleted_at || '']]);
         applied.push(row.id);
       } else {
         kept.push(stripRow_(cur));
@@ -252,11 +260,32 @@ function onEdit(e) {
 
 function setupSheet() {
   const sh = getSheet_();
-  // Asegura cabeceras en G/H/I y oculta las columnas
+
+  // Cabeceras en G1/H1/I1 (3 setValue rápidos)
   sh.getRange(1, COL_ID).setValue('id');
   sh.getRange(1, COL_UPDATED).setValue('updated_at');
   sh.getRange(1, COL_DELETED).setValue('deleted_at');
+
+  // Ocultar columnas G/H/I
   sh.hideColumns(COL_ID, 3);
-  recomputeDashboard_(readMovements_());
-  SpreadsheetApp.getUi().alert('Setup completado. Las columnas G/H/I quedan ocultas.');
+
+  // Recalcula el panel con los datos actuales (sin autorepair — eso ocurre al sincronizar)
+  const lastRow = sh.getLastRow();
+  if (lastRow >= 2) {
+    const numRows = lastRow - 1;
+    const rng = sh.getRange(2, 1, numRows, COL_QUIEN).getValues();
+    const mocks = [];
+    for (let i = 0; i < rng.length; i++) {
+      const importe = rng[i][COL_IMPORTE - 1];
+      if (importe === '' || importe == null) continue;
+      mocks.push({ importe: toNum_(importe), usuario: String(rng[i][COL_QUIEN - 1] || '').trim(), deleted_at: null });
+    }
+    recomputeDashboard_(mocks);
+  }
+
+  SpreadsheetApp.getUi().alert(
+    'Setup completado ✓\n' +
+    '• Columnas G/H/I ocultas.\n' +
+    '• Los IDs se generarán la primera vez que sincronices desde la app.'
+  );
 }
