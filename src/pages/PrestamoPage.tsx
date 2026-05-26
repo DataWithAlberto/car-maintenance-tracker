@@ -163,12 +163,7 @@ const PersonCard = ({ name, pagado, pct }: PersonCardProps) => (
 interface AddPaymentFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: {
-    fecha: string;
-    importe: number;
-    usuario: string;
-    descripcion?: string;
-  }) => Promise<void>;
+  onSubmit: (data: { fecha: string; importe: number; usuario: string }) => Promise<void>;
 }
 
 const AddPaymentForm = ({ open, onClose, onSubmit }: AddPaymentFormProps) => {
@@ -176,14 +171,12 @@ const AddPaymentForm = ({ open, onClose, onSubmit }: AddPaymentFormProps) => {
   const [fecha, setFecha] = useState(today);
   const [importe, setImporte] = useState('');
   const [usuario, setUsuario] = useState<'Celia' | 'Alberto'>('Celia');
-  const [descripcion, setDescripcion] = useState('');
   const [saving, setSaving] = useState(false);
 
   const reset = () => {
     setFecha(today);
     setImporte('');
     setUsuario('Celia');
-    setDescripcion('');
   };
 
   const handleClose = () => {
@@ -200,7 +193,7 @@ const AddPaymentForm = ({ open, onClose, onSubmit }: AddPaymentFormProps) => {
     }
     setSaving(true);
     try {
-      await onSubmit({ fecha, importe: val, usuario, descripcion: descripcion || undefined });
+      await onSubmit({ fecha, importe: val, usuario });
       reset();
       onClose();
     } finally {
@@ -295,18 +288,6 @@ const AddPaymentForm = ({ open, onClose, onSubmit }: AddPaymentFormProps) => {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Descripción */}
-        <div>
-          <label style={labelStyle}>Descripción (opcional)</label>
-          <input
-            type="text"
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            placeholder="Cuota mensual, adelanto…"
-            style={inputStyle}
-          />
         </div>
 
         <div className="flex gap-3 pt-1">
@@ -590,12 +571,7 @@ export const PrestamoPage = () => {
     return null;
   }
 
-  const handleCreate = async (data: {
-    fecha: string;
-    importe: number;
-    usuario: string;
-    descripcion?: string;
-  }) => {
+  const handleCreate = async (data: { fecha: string; importe: number; usuario: string }) => {
     await create(data);
     toast.success('Pago registrado');
   };
@@ -783,11 +759,6 @@ export const PrestamoPage = () => {
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-text text-ink font-medium" style={{ fontSize: 15 }}>
                     {m.usuario}
-                    {m.descripcion && (
-                      <span className="text-graphite font-normal ml-2 truncate">
-                        · {m.descripcion}
-                      </span>
-                    )}
                   </span>
                   <span
                     className="font-display text-ink font-semibold tabular-nums shrink-0"

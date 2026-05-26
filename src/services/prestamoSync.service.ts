@@ -52,7 +52,6 @@ interface SheetRow {
   fecha: string;
   usuario: string;
   importe: number;
-  descripcion: string | null;
   updated_at: string;
   deleted_at: string | null;
 }
@@ -62,7 +61,6 @@ const toSheetRow = (m: PrestamoMovimiento): SheetRow => ({
   fecha: m.fecha,
   usuario: m.usuario,
   importe: m.importe,
-  descripcion: m.descripcion ?? null,
   updated_at: m.updated_at,
   deleted_at: m.deleted_at,
 });
@@ -73,7 +71,6 @@ const fromSheetRow = (r: SheetRow, vehicleId: string): PrestamoMovimiento => ({
   fecha: typeof r.fecha === 'string' ? r.fecha.slice(0, 10) : r.fecha,
   usuario: r.usuario as PrestamoMovimiento['usuario'],
   importe: Number(r.importe),
-  descripcion: r.descripcion || undefined,
   created_at: r.updated_at,
   updated_at: r.updated_at,
   deleted_at: r.deleted_at,

@@ -1,134 +1,262 @@
 /**
- * FocusHub · Préstamo ⇄ Google Sheets sync
- * ─────────────────────────────────────────
+ * FocusHub · Préstamo ⇄ Google Sheets sync — versión adaptada a tu Excel.
+ * ───────────────────────────────────────────────────────────────────────
+ *
+ * Layout que respeta el archivo `Prestamo_ford focus.xlsx`:
+ *
+ *      A          B         C                D    E                       F
+ *   1  Fecha      Importe   Quien lo hace
+ *   2                                            Importe Inicial          17.000,00 €
+ *   3                                            Saldo Pendiente          (calculado)
+ *   4
+ *   5                                            Pagado por Celia (%)     (calculado)
+ *   6                                            Pagado por Alberto (%)   (calculado)
+ *   7                                            ← (a partir de aquí
+ *   8  …pagos…                                     puedes pegar pagos)
+ *
+ * Columnas OCULTAS (creadas/mantenidas por el script):
+ *      G = id        H = updated_at        I = deleted_at
+ *
+ * Reglas:
+ *   · Una fila se considera «movimiento» si tiene Importe (col B) no vacío.
+ *   · Cuando editas A/B/C manualmente, el trigger onEdit bumpea H (updated_at)
+ *     y genera G (id) si falta. Esto es lo que permite el last-write-wins.
+ *   · F3, F5 y F6 se recalculan en cada lectura/escritura. Tu F2 (Importe
+ *     Inicial = 17.000,00 €) NO se toca — es el dato de partida.
  *
  * Despliegue:
- *   1. Crea una hoja de cálculo nueva en Google Sheets.
- *   2. Nombra la primera pestaña `Movimientos`.
- *   3. Fila 1 (cabecera, en este orden exacto):
- *      id | fecha | usuario | importe | descripcion | updated_at | deleted_at
- *   4. Extensiones → Apps Script → pega ESTE archivo entero.
- *   5. Desplegar → Nueva implementación → Tipo: «Aplicación web».
- *      - Ejecutar como: «Yo»
- *      - Tener acceso: «Cualquier usuario» (es seguro: la app valida el secreto)
- *   6. Copia la URL ("https://script.google.com/macros/s/.../exec") y pégala
- *      en /prestamo → ⚙ Configurar sync.
- *   7. Cambia SECRET por una cadena aleatoria y guárdala también en la app.
- *
- * Contrato (last-write-wins por updated_at):
- *   GET  ?secret=…           → { rows: [...] }
- *   POST { secret, rows[] }  → { applied, kept, merged: [...] }
+ *   1. Sube tu Prestamo_ford focus.xlsx a Google Drive y ábrelo con Google
+ *      Sheets (Drive → click derecho → Abrir con → Hojas de cálculo).
+ *   2. Extensiones → Apps Script → pega ESTE archivo entero.
+ *   3. Cambia SECRET por una cadena aleatoria y guarda.
+ *   4. Ejecuta una vez la función `setupSheet` (botón ▶) para ocultar G/H/I.
+ *   5. Desplegar → Nueva implementación → «Aplicación web»
+ *        - Ejecutar como: Yo
+ *        - Tener acceso: Cualquier usuario
+ *   6. Copia la URL terminada en `/exec` y pégala en /prestamo de la app
+ *      junto al mismo SECRET.
  */
 
-const SHEET_NAME = 'Movimientos';
+const SHEET_NAME = 'Hoja 1';
 const SECRET = 'CAMBIA_ESTE_VALOR_POR_UNO_LARGO_Y_ALEATORIO';
+const IMPORTE_INICIAL = 17000;
 
-const COLS = ['id', 'fecha', 'usuario', 'importe', 'descripcion', 'updated_at', 'deleted_at'];
+// Columnas visibles
+const COL_FECHA = 1;     // A
+const COL_IMPORTE = 2;   // B
+const COL_QUIEN = 3;     // C
+// Columnas ocultas (sync)
+const COL_ID = 7;        // G
+const COL_UPDATED = 8;   // H
+const COL_DELETED = 9;   // I
+const LAST_COL = COL_DELETED;
+
+// Celdas del panel lateral
+const CELL_SALDO = 'F3';
+const CELL_PCT_CELIA = 'F5';
+const CELL_PCT_ALBERTO = 'F6';
+
+// ─── Utilidades ──────────────────────────────────────────────────────────────
+
+function jsonOut_(body) {
+  return ContentService.createTextOutput(JSON.stringify(body))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
 function getSheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sh = ss.getSheetByName(SHEET_NAME);
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   if (!sh) throw new Error(`Pestaña "${SHEET_NAME}" no encontrada`);
   return sh;
 }
 
-function readAll_() {
+function toIso_(v) {
+  if (!v) return null;
+  if (v instanceof Date) return v.toISOString();
+  return String(v);
+}
+
+function toDate_(v) {
+  if (!v) return '';
+  if (v instanceof Date) {
+    return Utilities.formatDate(v, 'UTC', 'yyyy-MM-dd');
+  }
+  return String(v).slice(0, 10);
+}
+
+function toNum_(v) {
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number') return v;
+  return parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+// ─── Lectura + autoreparación ────────────────────────────────────────────────
+
+/**
+ * Lee todas las filas con Importe no vacío y devuelve movimientos normalizados.
+ * Si encuentra filas sin id o sin updated_at, las rellena en sitio para que
+ * cualquier edición manual sea sincronizable.
+ */
+function readMovements_() {
   const sh = getSheet_();
-  const last = sh.getLastRow();
-  if (last < 2) return [];
-  const values = sh.getRange(2, 1, last - 1, COLS.length).getValues();
-  return values.map((row, i) => {
-    const obj = { _rowIndex: i + 2 };
-    COLS.forEach((c, j) => {
-      let v = row[j];
-      if (v instanceof Date) v = v.toISOString();
-      if (c === 'importe' && typeof v === 'string') v = parseFloat(v.replace(',', '.'));
-      obj[c] = v === '' ? null : v;
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return [];
+
+  const rng = sh.getRange(2, 1, lastRow - 1, LAST_COL).getValues();
+  const out = [];
+  const now = new Date().toISOString();
+
+  for (let i = 0; i < rng.length; i++) {
+    const row = rng[i];
+    const importe = row[COL_IMPORTE - 1];
+    if (importe === '' || importe == null) continue;
+
+    let id = row[COL_ID - 1];
+    let updated = row[COL_UPDATED - 1];
+
+    if (!id) {
+      id = Utilities.getUuid();
+      sh.getRange(i + 2, COL_ID).setValue(id);
+    }
+    if (!updated) {
+      updated = now;
+      sh.getRange(i + 2, COL_UPDATED).setValue(updated);
+    }
+
+    out.push({
+      _row: i + 2,
+      id: id,
+      fecha: toDate_(row[COL_FECHA - 1]),
+      importe: toNum_(importe),
+      usuario: String(row[COL_QUIEN - 1] || '').trim(),
+      updated_at: toIso_(updated),
+      deleted_at: toIso_(row[COL_DELETED - 1]),
     });
-    return obj;
-  });
-}
-
-function rowFromObj_(obj) {
-  return COLS.map((c) => {
-    const v = obj[c];
-    if (v == null) return '';
-    return v;
-  });
-}
-
-function jsonOut_(body, status) {
-  const out = ContentService.createTextOutput(JSON.stringify(body));
-  out.setMimeType(ContentService.MimeType.JSON);
+  }
   return out;
 }
 
-function doGet(e) {
-  if ((e.parameter.secret || '') !== SECRET) {
-    return jsonOut_({ error: 'unauthorized' }, 401);
-  }
-  const rows = readAll_().map((r) => {
-    delete r._rowIndex;
-    return r;
-  });
-  return jsonOut_({ rows: rows });
+function stripRow_(m) {
+  const copy = {};
+  for (const k in m) if (k !== '_row') copy[k] = m[k];
+  return copy;
 }
 
-/**
- * Batch upsert con last-write-wins.
- * Para cada row entrante:
- *  - Si el id no existe en la hoja → se inserta.
- *  - Si existe y la `updated_at` entrante es más reciente → se sobrescribe.
- *  - Si existe pero la hoja es más reciente → se ignora y se devuelve en `kept`
- *    (la app debe sobrescribir su copia con el valor de la hoja).
- * Respuesta: { applied: [ids…], kept: [{ id, sheetRow }] }
- */
+// ─── Recálculo del panel lateral ─────────────────────────────────────────────
+
+function recomputeDashboard_(movements) {
+  const sh = getSheet_();
+  let celia = 0;
+  let alberto = 0;
+  for (const m of movements) {
+    if (m.deleted_at) continue;
+    if (m.usuario === 'Celia') celia += m.importe;
+    else if (m.usuario === 'Alberto') alberto += m.importe;
+  }
+  const saldo = Math.max(0, IMPORTE_INICIAL - celia - alberto);
+  sh.getRange(CELL_SALDO).setValue(saldo);
+  sh.getRange(CELL_PCT_CELIA).setValue(IMPORTE_INICIAL > 0 ? celia / IMPORTE_INICIAL : 0);
+  sh.getRange(CELL_PCT_ALBERTO).setValue(IMPORTE_INICIAL > 0 ? alberto / IMPORTE_INICIAL : 0);
+  // Formatea las celdas de % como porcentaje
+  sh.getRange(CELL_PCT_CELIA).setNumberFormat('0.0%');
+  sh.getRange(CELL_PCT_ALBERTO).setNumberFormat('0.0%');
+  sh.getRange(CELL_SALDO).setNumberFormat('#,##0.00 €');
+}
+
+// ─── Endpoints HTTP ──────────────────────────────────────────────────────────
+
+function doGet(e) {
+  if (!e || (e.parameter.secret || '') !== SECRET) {
+    return jsonOut_({ error: 'unauthorized' });
+  }
+  const movs = readMovements_();
+  recomputeDashboard_(movs);
+  return jsonOut_({ rows: movs.map(stripRow_) });
+}
+
 function doPost(e) {
   let body;
-  try {
-    body = JSON.parse(e.postData.contents);
-  } catch (err) {
-    return jsonOut_({ error: 'bad_json' }, 400);
-  }
-  if ((body.secret || '') !== SECRET) return jsonOut_({ error: 'unauthorized' }, 401);
+  try { body = JSON.parse(e.postData.contents); }
+  catch (err) { return jsonOut_({ error: 'bad_json' }); }
+  if ((body.secret || '') !== SECRET) return jsonOut_({ error: 'unauthorized' });
 
-  const incoming = Array.isArray(body.rows) ? body.rows : [];
   const sh = getSheet_();
-  const existing = readAll_();
+  const incoming = Array.isArray(body.rows) ? body.rows : [];
+  const current = readMovements_();
   const byId = {};
-  existing.forEach((r) => { byId[r.id] = r; });
+  current.forEach((m) => { byId[m.id] = m; });
 
   const applied = [];
   const kept = [];
-  const toAppend = [];
 
-  incoming.forEach((row) => {
-    if (!row.id) return;
+  for (const row of incoming) {
+    if (!row.id) continue;
     const cur = byId[row.id];
     if (!cur) {
-      toAppend.push(rowFromObj_(row));
-      applied.push(row.id);
-      return;
-    }
-    const incTs = Date.parse(row.updated_at || '') || 0;
-    const curTs = Date.parse(cur.updated_at || '') || 0;
-    if (incTs > curTs) {
-      // Overwrite existing row
-      sh.getRange(cur._rowIndex, 1, 1, COLS.length).setValues([rowFromObj_(row)]);
+      const append = sh.getLastRow() + 1;
+      sh.getRange(append, COL_FECHA).setValue(row.fecha);
+      sh.getRange(append, COL_IMPORTE).setValue(toNum_(row.importe));
+      sh.getRange(append, COL_QUIEN).setValue(row.usuario);
+      sh.getRange(append, COL_ID).setValue(row.id);
+      sh.getRange(append, COL_UPDATED).setValue(row.updated_at);
+      sh.getRange(append, COL_DELETED).setValue(row.deleted_at || '');
       applied.push(row.id);
     } else {
-      // Sheet wins — return current to caller so it can update its local copy
-      const clean = Object.assign({}, cur);
-      delete clean._rowIndex;
-      kept.push(clean);
+      const incTs = Date.parse(row.updated_at) || 0;
+      const curTs = Date.parse(cur.updated_at) || 0;
+      if (incTs > curTs) {
+        sh.getRange(cur._row, COL_FECHA).setValue(row.fecha);
+        sh.getRange(cur._row, COL_IMPORTE).setValue(toNum_(row.importe));
+        sh.getRange(cur._row, COL_QUIEN).setValue(row.usuario);
+        sh.getRange(cur._row, COL_UPDATED).setValue(row.updated_at);
+        sh.getRange(cur._row, COL_DELETED).setValue(row.deleted_at || '');
+        applied.push(row.id);
+      } else {
+        kept.push(stripRow_(cur));
+      }
     }
-  });
-
-  if (toAppend.length) {
-    sh.getRange(sh.getLastRow() + 1, 1, toAppend.length, COLS.length).setValues(toAppend);
   }
 
-  // Return the full merged view too — saves a round-trip from the client
-  const merged = readAll_().map((r) => { delete r._rowIndex; return r; });
-  return jsonOut_({ applied: applied, kept: kept, merged: merged });
+  const fresh = readMovements_();
+  recomputeDashboard_(fresh);
+  return jsonOut_({ applied: applied, kept: kept, merged: fresh.map(stripRow_) });
+}
+
+// ─── Trigger onEdit: marca updated_at cuando editas A/B/C a mano ────────────
+
+function onEdit(e) {
+  try {
+    const sh = e.source.getActiveSheet();
+    if (sh.getName() !== SHEET_NAME) return;
+    const range = e.range;
+    if (range.getRow() < 2) return;
+    if (range.getColumn() > COL_QUIEN) return;
+
+    const now = new Date().toISOString();
+    for (let r = range.getRow(); r < range.getRow() + range.getNumRows(); r++) {
+      // Solo bumpea si la fila tiene Importe (es un movimiento real)
+      const importe = sh.getRange(r, COL_IMPORTE).getValue();
+      if (importe === '' || importe == null) continue;
+      sh.getRange(r, COL_UPDATED).setValue(now);
+      if (!sh.getRange(r, COL_ID).getValue()) {
+        sh.getRange(r, COL_ID).setValue(Utilities.getUuid());
+      }
+    }
+    recomputeDashboard_(readMovements_());
+  } catch (err) {
+    // onEdit no puede romper la UI del Sheet — silenciamos errores
+    console.error('onEdit error', err);
+  }
+}
+
+// ─── Setup inicial (ejecutar una vez desde el editor de Apps Script) ────────
+
+function setupSheet() {
+  const sh = getSheet_();
+  // Asegura cabeceras en G/H/I y oculta las columnas
+  sh.getRange(1, COL_ID).setValue('id');
+  sh.getRange(1, COL_UPDATED).setValue('updated_at');
+  sh.getRange(1, COL_DELETED).setValue('deleted_at');
+  sh.hideColumns(COL_ID, 3);
+  recomputeDashboard_(readMovements_());
+  SpreadsheetApp.getUi().alert('Setup completado. Las columnas G/H/I quedan ocultas.');
 }

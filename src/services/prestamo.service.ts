@@ -29,7 +29,7 @@ export const prestamoService = {
 
   async create(
     vehicleId: string,
-    input: { fecha: string; importe: number; usuario: string; descripcion?: string },
+    input: { fecha: string; importe: number; usuario: string },
   ): Promise<PrestamoMovimiento> {
     const { data, error } = await supabase
       .from('prestamo_movimientos')

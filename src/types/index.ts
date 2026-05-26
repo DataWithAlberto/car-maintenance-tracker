@@ -525,7 +525,6 @@ export interface PrestamoMovimiento {
   fecha: string;
   importe: number;
   usuario: PrestamoUsuario;
-  descripcion?: string;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

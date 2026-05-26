@@ -108,12 +108,7 @@ export function usePrestamo(vehicleId?: string) {
     }
   };
 
-  const create = async (input: {
-    fecha: string;
-    importe: number;
-    usuario: string;
-    descripcion?: string;
-  }) => {
+  const create = async (input: { fecha: string; importe: number; usuario: string }) => {
     if (!vehicleId) return;
     const m = await prestamoService.create(vehicleId, input);
     setMovimientos((prev) => [m, ...prev]);
