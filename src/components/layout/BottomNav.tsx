@@ -16,6 +16,7 @@ import {
   Share2,
   Settings,
   Images,
+  Landmark,
   X,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
@@ -63,6 +64,11 @@ const MORE_ITEMS: TabDef[] = [
     icon: ShieldCheck,
     label: 'Seguro',
     lordSrc: 'https://cdn.lordicon.com/yraqammt.json',
+  },
+  {
+    to: '/prestamo',
+    icon: Landmark,
+    label: 'Préstamo',
   },
   {
     to: '/documents',

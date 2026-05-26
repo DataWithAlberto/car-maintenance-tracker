@@ -515,6 +515,30 @@ export const DEFAULT_VEHICLE_THRESHOLDS: VehicleThresholds = {
   fuelLevelCritical: 5,
 };
 
+// ─── Préstamo ─────────────────────────────────────────────────────────────────
+
+export type PrestamoUsuario = 'Celia' | 'Alberto';
+
+export interface PrestamoMovimiento {
+  id: string;
+  vehicle_id: string;
+  fecha: string;
+  importe: number;
+  usuario: PrestamoUsuario;
+  descripcion?: string;
+  created_at: string;
+}
+
+export interface PrestamoStats {
+  importeInicial: number;
+  totalPagado: number;
+  saldoPendiente: number;
+  pagadoCelia: number;
+  pagadoAlberto: number;
+  pctCelia: number;
+  pctAlberto: number;
+}
+
 export interface OBD2Anomaly {
   id?: string;
   vehicle_id?: string;

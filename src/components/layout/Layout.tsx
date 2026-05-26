@@ -16,6 +16,7 @@ import {
   Cpu,
   Store,
   Images,
+  Landmark,
 } from 'lucide-react';
 import { FloatingDock, type FloatingDockEntry } from './FloatingDock';
 import { BottomNav } from './BottomNav';
@@ -99,6 +100,12 @@ export const Layout = () => {
             href: '/insurance',
             lordSrc: 'https://cdn.lordicon.com/yraqammt.json',
           },
+          {
+            id: 'prestamo',
+            label: 'Préstamo',
+            icon: Landmark,
+            href: '/prestamo',
+          },
         ],
       },
       {
@@ -176,6 +183,7 @@ export const Layout = () => {
     if (p === '/mechanics' || p.startsWith('/mechanics/')) return 'mechanics';
     if (p === '/sharing' || p.startsWith('/sharing/')) return 'sharing';
     if (p === '/galeria' || p.startsWith('/galeria/')) return 'gallery';
+    if (p === '/prestamo' || p.startsWith('/prestamo/')) return 'prestamo';
     if (p === '/settings' || p.startsWith('/settings/')) return 'settings';
     return '';
   }, [location.pathname]);

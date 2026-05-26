@@ -61,6 +61,9 @@ const WorkshopPage = lazy(() =>
 const GalleryPage = lazy(() =>
   import('./pages/GalleryPage').then((m) => ({ default: m.GalleryPage })),
 );
+const PrestamoPage = lazy(() =>
+  import('./pages/PrestamoPage').then((m) => ({ default: m.PrestamoPage })),
+);
 
 const PageFallback = () => (
   <div className="px-6 sm:px-10 py-10 space-y-4">
@@ -146,6 +149,7 @@ function App() {
           <Route path="obd2" element={lazyRoute(<OBD2Page />)} />
           <Route path="sharing" element={lazyRoute(<SharingPage />)} />
           <Route path="galeria" element={lazyRoute(<GalleryPage />)} />
+          <Route path="prestamo" element={lazyRoute(<PrestamoPage />)} />
           <Route path="settings" element={lazyRoute(<SettingsPage />)} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
