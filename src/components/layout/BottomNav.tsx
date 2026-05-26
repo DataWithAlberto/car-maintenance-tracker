@@ -174,18 +174,12 @@ export const BottomNav = () => {
 
       {/* ─── Tab bar (Apple Liquid Glass) ─────────────────────────────────── */}
       <nav
-        className="md:hidden fixed z-40"
+        className="liquid-glass md:hidden fixed z-40"
         style={{
           left: 16,
           right: 16,
           bottom: 'max(16px, env(safe-area-inset-bottom))',
-          background: 'rgba(255, 255, 255, 0.45)',
-          border: '1px solid rgba(255, 255, 255, 0.5)',
           borderRadius: 38,
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow: '0 12px 32px rgba(0,0,0,0.12), inset 0 1px 1px rgba(255,255,255,0.8)',
-          transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
         }}
         aria-label="Navegación móvil"
       >
@@ -206,17 +200,13 @@ export const BottomNav = () => {
                 {({ isActive }) => (
                   <>
                     <span
-                      className="h-9 w-9 flex items-center justify-center rounded-full"
+                      className={cn(
+                        'h-9 w-9 flex items-center justify-center rounded-full',
+                        isActive && 'liquid-glass-secondary',
+                      )}
                       style={{
                         transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
                         transform: isActive ? 'scale(1.1)' : 'scale(1)',
-                        background: isActive ? 'rgba(255, 255, 255, 0.5)' : 'transparent',
-                        border: isActive
-                          ? '1px solid rgba(255, 255, 255, 0.6)'
-                          : '1px solid transparent',
-                        boxShadow: isActive
-                          ? '0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
-                          : 'none',
                       }}
                     >
                       {lordSrc ? (
@@ -247,15 +237,13 @@ export const BottomNav = () => {
               style={{ transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)' }}
             >
               <span
-                className="h-9 w-9 flex items-center justify-center rounded-full"
+                className={cn(
+                  'h-9 w-9 flex items-center justify-center rounded-full',
+                  open && 'liquid-glass-secondary',
+                )}
                 style={{
                   transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
                   transform: open ? 'scale(1.1) rotate(90deg)' : 'scale(1)',
-                  background: open ? 'rgba(255, 255, 255, 0.5)' : 'transparent',
-                  border: open ? '1px solid rgba(255, 255, 255, 0.6)' : '1px solid transparent',
-                  boxShadow: open
-                    ? '0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
-                    : 'none',
                 }}
               >
                 <MoreHorizontal className="h-5 w-5" strokeWidth={open ? 2.2 : 1.8} />

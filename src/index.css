@@ -701,11 +701,11 @@ a:hover {
   transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 [data-theme='dark'] .theme-toggle {
-  background: rgba(28, 28, 30, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(28, 28, 30, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.06);
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.14);
 }
 .theme-toggle:hover {
   transform: scale(1.05);
@@ -783,18 +783,24 @@ a:hover {
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 [data-theme='dark'] .liquid-glass {
-  background: rgba(28, 28, 30, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Tinte oscuro semitransparente — el blur+saturate hace el trabajo visual,
+     la opacidad solo da contraste mínimo para que el contenido se lea. */
+  background: rgba(28, 28, 30, 0.62);
+  /* Borde y reflejo especular más visibles que en light: sobre fondo oscuro
+     una opacidad baja se pierde. */
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.06);
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.14);
 }
 [data-theme='dark'] .liquid-glass-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Cristal interior: tinte blanco muy bajo sobre el cristal padre oscuro.
+     No usar fondo oscuro — apagaría el contenedor. */
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 /* Transición global suave al cambiar de tema */

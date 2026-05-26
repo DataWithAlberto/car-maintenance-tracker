@@ -92,7 +92,7 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
       <Link
         key={it.id}
         to={it.href}
-        className="focus-ring"
+        className={isActive ? 'focus-ring liquid-glass-secondary' : 'focus-ring'}
         aria-current={isActive ? 'page' : undefined}
         title={!open ? it.label : undefined}
         style={{
@@ -104,11 +104,6 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
           borderRadius: nested ? 12 : 14,
           cursor: 'pointer',
           textDecoration: 'none',
-          background: isActive ? 'rgba(255, 255, 255, 0.5)' : 'transparent',
-          border: isActive ? '1px solid rgba(255, 255, 255, 0.6)' : '1px solid transparent',
-          boxShadow: isActive
-            ? '0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
-            : 'none',
           color: isActive ? 'var(--color-azure)' : 'var(--color-slate)',
           fontFamily: 'Inter, var(--font-sf-pro-text)',
           fontWeight: isActive ? 600 : 400,
@@ -202,7 +197,7 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
       >
         <button
           type="button"
-          className="focus-ring"
+          className={headerActive ? 'focus-ring liquid-glass-secondary' : 'focus-ring'}
           aria-expanded={showChildren}
           title={!open ? g.label : undefined}
           style={{
@@ -213,11 +208,6 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
             padding: open ? '9px 10px' : '9px 0',
             borderRadius: 14,
             cursor: 'pointer',
-            background: headerActive ? 'rgba(255, 255, 255, 0.5)' : 'transparent',
-            border: headerActive ? '1px solid rgba(255, 255, 255, 0.6)' : '1px solid transparent',
-            boxShadow: headerActive
-              ? '0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
-              : 'none',
             color: headerActive ? 'var(--color-azure)' : 'var(--color-slate)',
             fontFamily: 'Inter, var(--font-sf-pro-text)',
             fontWeight: childActive ? 600 : 400,
@@ -306,7 +296,7 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
 
   return (
     <aside
-      className="hidden md:flex"
+      className="liquid-glass hidden md:flex"
       onMouseEnter={() => {
         cancelClose();
         setHovered(true);
@@ -324,13 +314,7 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
         transform: 'translateY(-50%)',
         width: open ? 232 : 60,
         maxHeight: 'min(800px, calc(100vh - 40px))',
-        transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
-        background: 'rgba(255, 255, 255, 0.45)',
         borderRadius: 38,
-        border: '1px solid rgba(255, 255, 255, 0.5)',
-        backdropFilter: 'blur(40px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-        boxShadow: '0 12px 32px rgba(0,0,0,0.12), inset 0 1px 1px rgba(255,255,255,0.8)',
         flexDirection: 'column',
         zIndex: 50,
         overflow: 'hidden',

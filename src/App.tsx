@@ -112,14 +112,10 @@ function App() {
       <Toaster
         position="top-right"
         toastOptions={{
+          className: 'liquid-glass',
           style: {
-            background: 'rgba(255, 255, 255, 0.45)',
             color: 'var(--color-ink)',
-            border: '1px solid rgba(255, 255, 255, 0.5)',
             borderRadius: '20px',
-            backdropFilter: 'blur(40px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-            boxShadow: '0 12px 32px rgba(0,0,0,0.12), inset 0 1px 1px rgba(255,255,255,0.8)',
           },
         }}
       />
