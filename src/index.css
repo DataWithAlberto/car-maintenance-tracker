@@ -685,19 +685,27 @@ a:hover {
   width: 48px;
   height: 48px;
   border-radius: 999px;
-  border: 1px solid var(--color-silver-mist);
-  background: var(--surface-card);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8);
   color: var(--color-ink);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   overflow: hidden;
-  transition:
-    background-color var(--duration-base) var(--ease-out-expo),
-    border-color var(--duration-base) var(--ease-out-expo),
-    transform var(--duration-fast) var(--ease-default),
-    color var(--duration-base) var(--ease-out-expo);
+  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+[data-theme='dark'] .theme-toggle {
+  background: rgba(28, 28, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.06);
 }
 .theme-toggle:hover {
   transform: scale(1.05);
@@ -744,6 +752,49 @@ a:hover {
   .theme-toggle__icon {
     transition: none;
   }
+}
+
+/* ─── Apple Liquid Glass ──────────────────────────────────────────────────
+ * Receta canónica para superficies flotantes (docks, sheets, modales, toasts,
+ * FABs). El blur + saturate es el corazón del efecto; la sombra interior
+ * (inset) es el reflejo especular que distingue el cristal Apple del
+ * glassmorphism genérico.
+ *
+ * `.liquid-glass`           → contenedor principal.
+ * `.liquid-glass-secondary` → fondo tenue para estados activos sobre cristal
+ *                             (evita las píldoras sólidas oscuras).
+ * En modo oscuro el tinte base se invierte automáticamente.
+ * ────────────────────────────────────────────────────────────────────────── */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.liquid-glass-secondary {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+[data-theme='dark'] .liquid-glass {
+  background: rgba(28, 28, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.06);
+}
+[data-theme='dark'] .liquid-glass-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Transición global suave al cambiar de tema */

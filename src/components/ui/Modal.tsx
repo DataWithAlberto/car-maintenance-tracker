@@ -30,7 +30,13 @@ const sizeMap = {
 };
 
 export const Modal = ({
-  open, onClose, title, description, children, size = 'md', footer,
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  size = 'md',
+  footer,
 }: ModalProps) => {
   useEffect(() => {
     if (!open) return;
@@ -62,11 +68,11 @@ export const Modal = ({
         }}
       />
 
-      {/* Sheet */}
+      {/* Sheet — Apple Liquid Glass */}
       <div
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'relative w-full bg-snow flex flex-col',
+          'liquid-glass relative w-full flex flex-col',
           'max-h-[92vh] sm:max-h-[88vh]',
           'rounded-t-[28px] sm:rounded-[28px]',
           sizeMap[size],
@@ -121,9 +127,7 @@ export const Modal = ({
         <div className="p-7 flex-1 overflow-y-auto">{children}</div>
 
         {/* Footer */}
-        {footer && (
-          <div className="shrink-0 p-7 border-t border-silver-mist">{footer}</div>
-        )}
+        {footer && <div className="shrink-0 p-7 border-t border-silver-mist">{footer}</div>}
       </div>
     </div>,
     document.body,

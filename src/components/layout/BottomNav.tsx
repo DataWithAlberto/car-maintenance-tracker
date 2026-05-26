@@ -118,14 +118,12 @@ export const BottomNav = () => {
             onClick={() => setOpen(false)}
           />
           <div
-            className="md:hidden fixed inset-x-0 z-50 rounded-t-[28px] pb-safe"
+            className="liquid-glass md:hidden fixed inset-x-0 z-50 pb-safe"
             style={{
-              bottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 80px)',
-              background: 'rgba(255, 255, 255, 0.92)',
-              border: '1px solid var(--color-silver-mist)',
-              borderBottom: 'none',
-              backdropFilter: 'saturate(180%) blur(22px)',
-              WebkitBackdropFilter: 'saturate(180%) blur(22px)',
+              bottom: 'calc(max(16px, env(safe-area-inset-bottom)) + 80px)',
+              left: 16,
+              right: 16,
+              borderRadius: 28,
             }}
           >
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
@@ -137,8 +135,7 @@ export const BottomNav = () => {
               </span>
               <button
                 onClick={() => setOpen(false)}
-                className="h-7 w-7 flex items-center justify-center rounded-full"
-                style={{ background: 'var(--color-fog)' }}
+                className="liquid-glass-secondary h-7 w-7 flex items-center justify-center rounded-full"
               >
                 <X className="h-4 w-4 text-graphite" strokeWidth={2} />
               </button>
@@ -152,16 +149,10 @@ export const BottomNav = () => {
                     setOpen(false);
                     navigate(to);
                   }}
-                  className="flex flex-col items-center gap-2 rounded-[16px] py-3 px-2 transition-transform active:scale-95"
-                  style={{ background: 'var(--color-fog)' }}
+                  className="liquid-glass-secondary flex flex-col items-center gap-2 rounded-[16px] py-3 px-2 active:scale-95"
+                  style={{ transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)' }}
                 >
-                  <span
-                    className="h-10 w-10 flex items-center justify-center rounded-[12px]"
-                    style={{
-                      background: 'var(--color-snow)',
-                      border: '1px solid var(--color-silver-mist)',
-                    }}
-                  >
+                  <span className="h-10 w-10 flex items-center justify-center">
                     {lordSrc ? (
                       <LordIcon src={lordSrc} trigger="hover" size={22} />
                     ) : (
