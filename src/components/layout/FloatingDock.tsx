@@ -74,7 +74,6 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
   // Hex colors for Lordicon (no CSS vars allowed). When item is "active" we
   // invert the icon to match the inverted background (--color-ink).
   const themeInk = theme === 'dark' ? '#f5f5f7' : '#1d1d1f';
-  const themeSnow = theme === 'dark' ? '#1e1e20' : '#ffffff';
 
   // Group currently under the cursor — opens its children on hover.
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
@@ -105,14 +104,18 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
           borderRadius: nested ? 12 : 14,
           cursor: 'pointer',
           textDecoration: 'none',
-          background: isActive ? 'var(--color-ink)' : 'transparent',
-          color: isActive ? 'var(--color-snow)' : 'var(--color-slate)',
+          background: isActive ? 'rgba(255, 255, 255, 0.5)' : 'transparent',
+          border: isActive ? '1px solid rgba(255, 255, 255, 0.6)' : '1px solid transparent',
+          boxShadow: isActive
+            ? '0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
+            : 'none',
+          color: isActive ? 'var(--color-azure)' : 'var(--color-slate)',
           fontFamily: 'Inter, var(--font-sf-pro-text)',
           fontWeight: isActive ? 600 : 400,
           fontSize: nested ? 13 : 14,
           lineHeight: 1,
           justifyContent: open ? 'flex-start' : 'center',
-          transition: 'background 180ms ease, color 180ms ease',
+          transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
         }}
       >
         <span
@@ -123,7 +126,8 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            color: isActive ? 'var(--color-snow)' : 'var(--color-ink)',
+            color: isActive ? 'var(--color-azure)' : 'var(--color-ink)',
+            transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
           }}
         >
           {it.lordSrc ? (
@@ -131,8 +135,8 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
               src={it.lordSrc}
               trigger={isActive ? 'loop' : 'hover'}
               size={nested ? 16 : 18}
-              primaryColor={isActive ? themeSnow : themeInk}
-              secondaryColor={isActive ? themeSnow : themeInk}
+              primaryColor={isActive ? '#0071e3' : themeInk}
+              secondaryColor={isActive ? '#0071e3' : themeInk}
               stroke="regular"
             />
           ) : (
@@ -149,8 +153,8 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
               height: 18,
               padding: '0 6px',
               borderRadius: 999,
-              background: isActive ? 'var(--color-snow)' : '#b64400',
-              color: isActive ? 'var(--color-ink)' : 'var(--color-snow)',
+              background: isActive ? 'var(--color-azure)' : '#b64400',
+              color: 'var(--color-snow)',
               fontFamily: 'Inter, var(--font-sf-pro-text)',
               fontWeight: 600,
               fontSize: 10,
@@ -207,17 +211,20 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
             gap: 12,
             width: '100%',
             padding: open ? '9px 10px' : '9px 0',
-            border: 'none',
             borderRadius: 14,
             cursor: 'pointer',
-            background: headerActive ? 'var(--color-ink)' : 'transparent',
-            color: headerActive ? 'var(--color-snow)' : 'var(--color-slate)',
+            background: headerActive ? 'rgba(255, 255, 255, 0.5)' : 'transparent',
+            border: headerActive ? '1px solid rgba(255, 255, 255, 0.6)' : '1px solid transparent',
+            boxShadow: headerActive
+              ? '0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
+              : 'none',
+            color: headerActive ? 'var(--color-azure)' : 'var(--color-slate)',
             fontFamily: 'Inter, var(--font-sf-pro-text)',
             fontWeight: childActive ? 600 : 400,
             fontSize: 14,
             lineHeight: 1,
             justifyContent: open ? 'flex-start' : 'center',
-            transition: 'background 180ms ease, color 180ms ease',
+            transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
           }}
         >
           <span
@@ -228,7 +235,8 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              color: headerActive ? 'var(--color-snow)' : 'var(--color-ink)',
+              color: headerActive ? 'var(--color-azure)' : 'var(--color-ink)',
+              transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
             }}
           >
             {g.lordSrc ? (
@@ -236,8 +244,8 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
                 src={g.lordSrc}
                 trigger="hover"
                 size={18}
-                primaryColor={headerActive ? themeSnow : themeInk}
-                secondaryColor={headerActive ? themeSnow : themeInk}
+                primaryColor={headerActive ? '#0071e3' : themeInk}
+                secondaryColor={headerActive ? '#0071e3' : themeInk}
                 stroke="regular"
               />
             ) : (
@@ -253,8 +261,8 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
                 style={{
                   flexShrink: 0,
                   transform: showChildren ? 'rotate(0deg)' : 'rotate(-90deg)',
-                  transition: 'transform 200ms ease',
-                  color: headerActive ? 'var(--color-snow)' : 'var(--color-mist)',
+                  transition: 'transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                  color: headerActive ? 'var(--color-azure)' : 'var(--color-mist)',
                 }}
               />
             </>
@@ -316,10 +324,13 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
         transform: 'translateY(-50%)',
         width: open ? 232 : 60,
         maxHeight: 'min(800px, calc(100vh - 40px))',
-        transition: 'width 320ms cubic-bezier(.4,0,.2,1)',
-        background: 'var(--color-snow)',
-        borderRadius: 28,
-        border: '1px solid var(--color-silver-mist)',
+        transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
+        background: 'rgba(255, 255, 255, 0.45)',
+        borderRadius: 38,
+        border: '1px solid rgba(255, 255, 255, 0.5)',
+        backdropFilter: 'blur(40px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+        boxShadow: '0 12px 32px rgba(0,0,0,0.12), inset 0 1px 1px rgba(255,255,255,0.8)',
         flexDirection: 'column',
         zIndex: 50,
         overflow: 'hidden',

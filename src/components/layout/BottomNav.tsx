@@ -181,24 +181,24 @@ export const BottomNav = () => {
         </>
       )}
 
-      {/* ─── Tab bar (floating glassmorphism) ─────────────────────────────── */}
+      {/* ─── Tab bar (Apple Liquid Glass) ─────────────────────────────────── */}
       <nav
         className="md:hidden fixed z-40"
         style={{
-          left: 12,
-          right: 12,
-          bottom: 'max(12px, env(safe-area-inset-bottom))',
-          background: 'rgba(255, 255, 255, 0.72)',
-          border: '1px solid rgba(232, 232, 237, 0.7)',
-          borderRadius: 28,
-          backdropFilter: 'saturate(180%) blur(22px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(22px)',
-          boxShadow:
-            '0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)',
+          left: 16,
+          right: 16,
+          bottom: 'max(16px, env(safe-area-inset-bottom))',
+          background: 'rgba(255, 255, 255, 0.45)',
+          border: '1px solid rgba(255, 255, 255, 0.5)',
+          borderRadius: 38,
+          backdropFilter: 'blur(40px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+          boxShadow: '0 12px 32px rgba(0,0,0,0.12), inset 0 1px 1px rgba(255,255,255,0.8)',
+          transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
         }}
         aria-label="Navegación móvil"
       >
-        <ul className="grid grid-cols-5 px-1.5 py-1">
+        <ul className="grid grid-cols-5 px-2 py-1.5">
           {MAIN_TABS.map(({ to, icon: Icon, lordSrc, label }) => (
             <li key={to}>
               <NavLink
@@ -206,25 +206,35 @@ export const BottomNav = () => {
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    'focus-ring flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors',
-                    isActive ? 'text-ink' : 'text-graphite hover:text-ink',
+                    'focus-ring flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium',
+                    isActive ? 'text-[color:var(--color-azure)]' : 'text-graphite hover:text-ink',
                   )
                 }
+                style={{ transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)' }}
               >
                 {({ isActive }) => (
                   <>
                     <span
-                      className={cn(
-                        'h-9 w-9 flex items-center justify-center rounded-xl transition-all duration-300',
-                        isActive ? 'bg-ink/10 scale-110' : 'scale-100',
-                      )}
+                      className="h-9 w-9 flex items-center justify-center rounded-full"
+                      style={{
+                        transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                        transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                        background: isActive ? 'rgba(255, 255, 255, 0.5)' : 'transparent',
+                        border: isActive
+                          ? '1px solid rgba(255, 255, 255, 0.6)'
+                          : '1px solid transparent',
+                        boxShadow: isActive
+                          ? '0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
+                          : 'none',
+                      }}
                     >
                       {lordSrc ? (
                         <LordIcon src={lordSrc} trigger={isActive ? 'loop' : 'hover'} size={22} />
                       ) : (
                         <Icon
-                          className="h-5 w-5 transition-transform duration-300"
+                          className="h-5 w-5"
                           strokeWidth={isActive ? 2.2 : 1.8}
+                          style={{ transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)' }}
                         />
                       )}
                     </span>
@@ -240,15 +250,22 @@ export const BottomNav = () => {
             <button
               onClick={() => setOpen((v) => !v)}
               className={cn(
-                'focus-ring w-full flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors',
-                open ? 'text-ink' : 'text-graphite hover:text-ink',
+                'focus-ring w-full flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-medium',
+                open ? 'text-[color:var(--color-azure)]' : 'text-graphite hover:text-ink',
               )}
+              style={{ transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)' }}
             >
               <span
-                className={cn(
-                  'h-9 w-9 flex items-center justify-center rounded-xl transition-all duration-300',
-                  open ? 'bg-ink/10 scale-110 rotate-90' : 'scale-100',
-                )}
+                className="h-9 w-9 flex items-center justify-center rounded-full"
+                style={{
+                  transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                  transform: open ? 'scale(1.1) rotate(90deg)' : 'scale(1)',
+                  background: open ? 'rgba(255, 255, 255, 0.5)' : 'transparent',
+                  border: open ? '1px solid rgba(255, 255, 255, 0.6)' : '1px solid transparent',
+                  boxShadow: open
+                    ? '0 4px 12px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
+                    : 'none',
+                }}
               >
                 <MoreHorizontal className="h-5 w-5" strokeWidth={open ? 2.2 : 1.8} />
               </span>
