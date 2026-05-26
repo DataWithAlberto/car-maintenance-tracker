@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Sliders, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { DEFAULT_VEHICLE_THRESHOLDS, type VehicleThresholds } from '../../types';
 import { useOBD2ThresholdsStore } from '../../store/obd2ThresholdsStore';
@@ -104,9 +104,17 @@ const GROUP_LABELS: Record<FieldDef['group'], string> = {
 
 export const OBD2ThresholdsPanel = ({ vehicleId }: Props) => {
   const [expanded, setExpanded] = useState(false);
-  const thresholds = useOBD2ThresholdsStore((s) => s.getFor(vehicleId));
+  // IMPORTANTE: el selector devuelve el partial bruto del store (referencia
+  // estable) y la fusión con defaults va en useMemo. Si la fusión se hace
+  // dentro del selector, devolvería un objeto nuevo en cada render y
+  // dispararía un bucle infinito.
+  const partial = useOBD2ThresholdsStore((s) => s.byVehicle[vehicleId]);
   const setFor = useOBD2ThresholdsStore((s) => s.setFor);
   const resetFor = useOBD2ThresholdsStore((s) => s.resetFor);
+  const thresholds = useMemo<VehicleThresholds>(
+    () => ({ ...DEFAULT_VEHICLE_THRESHOLDS, ...(partial ?? {}) }),
+    [partial],
+  );
 
   const handleChange = (key: keyof VehicleThresholds, value: string) => {
     const num = parseFloat(value);
