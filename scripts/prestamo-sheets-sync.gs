@@ -260,32 +260,9 @@ function onEdit(e) {
 
 function setupSheet() {
   const sh = getSheet_();
-
-  // Cabeceras en G1/H1/I1 (3 setValue rápidos)
   sh.getRange(1, COL_ID).setValue('id');
   sh.getRange(1, COL_UPDATED).setValue('updated_at');
   sh.getRange(1, COL_DELETED).setValue('deleted_at');
-
-  // Ocultar columnas G/H/I
   sh.hideColumns(COL_ID, 3);
-
-  // Recalcula el panel con los datos actuales (sin autorepair — eso ocurre al sincronizar)
-  const lastRow = sh.getLastRow();
-  if (lastRow >= 2) {
-    const numRows = lastRow - 1;
-    const rng = sh.getRange(2, 1, numRows, COL_QUIEN).getValues();
-    const mocks = [];
-    for (let i = 0; i < rng.length; i++) {
-      const importe = rng[i][COL_IMPORTE - 1];
-      if (importe === '' || importe == null) continue;
-      mocks.push({ importe: toNum_(importe), usuario: String(rng[i][COL_QUIEN - 1] || '').trim(), deleted_at: null });
-    }
-    recomputeDashboard_(mocks);
-  }
-
-  SpreadsheetApp.getUi().alert(
-    'Setup completado ✓\n' +
-    '• Columnas G/H/I ocultas.\n' +
-    '• Los IDs se generarán la primera vez que sincronices desde la app.'
-  );
+  SpreadsheetApp.getUi().alert('Setup completado ✓\nColumnas G/H/I ocultas.');
 }
