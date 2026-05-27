@@ -101,7 +101,7 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
-          gap: nested ? 10 : 12,
+          gap: open ? (nested ? 10 : 12) : 0,
           padding: open ? (nested ? '7px 10px' : '9px 10px') : '9px 0',
           borderRadius: nested ? 12 : 14,
           cursor: 'pointer',
@@ -248,7 +248,7 @@ export const FloatingDock = ({ entries, activeId, vehicle, user, backHref }: Flo
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
+            gap: open ? 12 : 0,
             width: '100%',
             padding: open ? '9px 10px' : '9px 0',
             borderRadius: 14,
