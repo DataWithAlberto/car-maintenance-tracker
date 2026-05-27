@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   FileText,
   CalendarClock,
+  CalendarDays,
   Cpu,
   Store,
   Share2,
@@ -47,6 +48,11 @@ const MAIN_TABS: TabDef[] = [
 ];
 
 const MORE_ITEMS: TabDef[] = [
+  {
+    to: '/calendario',
+    icon: CalendarDays,
+    label: 'Calendario',
+  },
   {
     to: '/maintenance-plan',
     icon: CalendarClock,

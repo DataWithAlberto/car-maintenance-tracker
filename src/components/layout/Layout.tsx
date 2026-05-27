@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutGrid,
   LayoutDashboard,
+  CalendarDays,
   Wrench,
   Receipt,
   FileText,
@@ -57,6 +58,12 @@ export const Layout = () => {
         icon: LayoutGrid,
         href: '/car',
         lordSrc: 'https://cdn.lordicon.com/oeotfwsx.json',
+      },
+      {
+        id: 'calendar',
+        label: 'Calendario',
+        icon: CalendarDays,
+        href: '/calendario',
       },
       {
         id: 'maintenance-group',
@@ -173,6 +180,7 @@ export const Layout = () => {
     const p = location.pathname;
     if (p === '/dashboard' || p.startsWith('/dashboard/')) return 'dashboard';
     if (p === '/car' || p.startsWith('/car/')) return 'overview';
+    if (p === '/calendario' || p.startsWith('/calendario/')) return 'calendar';
     if (p === '/maintenance-plan' || p.startsWith('/maintenance-plan/')) return 'plan';
     if (p === '/maintenance' || p.startsWith('/maintenance/')) return 'maintenance';
     if (p === '/expenses' || p.startsWith('/expenses/')) return 'expenses';
