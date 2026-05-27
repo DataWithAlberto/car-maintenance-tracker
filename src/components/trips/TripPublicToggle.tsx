@@ -77,8 +77,8 @@ export const TripPublicToggle = ({ isPublic, shareToken, onChange }: Props) => {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: optimistic ? 'rgba(0,102,204,.12)' : 'var(--color-fog, #f5f5f7)',
-              color: optimistic ? '#0066cc' : '#1d1d1f',
+              background: optimistic ? 'rgba(0,102,204,.12)' : 'var(--surface-canvas)',
+              color: optimistic ? 'var(--color-cobalt-link)' : 'var(--color-ink)',
             }}
           >
             {optimistic ? (
@@ -124,7 +124,7 @@ export const TripPublicToggle = ({ isPublic, shareToken, onChange }: Props) => {
             borderRadius: 999,
             border: 'none',
             cursor: pending ? 'wait' : 'pointer',
-            background: optimistic ? '#0066cc' : '#c7c7cc',
+            background: optimistic ? 'var(--color-cobalt-link)' : 'var(--color-silver-mist)',
             opacity: pending ? 0.7 : 1,
             padding: 0,
             flex: '0 0 auto',
@@ -140,7 +140,7 @@ export const TripPublicToggle = ({ isPublic, shareToken, onChange }: Props) => {
               width: 26,
               height: 26,
               borderRadius: 999,
-              background: '#fff',
+              background: '#ffffff',
               boxShadow: '0 2px 6px rgba(0,0,0,.18)',
               transform: optimistic ? 'translateX(24px)' : 'translateX(0)',
               display: 'inline-flex',
@@ -185,7 +185,7 @@ export const TripPublicToggle = ({ isPublic, shareToken, onChange }: Props) => {
               style={{
                 flex: 1,
                 fontSize: 12,
-                color: '#1d1d1f',
+                color: 'var(--color-ink)',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -198,8 +198,8 @@ export const TripPublicToggle = ({ isPublic, shareToken, onChange }: Props) => {
               type="button"
               className="transition-opacity hover:opacity-85 focus-ring"
               style={{
-                background: copied ? '#1cb05c' : '#1d1d1f',
-                color: '#fff',
+                background: copied ? 'var(--color-success-500, #1cb05c)' : 'var(--color-ink)',
+                color: 'var(--color-snow)',
                 borderRadius: 999,
                 border: 'none',
                 padding: '6px 12px',

@@ -59,7 +59,7 @@ export const TripChecklist = ({ items, onAdd, onToggle, onDelete }: Props) => {
       <div
         style={{
           height: 4,
-          background: '#f5f5f7',
+          background: 'var(--surface-canvas)',
           borderRadius: 999,
           overflow: 'hidden',
           marginTop: 10,
@@ -69,7 +69,7 @@ export const TripChecklist = ({ items, onAdd, onToggle, onDelete }: Props) => {
           style={{
             width: `${pct}%`,
             height: '100%',
-            background: '#1cb05c',
+            background: 'var(--color-success-500, #1cb05c)',
             transition: 'width .25s ease',
           }}
         />
@@ -95,8 +95,8 @@ export const TripChecklist = ({ items, onAdd, onToggle, onDelete }: Props) => {
           disabled={adding || !text.trim()}
           className="transition-opacity hover:opacity-85 disabled:opacity-40"
           style={{
-            background: '#1d1d1f',
-            color: '#fff',
+            background: 'var(--color-ink)',
+            color: 'var(--color-snow)',
             borderRadius: 999,
             border: 'none',
             padding: '8px 14px',
@@ -121,12 +121,12 @@ export const TripChecklist = ({ items, onAdd, onToggle, onDelete }: Props) => {
               onClick={() => submit(s)}
               className="transition-colors hover:bg-fog"
               style={{
-                background: '#fff',
+                background: 'var(--surface-card)',
                 border: '1px dashed var(--color-silver-mist)',
                 borderRadius: 999,
                 padding: '5px 10px',
                 fontSize: 12,
-                color: '#707070',
+                color: 'var(--color-graphite)',
                 cursor: 'pointer',
               }}
             >
@@ -155,8 +155,8 @@ export const TripChecklist = ({ items, onAdd, onToggle, onDelete }: Props) => {
                 width: 18,
                 height: 18,
                 borderRadius: 6,
-                border: `1.5px solid ${item.done ? '#1cb05c' : 'var(--color-silver-mist)'}`,
-                background: item.done ? '#1cb05c' : '#fff',
+                border: `1.5px solid ${item.done ? 'var(--color-success-500, #1cb05c)' : 'var(--color-silver-mist)'}`,
+                background: item.done ? 'var(--color-success-500, #1cb05c)' : 'var(--surface-card)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -170,7 +170,7 @@ export const TripChecklist = ({ items, onAdd, onToggle, onDelete }: Props) => {
               style={{
                 flex: 1,
                 fontSize: 14,
-                color: item.done ? '#a1a1a6' : 'var(--color-ink)',
+                color: item.done ? 'var(--color-mist)' : 'var(--color-ink)',
                 textDecoration: item.done ? 'line-through' : 'none',
               }}
             >

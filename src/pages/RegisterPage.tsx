@@ -14,8 +14,12 @@ function Mark({ size = 18, color = '#ffffff' }: { size?: number; color?: string 
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
       <circle cx="12" cy="12" r="10.25" stroke={color} strokeWidth="1.5" />
       <circle cx="12" cy="12" r="2.4" fill={color} />
-      <path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3"
-        stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -53,6 +57,7 @@ export const RegisterPage = () => {
 
   return (
     <div
+      data-theme="light"
       className="min-h-screen relative overflow-hidden"
       style={{
         background: GRADIENT_INDIGO,
@@ -73,7 +78,13 @@ export const RegisterPage = () => {
       >
         <div className="flex items-center gap-2.5">
           <Mark size={18} />
-          <span style={{ font: '600 13px/1 inherit', color: 'rgba(255,255,255,.92)', letterSpacing: '-0.06px' }}>
+          <span
+            style={{
+              font: '600 13px/1 inherit',
+              color: 'rgba(255,255,255,.92)',
+              letterSpacing: '-0.06px',
+            }}
+          >
             FocusHub
           </span>
         </div>
@@ -93,9 +104,18 @@ export const RegisterPage = () => {
               margin: '0 0 12px',
             }}
           >
-            Tu garaje<br />digital.
+            Tu garaje
+            <br />
+            digital.
           </h1>
-          <p style={{ fontSize: 18, fontWeight: 400, color: 'rgba(255,255,255,.82)', lineHeight: 1.4 }}>
+          <p
+            style={{
+              fontSize: 18,
+              fontWeight: 400,
+              color: 'rgba(255,255,255,.82)',
+              lineHeight: 1.4,
+            }}
+          >
             Crea tu cuenta. Tarda 30 segundos.
           </p>
         </div>
@@ -135,7 +155,9 @@ export const RegisterPage = () => {
               margin: '0 0 20px',
             }}
           >
-            Tu garaje<br />digital.
+            Tu garaje
+            <br />
+            digital.
           </h1>
           <p
             style={{
@@ -148,8 +170,8 @@ export const RegisterPage = () => {
               margin: 0,
             }}
           >
-            Crea una cuenta gratis. Registra tus vehículos, mantenimientos y gastos —
-            todo desde una sola interfaz.
+            Crea una cuenta gratis. Registra tus vehículos, mantenimientos y gastos — todo desde una
+            sola interfaz.
           </p>
         </div>
 
@@ -184,7 +206,9 @@ export const RegisterPage = () => {
 /* ── Auth card extracted as a sub-component ── */
 interface AuthCardProps {
   form: { email: string; password: string; full_name: string };
-  setForm: React.Dispatch<React.SetStateAction<{ email: string; password: string; full_name: string }>>;
+  setForm: React.Dispatch<
+    React.SetStateAction<{ email: string; password: string; full_name: string }>
+  >;
   errors: Record<string, string>;
   loading: boolean;
   handleSubmit: (e: React.FormEvent) => void;
@@ -208,21 +232,41 @@ function AuthCard({ form, setForm, errors, loading, handleSubmit, style }: AuthC
       <div className="flex items-center gap-2 mb-3.5">
         <span
           style={{
-            width: 8, height: 8, borderRadius: 999,
+            width: 8,
+            height: 8,
+            borderRadius: 999,
             background: '#1cb05c',
             boxShadow: '0 0 6px rgba(28,176,92,.6)',
-            display: 'inline-block', flexShrink: 0,
+            display: 'inline-block',
+            flexShrink: 0,
           }}
         />
-        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-slate)', letterSpacing: '-0.04px' }}>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'var(--color-slate)',
+            letterSpacing: '-0.04px',
+          }}
+        >
           Nuevo · Gratis
         </span>
       </div>
 
-      <h2 style={{ fontSize: 40, fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.6px', margin: '0 0 6px' }}>
+      <h2
+        style={{
+          fontSize: 40,
+          fontWeight: 700,
+          lineHeight: 1.1,
+          letterSpacing: '-0.6px',
+          margin: '0 0 6px',
+        }}
+      >
         Crear cuenta
       </h2>
-      <p style={{ fontSize: 15, lineHeight: 1.43, color: 'var(--color-slate)', margin: '0 0 22px' }}>
+      <p
+        style={{ fontSize: 15, lineHeight: 1.43, color: 'var(--color-slate)', margin: '0 0 22px' }}
+      >
         Tarda 30 segundos. No pedimos tarjeta ni dirección.
       </p>
 
@@ -286,4 +330,3 @@ function AuthCard({ form, setForm, errors, loading, handleSubmit, style }: AuthC
     </div>
   );
 }
-

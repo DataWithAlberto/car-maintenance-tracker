@@ -174,18 +174,16 @@ export const TripActivityCard = ({
 
       {confirmDelete && (
         <div
-          className="flex items-center justify-between"
+          className="flex items-center justify-between confirm-delete-panel"
           style={{
-            background: '#fff6e0',
-            border: '1px solid #febb02',
             borderRadius: 12,
             padding: '12px 14px',
             gap: 12,
           }}
         >
           <div className="flex items-center" style={{ gap: 10 }}>
-            <AlertTriangle className="h-5 w-5" color="#7a4d00" />
-            <p style={{ fontSize: 13, color: '#7a4d00', margin: 0 }}>
+            <AlertTriangle className="h-5 w-5 text-warn-ink" />
+            <p className="text-warn-ink" style={{ fontSize: 13, margin: 0 }}>
               ¿Eliminar <b>{activity.title}</b> del viaje?
             </p>
           </div>
@@ -193,10 +191,10 @@ export const TripActivityCard = ({
             <button
               onClick={() => setConfirmDelete(false)}
               type="button"
+              className="text-warn-ink"
               style={{
                 background: 'transparent',
-                border: '1px solid #7a4d00',
-                color: '#7a4d00',
+                border: '1px solid currentColor',
                 borderRadius: 8,
                 padding: '6px 12px',
                 fontSize: 12,
@@ -238,7 +236,7 @@ const ProviderChip = ({ theme: t }: { theme: BookingTheme }) => (
       fontSize: 10,
       fontWeight: 700,
       letterSpacing: '.04em',
-      color: t.badgeShape === 'rounded' ? t.accent : t.onAccent === '#ffffff' ? '#fff' : t.accent,
+      color: t.badgeShape === 'rounded' ? t.accent : t.onAccent,
       background: t.badgeShape === 'rounded' ? 'transparent' : t.accent,
       border: t.badgeShape === 'rounded' ? `1px solid ${t.accent}` : 'none',
       borderRadius: t.badgeShape === 'square' ? 3 : 999,
@@ -402,7 +400,7 @@ const ThemedInput = ({ theme: t, style, ...props }: ThemedInputProps) => (
     }}
     style={{
       width: '100%',
-      background: '#fff',
+      background: 'var(--surface-card)',
       border: `1px solid ${t.border}`,
       borderRadius: 10,
       padding: '8px 12px',
@@ -471,7 +469,7 @@ const EditView = ({ theme: t, draft, onChange, onCancel, onSave, saving }: EditV
         rows={2}
         style={{
           width: '100%',
-          background: '#fff',
+          background: 'var(--surface-card)',
           border: `1px solid ${t.border}`,
           borderRadius: 10,
           padding: '8px 12px',
@@ -513,7 +511,7 @@ const EditView = ({ theme: t, draft, onChange, onCancel, onSave, saving }: EditV
           style={{
             background: t.accent,
             border: 'none',
-            color: t.onAccent === '#ffffff' ? '#fff' : t.onAccent,
+            color: t.onAccent,
             borderRadius: 999,
             padding: '7px 16px',
             fontSize: 13,

@@ -64,12 +64,15 @@ export const TripVisibilityControl = ({ visibility, shareToken, onChange }: Prop
               style={{
                 padding: '12px 14px',
                 borderRadius: 14,
-                border: `1.5px solid ${active ? '#1d1d1f' : 'var(--color-silver-mist)'}`,
-                background: active ? 'var(--color-fog)' : '#fff',
+                border: `1.5px solid ${active ? 'var(--color-ink)' : 'var(--color-silver-mist)'}`,
+                background: active ? 'var(--surface-canvas)' : 'var(--surface-card)',
                 cursor: 'pointer',
               }}
             >
-              <Icon className="h-4 w-4" style={{ color: active ? '#1d1d1f' : '#707070' }} />
+              <Icon
+                className="h-4 w-4"
+                style={{ color: active ? 'var(--color-ink)' : 'var(--color-graphite)' }}
+              />
               <p className="text-ink" style={{ fontSize: 14, fontWeight: 600, marginTop: 6 }}>
                 {o.label}
               </p>
@@ -97,7 +100,7 @@ export const TripVisibilityControl = ({ visibility, shareToken, onChange }: Prop
             style={{
               flex: 1,
               fontSize: 12,
-              color: '#1d1d1f',
+              color: 'var(--color-ink)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -110,8 +113,8 @@ export const TripVisibilityControl = ({ visibility, shareToken, onChange }: Prop
             type="button"
             className="transition-opacity hover:opacity-85"
             style={{
-              background: copied ? '#1cb05c' : '#1d1d1f',
-              color: '#fff',
+              background: copied ? 'var(--color-success-500, #1cb05c)' : 'var(--color-ink)',
+              color: 'var(--color-snow)',
               borderRadius: 999,
               border: 'none',
               padding: '6px 12px',

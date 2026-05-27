@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useState, useMemo, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -9,7 +9,14 @@ import {
   Settings,
   CheckCircle2,
   AlertCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Scale,
+  CalendarClock,
+  StickyNote,
 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '../components/ui/Button';
 import { KpiCard } from '../components/ui/KpiCard';
 import { Modal } from '../components/ui/Modal';
@@ -17,7 +24,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { SkeletonRow } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
 import { usePrestamo, type SyncStatus } from '../hooks/usePrestamo';
-import { IMPORTE_INICIAL } from '../services/prestamo.service';
+import { IMPORTE_INICIAL, prestamoService } from '../services/prestamo.service';
 import { prestamoSyncStorage } from '../services/prestamoSync.service';
 import { formatCurrency, formatDate, formatRelative } from '../utils/formatters';
 import toast from 'react-hot-toast';
@@ -163,7 +170,12 @@ const PersonCard = ({ name, pagado, pct }: PersonCardProps) => (
 interface AddPaymentFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: { fecha: string; importe: number; usuario: string }) => Promise<void>;
+  onSubmit: (data: {
+    fecha: string;
+    importe: number;
+    usuario: string;
+    nota?: string | null;
+  }) => Promise<void>;
 }
 
 const AddPaymentForm = ({ open, onClose, onSubmit }: AddPaymentFormProps) => {
@@ -171,12 +183,14 @@ const AddPaymentForm = ({ open, onClose, onSubmit }: AddPaymentFormProps) => {
   const [fecha, setFecha] = useState(today);
   const [importe, setImporte] = useState('');
   const [usuario, setUsuario] = useState<'Celia' | 'Alberto'>('Celia');
+  const [nota, setNota] = useState('');
   const [saving, setSaving] = useState(false);
 
   const reset = () => {
     setFecha(today);
     setImporte('');
     setUsuario('Celia');
+    setNota('');
   };
 
   const handleClose = () => {
@@ -193,7 +207,12 @@ const AddPaymentForm = ({ open, onClose, onSubmit }: AddPaymentFormProps) => {
     }
     setSaving(true);
     try {
-      await onSubmit({ fecha, importe: val, usuario });
+      await onSubmit({
+        fecha,
+        importe: val,
+        usuario,
+        nota: nota.trim() ? nota.trim() : null,
+      });
       reset();
       onClose();
     } finally {
@@ -288,6 +307,19 @@ const AddPaymentForm = ({ open, onClose, onSubmit }: AddPaymentFormProps) => {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Nota (opcional) */}
+        <div>
+          <label style={labelStyle}>Nota (opcional)</label>
+          <input
+            type="text"
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+            placeholder="p. ej. cuota + intereses, pago doble…"
+            maxLength={140}
+            style={inputStyle}
+          />
         </div>
 
         <div className="flex gap-3 pt-1">
@@ -554,6 +586,347 @@ const SyncIndicator = ({
   );
 };
 
+// ─── Filter pills ─────────────────────────────────────────────────────────────
+
+type FilterValue = 'all' | 'Celia' | 'Alberto';
+
+const FilterPills = ({
+  value,
+  onChange,
+  counts,
+}: {
+  value: FilterValue;
+  onChange: (v: FilterValue) => void;
+  counts: { all: number; Celia: number; Alberto: number };
+}) => {
+  const items: { key: FilterValue; label: string; color?: string }[] = [
+    { key: 'all', label: `Todos · ${counts.all}` },
+    { key: 'Celia', label: `Celia · ${counts.Celia}`, color: COLORS.Celia },
+    { key: 'Alberto', label: `Alberto · ${counts.Alberto}`, color: COLORS.Alberto },
+  ];
+  return (
+    <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-fog border border-silver-mist">
+      {items.map((it) => {
+        const active = value === it.key;
+        return (
+          <button
+            key={it.key}
+            type="button"
+            onClick={() => onChange(it.key)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 999,
+              border: 'none',
+              background: active ? (it.color ?? 'var(--color-ink)') : 'transparent',
+              color: active ? '#fff' : 'var(--color-graphite)',
+              fontFamily: 'Inter, var(--font-sf-pro-text)',
+              fontWeight: active ? 600 : 500,
+              fontSize: 12,
+              letterSpacing: '-0.1px',
+              cursor: 'pointer',
+              transition: 'all 160ms ease',
+            }}
+          >
+            {it.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── Monthly chart ────────────────────────────────────────────────────────────
+
+const MonthlyChart = ({
+  data,
+}: {
+  data: Array<{ label: string; Celia: number; Alberto: number; total: number }>;
+}) => {
+  const hasData = data.some((d) => d.total > 0);
+  if (!hasData) {
+    return (
+      <div
+        className="bg-snow border border-silver-mist rounded-[20px] px-6 py-10 text-center font-text text-graphite"
+        style={{ fontSize: 13 }}
+      >
+        Aún no hay pagos en los últimos 12 meses para mostrar.
+      </div>
+    );
+  }
+  return (
+    <div className="bg-snow border border-silver-mist rounded-[20px] px-5 pt-5 pb-3">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <span
+          className="font-mono uppercase text-graphite"
+          style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.12em' }}
+        >
+          Pagos mensuales · últimos 12 meses
+        </span>
+        <div className="inline-flex items-center gap-3">
+          <span
+            className="inline-flex items-center gap-1.5 font-mono uppercase text-graphite"
+            style={{ fontSize: 9, letterSpacing: '0.1em' }}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 2,
+                background: COLORS.Celia,
+                display: 'inline-block',
+              }}
+            />
+            Celia
+          </span>
+          <span
+            className="inline-flex items-center gap-1.5 font-mono uppercase text-graphite"
+            style={{ fontSize: 9, letterSpacing: '0.1em' }}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 2,
+                background: COLORS.Alberto,
+                display: 'inline-block',
+              }}
+            />
+            Alberto
+          </span>
+        </div>
+      </div>
+      <ResponsiveContainer width="100%" height={170}>
+        <BarChart data={data} barSize={18} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
+          <XAxis
+            dataKey="label"
+            tick={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: 10,
+              fill: 'var(--color-mist)',
+            }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: 10,
+              fill: 'var(--color-mist)',
+            }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
+          />
+          <Tooltip
+            formatter={(val, name) => [formatCurrency(Number(val)), String(name)]}
+            contentStyle={{
+              background: 'var(--color-snow)',
+              border: '1px solid var(--color-silver-mist)',
+              borderRadius: 12,
+              boxShadow: 'none',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              padding: '8px 14px',
+            }}
+            labelStyle={{
+              color: 'var(--color-ink)',
+              fontWeight: 500,
+              fontSize: 13,
+              marginBottom: 2,
+            }}
+            itemStyle={{ color: 'var(--color-graphite)', fontSize: 13 }}
+            cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+          />
+          <Bar dataKey="Celia" stackId="m" fill={COLORS.Celia} radius={[0, 0, 0, 0]} />
+          <Bar dataKey="Alberto" stackId="m" fill={COLORS.Alberto} radius={[5, 5, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+// ─── Projection / Balance / Pace cards ────────────────────────────────────────
+
+const formatMonthYear = (d: Date): string =>
+  d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+const ProjectionCard = ({
+  projectedEndDate,
+  monthsRemaining,
+  saldoPendiente,
+}: {
+  projectedEndDate: Date | null;
+  monthsRemaining: number | null;
+  saldoPendiente: number;
+}) => {
+  const finished = saldoPendiente <= 0;
+  const label = finished
+    ? 'Préstamo liquidado'
+    : projectedEndDate
+      ? formatMonthYear(projectedEndDate)
+      : '—';
+  const hint = finished
+    ? '¡Hecho! Ya no queda saldo pendiente.'
+    : monthsRemaining != null
+      ? `${monthsRemaining} ${monthsRemaining === 1 ? 'mes' : 'meses'} al ritmo actual`
+      : 'Registra algunos pagos para estimar el fin';
+
+  return (
+    <div className="bg-snow border border-silver-mist rounded-[20px] p-5 flex items-start gap-4 flex-1 min-w-0">
+      <div
+        className="shrink-0 h-11 w-11 rounded-[12px] flex items-center justify-center"
+        style={{ background: finished ? '#1a9e3f1a' : '#0071e31a' }}
+      >
+        <CalendarClock
+          className="h-5 w-5"
+          strokeWidth={1.8}
+          style={{ color: finished ? '#1a9e3f' : '#0071e3' }}
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div
+          className="font-mono uppercase text-graphite"
+          style={{ fontSize: 10, letterSpacing: '0.12em' }}
+        >
+          Fecha estimada de fin
+        </div>
+        <div
+          className="text-ink tabular-nums mt-1.5 capitalize"
+          style={{
+            fontFamily: 'var(--font-sf-pro-display)',
+            fontWeight: 700,
+            fontSize: 22,
+            letterSpacing: '-0.3px',
+            lineHeight: 1.1,
+          }}
+        >
+          {label}
+        </div>
+        <div className="font-text text-graphite mt-1" style={{ fontSize: 12.5 }}>
+          {hint}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BalanceCard = ({ delta, leader }: { delta: number; leader: 'Celia' | 'Alberto' | null }) => {
+  const balanced = leader == null || delta < 0.01;
+  const color = balanced ? '#1a9e3f' : COLORS[leader!];
+  const half = delta / 2;
+
+  return (
+    <div className="bg-snow border border-silver-mist rounded-[20px] p-5 flex items-start gap-4 flex-1 min-w-0">
+      <div
+        className="shrink-0 h-11 w-11 rounded-[12px] flex items-center justify-center"
+        style={{ background: `${color}1a` }}
+      >
+        <Scale className="h-5 w-5" strokeWidth={1.8} style={{ color }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div
+          className="font-mono uppercase text-graphite"
+          style={{ fontSize: 10, letterSpacing: '0.12em' }}
+        >
+          Balance entre personas
+        </div>
+        {balanced ? (
+          <>
+            <div
+              className="text-ink mt-1.5"
+              style={{
+                fontFamily: 'var(--font-sf-pro-display)',
+                fontWeight: 700,
+                fontSize: 22,
+                letterSpacing: '-0.3px',
+                lineHeight: 1.1,
+              }}
+            >
+              Empate técnico
+            </div>
+            <div className="font-text text-graphite mt-1" style={{ fontSize: 12.5 }}>
+              Habéis aportado prácticamente lo mismo.
+            </div>
+          </>
+        ) : (
+          <>
+            <div
+              className="text-ink tabular-nums mt-1.5"
+              style={{
+                fontFamily: 'var(--font-sf-pro-display)',
+                fontWeight: 700,
+                fontSize: 22,
+                letterSpacing: '-0.3px',
+                lineHeight: 1.1,
+              }}
+            >
+              <span style={{ color }}>{leader}</span> +{formatCurrency(delta)}
+            </div>
+            <div className="font-text text-graphite mt-1" style={{ fontSize: 12.5 }}>
+              Para igualar, {leader === 'Celia' ? 'Alberto' : 'Celia'} debería aportar{' '}
+              <span className="text-ink font-medium tabular-nums">{formatCurrency(half)}</span> más.
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const PaceKpi = ({
+  avgMonthly,
+  pace,
+}: {
+  avgMonthly: number;
+  pace: 'ahead' | 'behind' | 'ontrack';
+}) => {
+  const cfg = {
+    ahead: { Icon: TrendingUp, color: '#1a9e3f', label: 'Por encima' },
+    behind: { Icon: TrendingDown, color: '#b64400', label: 'Por debajo' },
+    ontrack: { Icon: Minus, color: 'var(--color-graphite)', label: 'En ritmo' },
+  } as const;
+  const { Icon, color, label } = cfg[pace];
+  return (
+    <div className="bg-snow border border-silver-mist rounded-[20px] p-5">
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className="font-mono uppercase text-graphite"
+          style={{ fontSize: 10, letterSpacing: '0.12em' }}
+        >
+          Cuota media / mes
+        </span>
+        <span
+          className="inline-flex items-center gap-1 px-2 h-6 rounded-full"
+          style={{
+            background: `color-mix(in srgb, ${color} 12%, transparent)`,
+            color,
+            fontSize: 11,
+            fontWeight: 600,
+            fontFamily: 'Inter, var(--font-sf-pro-text)',
+          }}
+        >
+          <Icon className="h-3 w-3" strokeWidth={2} />
+          {label}
+        </span>
+      </div>
+      <div
+        className="text-ink tabular-nums mt-2"
+        style={{
+          fontFamily: 'var(--font-sf-pro-display)',
+          fontWeight: 700,
+          fontSize: 26,
+          letterSpacing: '-0.4px',
+          lineHeight: 1,
+        }}
+      >
+        {formatCurrency(avgMonthly)}
+      </div>
+      <div className="font-text text-graphite mt-1.5" style={{ fontSize: 12.5 }}>
+        Media desde el primer pago registrado
+      </div>
+    </div>
+  );
+};
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export const PrestamoPage = () => {
@@ -564,14 +937,39 @@ export const PrestamoPage = () => {
   );
   const [showForm, setShowForm] = useState(false);
   const [showSyncSettings, setShowSyncSettings] = useState(false);
+  const [filter, setFilter] = useState<FilterValue>('all');
   const [, forceRender] = useState(0);
+
+  const advanced = useMemo(
+    () => prestamoService.calcAdvancedStats(movimientos, stats),
+    [movimientos, stats],
+  );
+
+  const filtered = useMemo(() => {
+    if (filter === 'all') return movimientos;
+    return movimientos.filter((m) => m.usuario === filter);
+  }, [movimientos, filter]);
+
+  const counts = useMemo(
+    () => ({
+      all: movimientos.length,
+      Celia: movimientos.filter((m) => m.usuario === 'Celia').length,
+      Alberto: movimientos.filter((m) => m.usuario === 'Alberto').length,
+    }),
+    [movimientos],
+  );
 
   if (!selectedVehicle) {
     navigate('/dashboard');
     return null;
   }
 
-  const handleCreate = async (data: { fecha: string; importe: number; usuario: string }) => {
+  const handleCreate = async (data: {
+    fecha: string;
+    importe: number;
+    usuario: string;
+    nota?: string | null;
+  }) => {
     await create(data);
     toast.success('Pago registrado');
   };
@@ -637,7 +1035,7 @@ export const PrestamoPage = () => {
       </header>
 
       {/* ── KPI cards ── */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         <KpiCard
           icon={Landmark}
           label="Saldo pendiente"
@@ -651,6 +1049,7 @@ export const PrestamoPage = () => {
           hint={`${movimientos.length} ${movimientos.length === 1 ? 'pago' : 'pagos'} registrados`}
           tone="brand"
         />
+        <PaceKpi avgMonthly={advanced.avgMonthly} pace={advanced.pace} />
       </div>
 
       {/* ── Global progress bar ── */}
@@ -686,13 +1085,28 @@ export const PrestamoPage = () => {
       </div>
 
       {/* ── Person cards ── */}
-      <div className="flex gap-3 mb-8 flex-col sm:flex-row">
+      <div className="flex gap-3 mb-4 flex-col sm:flex-row">
         <PersonCard name="Celia" pagado={stats.pagadoCelia} pct={stats.pctCelia} />
         <PersonCard name="Alberto" pagado={stats.pagadoAlberto} pct={stats.pctAlberto} />
       </div>
 
+      {/* ── Projection + Balance ── */}
+      <div className="flex gap-3 mb-4 flex-col sm:flex-row">
+        <ProjectionCard
+          projectedEndDate={advanced.projectedEndDate}
+          monthsRemaining={advanced.monthsRemaining}
+          saldoPendiente={stats.saldoPendiente}
+        />
+        <BalanceCard delta={advanced.balanceDelta} leader={advanced.balanceLeader} />
+      </div>
+
+      {/* ── Monthly chart ── */}
+      <div className="mb-8">
+        <MonthlyChart data={advanced.monthly} />
+      </div>
+
       {/* ── History ── */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <h2
           className="text-ink"
           style={{
@@ -704,12 +1118,7 @@ export const PrestamoPage = () => {
         >
           Historial
         </h2>
-        <span
-          className="font-mono text-graphite uppercase"
-          style={{ fontSize: 10, letterSpacing: '0.12em' }}
-        >
-          {movimientos.length} {movimientos.length === 1 ? 'movimiento' : 'movimientos'}
-        </span>
+        <FilterPills value={filter} onChange={setFilter} counts={counts} />
       </div>
 
       {loading ? (
@@ -733,9 +1142,16 @@ export const PrestamoPage = () => {
             </Button>
           }
         />
+      ) : filtered.length === 0 ? (
+        <div
+          className="bg-snow border border-silver-mist rounded-[14px] px-6 py-10 text-center font-text text-graphite"
+          style={{ fontSize: 13 }}
+        >
+          Sin pagos de {filter} todavía.
+        </div>
       ) : (
         <ul className="space-y-2">
-          {movimientos.map((m, i) => (
+          {filtered.map((m, i) => (
             <li
               key={m.id}
               className="stagger-item group bg-snow border border-silver-mist rounded-[14px] p-4 flex items-center gap-4"
@@ -774,6 +1190,19 @@ export const PrestamoPage = () => {
                   <Calendar className="h-3 w-3" strokeWidth={1.6} />
                   {formatDate(m.fecha)}
                 </div>
+                {m.nota && (
+                  <div
+                    className="flex items-start gap-1.5 mt-1.5 text-graphite font-text"
+                    style={{ fontSize: 12.5, lineHeight: 1.4 }}
+                  >
+                    <StickyNote
+                      className="h-3 w-3 mt-0.5 shrink-0"
+                      strokeWidth={1.6}
+                      style={{ color: COLORS[m.usuario] }}
+                    />
+                    <span className="truncate">{m.nota}</span>
+                  </div>
+                )}
               </div>
 
               {/* Delete */}

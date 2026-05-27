@@ -109,9 +109,13 @@ export const InsurancePage = () => {
   const [alertOn, setAlertOn] = useState(false);
 
   useEffect(() => {
-    if (!selectedVehicle) { navigate('/dashboard'); return; }
+    if (!selectedVehicle) {
+      navigate('/dashboard');
+      return;
+    }
     setLoading(true);
-    insuranceService.getByVehicle(selectedVehicle.id)
+    insuranceService
+      .getByVehicle(selectedVehicle.id)
       .then(setPolicies)
       .finally(() => setLoading(false));
   }, [selectedVehicle?.id]);
@@ -170,7 +174,12 @@ export const InsurancePage = () => {
         <div className="px-6 sm:px-12 py-12 page-enter">
           <span
             className="font-mono uppercase block"
-            style={{ fontSize: 11, fontWeight: 500, letterSpacing: '.18em', color: 'var(--color-mist)' }}
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              letterSpacing: '.18em',
+              color: 'var(--color-mist)',
+            }}
           >
             § Sin pólizas
           </span>
@@ -189,18 +198,24 @@ export const InsurancePage = () => {
           </h1>
           <p
             className="text-slate"
-            style={{ fontSize: 21, fontWeight: 300, lineHeight: 1.35, maxWidth: 520, textWrap: 'pretty' }}
+            style={{
+              fontSize: 21,
+              fontWeight: 300,
+              lineHeight: 1.35,
+              maxWidth: 520,
+              textWrap: 'pretty',
+            }}
           >
-            No tienes ninguna póliza registrada para este vehículo. Añade una para
-            llevar el control de la cobertura, el coste y la renovación.
+            No tienes ninguna póliza registrada para este vehículo. Añade una para llevar el control
+            de la cobertura, el coste y la renovación.
           </p>
           <button
             onClick={() => setShowForm(true)}
             className="transition-opacity hover:opacity-85"
             style={{
               marginTop: 24,
-              background: '#1d1d1f',
-              color: '#fff',
+              background: 'var(--color-ink)',
+              color: 'var(--color-snow)',
               borderRadius: 999,
               border: 'none',
               padding: '12px 22px',
@@ -212,9 +227,7 @@ export const InsurancePage = () => {
             Añadir póliza →
           </button>
         </div>
-        {showForm && (
-          <InsuranceForm onSubmit={handleSubmit} onClose={() => setShowForm(false)} />
-        )}
+        {showForm && <InsuranceForm onSubmit={handleSubmit} onClose={() => setShowForm(false)} />}
       </>
     );
   }
@@ -234,9 +247,8 @@ export const InsurancePage = () => {
   const danosIncluded = includedCount >= 9;
 
   const freq = policy.payment_frequency ?? 'anual';
-  const annual = policy.premium_amount != null
-    ? policy.premium_amount * (FREQ_PER_YEAR[freq] ?? 1)
-    : null;
+  const annual =
+    policy.premium_amount != null ? policy.premium_amount * (FREQ_PER_YEAR[freq] ?? 1) : null;
   const monthly = annual != null ? annual / 12 : null;
 
   const coverageLabel = INSURANCE_COVERAGE_LABELS[policy.coverage_type] ?? policy.coverage_type;
@@ -283,8 +295,8 @@ export const InsurancePage = () => {
             onClick={() => setShowForm(true)}
             className="transition-opacity hover:opacity-85"
             style={{
-              background: '#1d1d1f',
-              color: '#fff',
+              background: 'var(--color-ink)',
+              color: 'var(--color-snow)',
               borderRadius: 999,
               border: 'none',
               padding: '10px 18px',
@@ -298,10 +310,7 @@ export const InsurancePage = () => {
         </div>
 
         {/* ─── [2] Editorial + Hero card ─────────────────────────────── */}
-        <div
-          className="grid lg:grid-cols-2 items-end"
-          style={{ gap: 48 }}
-        >
+        <div className="grid lg:grid-cols-2 items-end" style={{ gap: 48 }}>
           {/* 2a · Editorial */}
           <div>
             <span
@@ -337,15 +346,22 @@ export const InsurancePage = () => {
               {expired ? (
                 <>
                   La póliza con{' '}
-                  <span className="text-ink" style={{ fontWeight: 500 }}>{policy.provider}</span>{' '}
+                  <span className="text-ink" style={{ fontWeight: 500 }}>
+                    {policy.provider}
+                  </span>{' '}
                   ha vencido. Renueva o añade una nueva para mantener la cobertura.
                 </>
               ) : (
                 <>
                   Una póliza vigente con{' '}
-                  <span className="text-ink" style={{ fontWeight: 500 }}>{policy.provider}</span>.
-                  Próxima renovación en{' '}
-                  <span className="text-ink" style={{ fontWeight: 500 }}>{daysLeft} días</span>.
+                  <span className="text-ink" style={{ fontWeight: 500 }}>
+                    {policy.provider}
+                  </span>
+                  . Próxima renovación en{' '}
+                  <span className="text-ink" style={{ fontWeight: 500 }}>
+                    {daysLeft} días
+                  </span>
+                  .
                 </>
               )}
             </p>
@@ -376,7 +392,7 @@ export const InsurancePage = () => {
                     width: 48,
                     height: 48,
                     borderRadius: 12,
-                    background: '#1d1d1f',
+                    background: 'var(--color-ink)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -394,7 +410,12 @@ export const InsurancePage = () => {
                 <div>
                   <p
                     className="text-ink"
-                    style={{ fontFamily: 'Inter, var(--font-sf-pro-display)', fontWeight: 700, fontSize: 24, letterSpacing: '-0.4px' }}
+                    style={{
+                      fontFamily: 'Inter, var(--font-sf-pro-display)',
+                      fontWeight: 700,
+                      fontSize: 24,
+                      letterSpacing: '-0.4px',
+                    }}
                   >
                     {policy.provider}
                   </p>
@@ -435,14 +456,24 @@ export const InsurancePage = () => {
             {/* Body */}
             <div
               className="grid items-center"
-              style={{ gridTemplateColumns: '1.05fr .95fr', gap: 24, marginTop: 26, position: 'relative' }}
+              style={{
+                gridTemplateColumns: '1.05fr .95fr',
+                gap: 24,
+                marginTop: 26,
+                position: 'relative',
+              }}
             >
               {/* Columna izquierda */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
                   <span
                     className="font-mono uppercase"
-                    style={{ fontSize: 10, fontWeight: 500, letterSpacing: '.14em', color: 'var(--color-mist)' }}
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 500,
+                      letterSpacing: '.14em',
+                      color: 'var(--color-mist)',
+                    }}
                   >
                     Prima
                   </span>
@@ -468,7 +499,12 @@ export const InsurancePage = () => {
                 <div>
                   <span
                     className="font-mono uppercase"
-                    style={{ fontSize: 10, fontWeight: 500, letterSpacing: '.14em', color: 'var(--color-mist)' }}
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 500,
+                      letterSpacing: '.14em',
+                      color: 'var(--color-mist)',
+                    }}
                   >
                     Nº Póliza
                   </span>
@@ -539,13 +575,22 @@ export const InsurancePage = () => {
         {/* ─── [3] Timeline strip ────────────────────────────────────── */}
         <div
           className="bg-snow"
-          style={{ border: '1px solid var(--color-silver-mist)', borderRadius: 20, padding: '20px 28px' }}
+          style={{
+            border: '1px solid var(--color-silver-mist)',
+            borderRadius: 20,
+            padding: '20px 28px',
+          }}
         >
           <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
             <div className="flex items-center" style={{ gap: 12 }}>
               <span
                 className="font-mono uppercase"
-                style={{ fontSize: 11, fontWeight: 500, letterSpacing: '.18em', color: 'var(--color-mist)' }}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  letterSpacing: '.18em',
+                  color: 'var(--color-mist)',
+                }}
               >
                 § Vigencia
               </span>
@@ -555,15 +600,27 @@ export const InsurancePage = () => {
               </span>
             </div>
             <div className="flex items-baseline" style={{ gap: 8 }}>
-              <span className="font-mono text-graphite" style={{ fontSize: 11 }}>HOY</span>
-              <span className="font-mono text-ink" style={{ fontSize: 11 }}>{dotDate(today)}</span>
+              <span className="font-mono text-graphite" style={{ fontSize: 11 }}>
+                HOY
+              </span>
+              <span className="font-mono text-ink" style={{ fontSize: 11 }}>
+                {dotDate(today)}
+              </span>
             </div>
           </div>
 
           <div style={{ position: 'relative', height: 62, marginTop: 18 }}>
             {/* Labels */}
             <div style={{ position: 'absolute', left: 0, top: -4 }}>
-              <span className="font-mono" style={{ fontSize: 10, fontWeight: 500, color: '#1d1d1f', display: 'block' }}>
+              <span
+                className="font-mono"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 500,
+                  color: 'var(--color-ink)',
+                  display: 'block',
+                }}
+              >
                 INICIO
               </span>
               <span className="font-mono text-graphite" style={{ fontSize: 10, fontWeight: 500 }}>
@@ -571,7 +628,15 @@ export const InsurancePage = () => {
               </span>
             </div>
             <div style={{ position: 'absolute', right: 0, top: -4, textAlign: 'right' }}>
-              <span className="font-mono" style={{ fontSize: 10, fontWeight: 500, color: '#1d1d1f', display: 'block' }}>
+              <span
+                className="font-mono"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 500,
+                  color: 'var(--color-ink)',
+                  display: 'block',
+                }}
+              >
                 VENCE
               </span>
               <span className="font-mono text-graphite" style={{ fontSize: 10, fontWeight: 500 }}>
@@ -599,7 +664,7 @@ export const InsurancePage = () => {
                 left: 0,
                 width: `${pct * 100}%`,
                 height: 14,
-                background: 'linear-gradient(90deg, #1d1d1f, #2a2a2e)',
+                background: 'var(--color-ink)',
                 borderRadius: 999,
               }}
             />
@@ -612,9 +677,9 @@ export const InsurancePage = () => {
                 width: 12,
                 height: 12,
                 borderRadius: 999,
-                background: '#1d1d1f',
-                border: '2px solid #fff',
-                boxShadow: '0 0 0 2px #1d1d1f',
+                background: 'var(--color-ink)',
+                border: '2px solid var(--color-snow)',
+                boxShadow: '0 0 0 2px var(--color-ink)',
               }}
             />
             {/* Marcador fin */}
@@ -626,8 +691,8 @@ export const InsurancePage = () => {
                 width: 12,
                 height: 12,
                 borderRadius: 999,
-                background: '#fff',
-                border: '2px solid #1d1d1f',
+                background: 'var(--color-snow)',
+                border: '2px solid var(--color-ink)',
               }}
             />
             {/* Escala de meses */}
@@ -636,11 +701,19 @@ export const InsurancePage = () => {
               style={{ position: 'absolute', top: 50, left: 0, right: 0 }}
             >
               {months.map((m, i) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div
+                  key={i}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
+                >
                   <span style={{ width: 1, height: 6, background: 'var(--color-silver-mist)' }} />
                   <span
                     className="font-mono"
-                    style={{ fontSize: 9, fontWeight: 500, letterSpacing: '.12em', color: 'var(--color-mist)' }}
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 500,
+                      letterSpacing: '.12em',
+                      color: 'var(--color-mist)',
+                    }}
                   >
                     {m}
                   </span>
@@ -651,15 +724,17 @@ export const InsurancePage = () => {
         </div>
 
         {/* ─── [4] Bloque inferior ───────────────────────────────────── */}
-        <div
-          className="grid lg:grid-cols-[260px_1fr_360px]"
-          style={{ gap: 48 }}
-        >
+        <div className="grid lg:grid-cols-[260px_1fr_360px]" style={{ gap: 48 }}>
           {/* 4a · Editorial coberturas */}
           <div>
             <span
               className="font-mono uppercase block"
-              style={{ fontSize: 11, fontWeight: 500, letterSpacing: '.18em', color: 'var(--color-mist)' }}
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '.18em',
+                color: 'var(--color-mist)',
+              }}
             >
               § Coberturas
             </span>
@@ -675,7 +750,10 @@ export const InsurancePage = () => {
             >
               Qué cubre.
             </h2>
-            <p className="text-graphite" style={{ fontSize: 14, lineHeight: 1.5, textWrap: 'pretty' }}>
+            <p
+              className="text-graphite"
+              style={{ fontSize: 14, lineHeight: 1.5, textWrap: 'pretty' }}
+            >
               Detalle según el condicionado particular.{' '}
               <span className="text-ink" style={{ fontWeight: 500 }}>
                 {includedCount} de 10 coberturas
@@ -690,8 +768,8 @@ export const InsurancePage = () => {
                 onClick={() => setEditing(policy)}
                 className="transition-opacity hover:opacity-85"
                 style={{
-                  background: '#1d1d1f',
-                  color: '#fff',
+                  background: 'var(--color-ink)',
+                  color: 'var(--color-snow)',
                   borderRadius: 999,
                   border: 'none',
                   padding: '10px 16px',
@@ -723,12 +801,12 @@ export const InsurancePage = () => {
                 onClick={() => handleDelete(policy.id)}
                 className="bg-snow transition-opacity hover:opacity-75"
                 style={{
-                  border: '1px solid #e8d7c8',
+                  border: '1px solid rgba(182, 68, 0, 0.35)',
                   borderRadius: 999,
                   padding: '9px 16px',
                   fontWeight: 500,
                   fontSize: 13,
-                  color: '#b64400',
+                  color: 'var(--color-accent-500, #b64400)',
                   cursor: 'pointer',
                 }}
               >
@@ -738,10 +816,7 @@ export const InsurancePage = () => {
           </div>
 
           {/* 4b · Grid de coberturas */}
-          <div
-            className="grid sm:grid-cols-2"
-            style={{ columnGap: 36, alignContent: 'start' }}
-          >
+          <div className="grid sm:grid-cols-2" style={{ columnGap: 36, alignContent: 'start' }}>
             {COVERAGE_CATALOG.map((c, i) => {
               const included = i < includedCount;
               return (
@@ -761,8 +836,8 @@ export const InsurancePage = () => {
                         width: 18,
                         height: 18,
                         borderRadius: 999,
-                        background: '#1d1d1f',
-                        color: '#fff',
+                        background: 'var(--color-ink)',
+                        color: 'var(--color-snow)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -842,7 +917,12 @@ export const InsurancePage = () => {
               <div style={{ position: 'relative' }}>
                 <span
                   className="font-mono uppercase"
-                  style={{ fontSize: 11, fontWeight: 500, letterSpacing: '.18em', color: 'rgba(255,255,255,.6)' }}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    letterSpacing: '.18em',
+                    color: 'rgba(255,255,255,.6)',
+                  }}
                 >
                   Recordatorio
                 </span>
@@ -896,11 +976,20 @@ export const InsurancePage = () => {
             {/* Documentos */}
             <div
               className="bg-snow"
-              style={{ border: '1px solid var(--color-silver-mist)', borderRadius: 20, padding: '18px 22px' }}
+              style={{
+                border: '1px solid var(--color-silver-mist)',
+                borderRadius: 20,
+                padding: '18px 22px',
+              }}
             >
               <span
                 className="font-mono uppercase block"
-                style={{ fontSize: 11, fontWeight: 500, letterSpacing: '.18em', color: 'var(--color-mist)' }}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  letterSpacing: '.18em',
+                  color: 'var(--color-mist)',
+                }}
               >
                 § Documentos
               </span>
@@ -921,10 +1010,18 @@ export const InsurancePage = () => {
                       marginTop: 8,
                     }}
                   >
-                    <FileText className="text-graphite" style={{ width: 20, height: 20 }} strokeWidth={1.6} />
+                    <FileText
+                      className="text-graphite"
+                      style={{ width: 20, height: 20 }}
+                      strokeWidth={1.6}
+                    />
                     <div>
-                      <p className="text-ink" style={{ fontSize: 13, fontWeight: 500 }}>{doc.label}</p>
-                      <p style={{ fontSize: 11, color: 'var(--color-mist)', marginTop: 4 }}>{doc.meta}</p>
+                      <p className="text-ink" style={{ fontSize: 13, fontWeight: 500 }}>
+                        {doc.label}
+                      </p>
+                      <p style={{ fontSize: 11, color: 'var(--color-mist)', marginTop: 4 }}>
+                        {doc.meta}
+                      </p>
                     </div>
                     <a
                       href={doc.url}
@@ -946,7 +1043,10 @@ export const InsurancePage = () => {
         <InsuranceForm
           initialData={editing ? toInput(editing) : undefined}
           onSubmit={handleSubmit}
-          onClose={() => { setShowForm(false); setEditing(null); }}
+          onClose={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
         />
       )}
     </>

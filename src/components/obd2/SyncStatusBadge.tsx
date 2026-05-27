@@ -13,12 +13,10 @@ export const SyncStatusBadge = () => {
   if (pending === 0) {
     return (
       <span
-        className="inline-flex items-center gap-1.5 font-mono uppercase rounded-full px-3 py-1"
+        className="inline-flex items-center gap-1.5 font-mono uppercase rounded-full px-3 py-1 badge-success"
         style={{
           fontSize: 10,
           letterSpacing: '0.1em',
-          background: '#e3f0e3',
-          color: '#2f6b34',
         }}
         title="Todos los datos están sincronizados"
       >
@@ -41,12 +39,10 @@ export const SyncStatusBadge = () => {
   return (
     <button
       onClick={handleForce}
-      className="inline-flex items-center gap-1.5 font-mono uppercase rounded-full px-3 py-1 hover:opacity-80 transition-opacity"
+      className="inline-flex items-center gap-1.5 font-mono uppercase rounded-full px-3 py-1 hover:opacity-80 transition-opacity badge-warn"
       style={{
         fontSize: 10,
         letterSpacing: '0.1em',
-        background: '#fdf1d9',
-        color: '#9a6700',
       }}
       title="Click para forzar reenvío"
       disabled={forcing}

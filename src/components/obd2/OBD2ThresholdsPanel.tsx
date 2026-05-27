@@ -148,12 +148,10 @@ export const OBD2ThresholdsPanel = ({ vehicleId }: Props) => {
           </h2>
           {hasOverrides && (
             <span
-              className="font-mono uppercase rounded-full px-2 py-0.5"
+              className="font-mono uppercase rounded-full px-2 py-0.5 badge-success"
               style={{
                 fontSize: 9,
                 letterSpacing: '0.1em',
-                background: '#e3f0e3',
-                color: '#2f6b34',
               }}
             >
               Personalizado

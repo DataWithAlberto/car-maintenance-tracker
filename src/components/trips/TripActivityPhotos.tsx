@@ -114,7 +114,7 @@ export const TripActivityPhotos = ({
                 overflow: 'hidden',
                 border: `1px solid ${t.border}`,
                 padding: 0,
-                background: '#fff',
+                background: 'var(--surface-card)',
                 cursor: 'pointer',
                 scrollSnapAlign: 'start',
               }}

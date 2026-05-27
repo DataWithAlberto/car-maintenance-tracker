@@ -65,11 +65,9 @@ export const FailureForecast = ({ vehicle, records }: Props) => {
           Predicción de desgaste · {fmtKm(vehicle.current_km)}
           {hasObd2 && (
             <span
-              className="ml-1 rounded-full px-1.5 py-0.5"
+              className="ml-1 rounded-full px-1.5 py-0.5 badge-success"
               style={{
                 fontSize: 9,
-                background: '#e3f0e3',
-                color: '#2f6b34',
                 letterSpacing: '0.06em',
               }}
             >

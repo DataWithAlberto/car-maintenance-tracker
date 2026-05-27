@@ -17,9 +17,9 @@ export interface BookingTheme {
 const STANDARD: BookingTheme = {
   surface: 'var(--color-snow)',
   border: 'var(--color-silver-mist)',
-  accent: '#1d1d1f',
+  accent: 'var(--color-ink)',
   accentSoft: 'var(--color-fog)',
-  onAccent: '#ffffff',
+  onAccent: 'var(--color-snow)',
   textPrimary: 'var(--color-ink)',
   textMuted: 'var(--color-graphite)',
   radius: 18,

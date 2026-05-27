@@ -79,6 +79,7 @@ export const LoginPage = () => {
 
   return (
     <div
+      data-theme="light"
       className="min-h-screen relative overflow-hidden"
       style={{
         background: GRADIENT_INDIGO,

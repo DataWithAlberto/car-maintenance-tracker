@@ -30,8 +30,8 @@ export const GalleryAlbumCard = ({ album, onOpen }: Props) => {
       className="group focus-ring"
       style={{
         textAlign: 'left',
-        background: 'var(--color-paper, #fff)',
-        border: '1px solid var(--color-silver-mist, #e5e5ea)',
+        background: 'var(--surface-card)',
+        border: '1px solid var(--color-silver-mist)',
         borderRadius: 20,
         overflow: 'hidden',
         display: 'flex',
@@ -53,14 +53,14 @@ export const GalleryAlbumCard = ({ album, onOpen }: Props) => {
           aspectRatio: '4 / 3',
           background: cover_url
             ? `center / cover no-repeat url(${cover_url})`
-            : 'linear-gradient(135deg, var(--color-fog, #f5f5f7) 0%, var(--color-silver-mist, #e5e5ea) 100%)',
+            : 'linear-gradient(135deg, var(--color-fog) 0%, var(--color-silver-mist) 100%)',
           position: 'relative',
         }}
       >
         {!cover_url && (
           <div
             className="flex items-center justify-center w-full h-full"
-            style={{ color: 'var(--color-graphite, #86868b)' }}
+            style={{ color: 'var(--color-graphite)' }}
           >
             <Images className="w-10 h-10" strokeWidth={1.2} />
           </div>

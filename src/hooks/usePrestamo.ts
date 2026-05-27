@@ -57,7 +57,14 @@ export function usePrestamo(vehicleId?: string) {
       const { upsertLocal, toRemote } = prestamoSyncService.reconcile(local, remote);
 
       if (upsertLocal.length) {
-        const withVehicle = upsertLocal.map((r) => ({ ...r, vehicle_id: vehicleId }));
+        // El Sheet no propaga `nota` — preservamos la versión local si existe
+        // para que un round-trip de sync no borre las notas escritas en la app.
+        const localById = new Map(local.map((m) => [m.id, m]));
+        const withVehicle = upsertLocal.map((r) => ({
+          ...r,
+          vehicle_id: vehicleId,
+          nota: r.nota ?? localById.get(r.id)?.nota ?? null,
+        }));
         await prestamoService.upsert(withVehicle);
       }
       if (toRemote.length) {
@@ -108,7 +115,12 @@ export function usePrestamo(vehicleId?: string) {
     }
   };
 
-  const create = async (input: { fecha: string; importe: number; usuario: string }) => {
+  const create = async (input: {
+    fecha: string;
+    importe: number;
+    usuario: string;
+    nota?: string | null;
+  }) => {
     if (!vehicleId) return;
     const m = await prestamoService.create(vehicleId, input);
     setMovimientos((prev) => [m, ...prev]);

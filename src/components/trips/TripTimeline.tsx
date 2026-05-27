@@ -190,7 +190,12 @@ export const TripTimeline = ({
       {sortedBookings.map((b) => {
         const Icon = TYPE_ICON[b.type] ?? MapPin;
         return (
-          <TimelineNode key={b.id} icon={Icon} ringColor="#1d1d1f" fillColor="var(--color-snow)">
+          <TimelineNode
+            key={b.id}
+            icon={Icon}
+            ringColor="var(--color-ink)"
+            fillColor="var(--color-snow)"
+          >
             <TripActivityCard
               activity={b}
               onDelete={onDeleteBooking}
@@ -209,13 +214,13 @@ export const TripTimeline = ({
           onClick={onAddBooking}
           className="w-full transition-colors hover:bg-fog text-left"
           style={{
-            background: '#fff',
+            background: 'var(--surface-card)',
             border: '1.5px dashed var(--color-silver-mist)',
             borderRadius: 18,
             padding: '16px 18px',
             fontSize: 13,
             fontWeight: 500,
-            color: '#707070',
+            color: 'var(--color-graphite)',
             cursor: 'pointer',
           }}
         >

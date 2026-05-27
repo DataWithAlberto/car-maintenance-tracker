@@ -249,12 +249,49 @@
   --animate-shimmer: shimmer 2s linear infinite;
 }
 
-/* ─── Dark theme ───────────────────────────────────────────────────────────
- * Overrides the neutral token values. Every Tailwind utility (text-ink,
- * bg-snow, bg-fog, border-silver-mist, text-graphite…) and every inline
- * var(--color-*) reference flips automatically. Fixed-dark surfaces
- * (the hero gradient, .card-dark) intentionally keep their literal colors.
+/* ─── Theme overrides ───────────────────────────────────────────────────────
+ * `[data-theme='dark']` flips neutral tokens for the dark palette. Every
+ * Tailwind utility (text-ink, bg-snow, bg-fog, border-silver-mist, text-graphite…)
+ * and every inline var(--color-*) reference flips automatically.
+ *
+ * `[data-theme='light']` re-applies the light tokens. It's needed to anchor
+ * subtrees that must stay light regardless of the global theme — for example,
+ * the auth cards on LoginPage / RegisterPage live over a fixed indigo gradient
+ * and must always render with light surfaces.
  * ──────────────────────────────────────────────────────────────────────── */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --color-ink: #1d1d1f;
+  --color-graphite: #707070;
+  --color-slate: #474747;
+  --color-ash: #333333;
+  --color-mist: #a1a1a6;
+  --color-fog: #f5f5f7;
+  --color-snow: #ffffff;
+  --color-silver-mist: #e8e8ed;
+  --color-silver: #e8e8ed;
+
+  --surface-canvas: #f5f5f7;
+  --surface-card: #ffffff;
+  --surface-recessed: #f5f5f7;
+  --surface-frosted-control: rgba(210, 210, 215, 0.64);
+
+  --color-bg: #f5f5f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #f5f5f7;
+  --color-border: #e8e8ed;
+
+  --color-canvas-white: #f5f5f7;
+  --color-canvas-50: #fafafa;
+  --color-canvas-100: #f5f5f7;
+  --color-cloud-white: #ffffff;
+  --color-ink-black: #1d1d1f;
+
+  --color-azure: #0071e3;
+  --color-cobalt-link: #0066cc;
+}
+
 [data-theme='dark'] {
   color-scheme: dark;
 
@@ -705,6 +742,61 @@ a:hover {
 }
 .data-row:hover {
   background: rgba(0, 113, 227, 0.05);
+}
+
+/* ─── Status badges — pill compact con variantes light/dark ─────────────────
+ * Reemplazan parejas hardcoded tipo `#e3f0e3`/`#2f6b34` o `#fdf1d9`/`#9a6700`
+ * que en dark mode quedaban como pastel imposibles de leer sobre fondos oscuros.
+ * ──────────────────────────────────────────────────────────────────────────── */
+.badge-success {
+  background: rgba(26, 158, 63, 0.16);
+  color: #2f6b34;
+}
+.badge-warn {
+  background: rgba(199, 119, 0, 0.16);
+  color: #9a6700;
+}
+.badge-info {
+  background: rgba(0, 113, 227, 0.12);
+  color: #0066cc;
+}
+.badge-danger {
+  background: rgba(215, 0, 21, 0.14);
+  color: #a01020;
+}
+[data-theme='dark'] .badge-success {
+  background: rgba(48, 209, 88, 0.22);
+  color: #6be29a;
+}
+[data-theme='dark'] .badge-warn {
+  background: rgba(255, 159, 10, 0.2);
+  color: #ffcf75;
+}
+[data-theme='dark'] .badge-info {
+  background: rgba(94, 168, 255, 0.18);
+  color: #82b9ff;
+}
+[data-theme='dark'] .badge-danger {
+  background: rgba(255, 59, 48, 0.18);
+  color: #ff8a82;
+}
+
+/* Panel "¿confirmar borrado?" — fondo ámbar/warning con variante dark. */
+.confirm-delete-panel {
+  background: #fff6e0;
+  border: 1px solid #febb02;
+  color: #7a4d00;
+}
+.confirm-delete-panel .text-warn-ink {
+  color: #7a4d00;
+}
+[data-theme='dark'] .confirm-delete-panel {
+  background: rgba(255, 159, 10, 0.14);
+  border: 1px solid rgba(255, 159, 10, 0.45);
+  color: #ffd28a;
+}
+[data-theme='dark'] .confirm-delete-panel .text-warn-ink {
+  color: #ffd28a;
 }
 
 /* Skeleton loader — shimmer entre superficies para que dark/light usen el tono

@@ -68,8 +68,8 @@ export const TripSurpriseEditor = ({ enabled, config, onChange }: Props) => {
           disabled={saving}
           className="transition-opacity hover:opacity-85"
           style={{
-            background: enabled ? '#FF5A5F' : '#fff',
-            color: enabled ? '#fff' : '#1d1d1f',
+            background: enabled ? '#FF5A5F' : 'var(--surface-card)',
+            color: enabled ? '#fff' : 'var(--color-ink)',
             border: enabled ? 'none' : '1px solid var(--color-silver-mist)',
             borderRadius: 999,
             padding: '8px 14px',
@@ -94,11 +94,12 @@ export const TripSurpriseEditor = ({ enabled, config, onChange }: Props) => {
             placeholder="Mensaje al destinatario (ej. 'Feliz aniversario')"
             style={{
               width: '100%',
-              background: '#fff',
+              background: 'var(--surface-card)',
               border: '1px solid var(--color-silver-mist)',
               borderRadius: 10,
               padding: '8px 12px',
               fontSize: 14,
+              color: 'var(--color-ink)',
               outline: 'none',
             }}
           />
@@ -109,11 +110,12 @@ export const TripSurpriseEditor = ({ enabled, config, onChange }: Props) => {
               onChange={(e) => setDraft({ ...draft, reveal_date: e.target.value || undefined })}
               style={{
                 width: '100%',
-                background: '#fff',
+                background: 'var(--surface-card)',
                 border: '1px solid var(--color-silver-mist)',
                 borderRadius: 10,
                 padding: '8px 12px',
                 fontSize: 14,
+                color: 'var(--color-ink)',
                 outline: 'none',
               }}
             />
@@ -124,11 +126,12 @@ export const TripSurpriseEditor = ({ enabled, config, onChange }: Props) => {
               }
               style={{
                 width: '100%',
-                background: '#fff',
+                background: 'var(--surface-card)',
                 border: '1px solid var(--color-silver-mist)',
                 borderRadius: 10,
                 padding: '8px 12px',
                 fontSize: 14,
+                color: 'var(--color-ink)',
                 outline: 'none',
               }}
             >
@@ -146,8 +149,8 @@ export const TripSurpriseEditor = ({ enabled, config, onChange }: Props) => {
               disabled={saving}
               className="transition-opacity hover:opacity-85"
               style={{
-                background: '#1d1d1f',
-                color: '#fff',
+                background: 'var(--color-ink)',
+                color: 'var(--color-snow)',
                 borderRadius: 999,
                 border: 'none',
                 padding: '7px 16px',

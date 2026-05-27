@@ -732,13 +732,13 @@ export const TripsPage = () => {
                   className="w-full transition-colors hover:bg-fog"
                   style={{
                     marginTop: 12,
-                    background: '#fff',
+                    background: 'var(--surface-card)',
                     border: '1.5px dashed var(--color-silver-mist)',
                     borderRadius: 12,
                     padding: '10px',
                     fontSize: 13,
                     fontWeight: 500,
-                    color: '#707070',
+                    color: 'var(--color-graphite)',
                     cursor: 'pointer',
                   }}
                 >
