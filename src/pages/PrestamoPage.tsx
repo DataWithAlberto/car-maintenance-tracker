@@ -15,6 +15,7 @@ import {
   Scale,
   CalendarClock,
   StickyNote,
+  Calculator,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '../components/ui/Button';
@@ -927,6 +928,147 @@ const PaceKpi = ({
   );
 };
 
+// ─── Simulador de cuota fija ─────────────────────────────────────────────────
+
+const SimuladorCuota = ({
+  saldoPendiente,
+  defaultCuota,
+}: {
+  saldoPendiente: number;
+  defaultCuota: number;
+}) => {
+  const [raw, setRaw] = useState(defaultCuota > 0 ? defaultCuota.toFixed(2) : '');
+
+  const result = useMemo(() => {
+    const cuota = parseFloat(raw.replace(',', '.'));
+    if (!cuota || cuota <= 0 || saldoPendiente <= 0) return null;
+    const meses = Math.ceil(saldoPendiente / cuota);
+    const now = new Date();
+    const fin = new Date(now.getFullYear(), now.getMonth() + meses, 1);
+    const label = fin.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    return { meses, label, cuota };
+  }, [raw, saldoPendiente]);
+
+  if (saldoPendiente <= 0) return null;
+
+  return (
+    <div className="bg-snow border border-silver-mist rounded-[20px] p-5">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4">
+        <div
+          className="h-9 w-9 rounded-[10px] flex items-center justify-center shrink-0"
+          style={{ background: '#0071e31a' }}
+        >
+          <Calculator className="h-4.5 w-4.5" strokeWidth={1.8} style={{ color: '#0071e3' }} />
+        </div>
+        <div>
+          <div
+            className="font-mono uppercase text-graphite"
+            style={{ fontSize: 10, letterSpacing: '0.12em' }}
+          >
+            Simulador de cuota fija
+          </div>
+          <div className="font-text text-graphite mt-0.5" style={{ fontSize: 12.5 }}>
+            ¿Cuándo acabaría si pago una cantidad fija cada mes?
+          </div>
+        </div>
+      </div>
+
+      {/* Input row */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            value={raw}
+            onChange={(e) => setRaw(e.target.value)}
+            placeholder="Cuota mensual…"
+            style={{
+              width: '100%',
+              padding: '11px 16px 11px 42px',
+              background: 'var(--color-fog)',
+              border: '1px solid var(--color-silver-mist)',
+              borderRadius: 13,
+              fontFamily: 'Inter, var(--font-sf-pro-text)',
+              fontSize: 15,
+              color: 'var(--color-ink)',
+              outline: 'none',
+            }}
+          />
+          <span
+            className="absolute left-4 top-1/2 -translate-y-1/2 font-text text-graphite pointer-events-none"
+            style={{ fontSize: 14 }}
+          >
+            €
+          </span>
+        </div>
+
+        {result && (
+          <div
+            className="shrink-0 font-text text-graphite"
+            style={{ fontSize: 13, lineHeight: 1.4 }}
+          >
+            →
+          </div>
+        )}
+
+        {result && (
+          <div className="shrink-0 text-right">
+            <div
+              className="text-ink capitalize tabular-nums"
+              style={{
+                fontFamily: 'var(--font-sf-pro-display)',
+                fontWeight: 700,
+                fontSize: 17,
+                letterSpacing: '-0.2px',
+                lineHeight: 1.1,
+              }}
+            >
+              {result.label}
+            </div>
+            <div className="font-text text-graphite mt-0.5" style={{ fontSize: 12 }}>
+              {result.meses} {result.meses === 1 ? 'mes' : 'meses'}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Contextual hint */}
+      {result && (
+        <div
+          className="mt-3 rounded-[10px] px-4 py-2.5 font-text text-graphite"
+          style={{
+            background: 'var(--color-fog)',
+            border: '1px solid var(--color-silver-mist)',
+            fontSize: 12.5,
+            lineHeight: 1.5,
+          }}
+        >
+          Pagando{' '}
+          <span className="text-ink font-semibold tabular-nums">
+            {formatCurrency(result.cuota)}
+          </span>{' '}
+          al mes quedarían{' '}
+          <span className="text-ink font-semibold tabular-nums">{result.meses}</span>{' '}
+          {result.meses === 1 ? 'cuota' : 'cuotas'} sobre{' '}
+          <span className="text-ink font-semibold tabular-nums">
+            {formatCurrency(saldoPendiente)}
+          </span>{' '}
+          pendientes. El último pago sería en{' '}
+          <span className="text-ink font-semibold capitalize">{result.label}</span>.
+        </div>
+      )}
+
+      {!result && raw && parseFloat(raw.replace(',', '.')) > 0 && (
+        <div className="mt-3 font-text text-graphite" style={{ fontSize: 12.5 }}>
+          Introduce un importe mayor que 0.
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export const PrestamoPage = () => {
@@ -1098,6 +1240,11 @@ export const PrestamoPage = () => {
           saldoPendiente={stats.saldoPendiente}
         />
         <BalanceCard delta={advanced.balanceDelta} leader={advanced.balanceLeader} />
+      </div>
+
+      {/* ── Simulador de cuota fija ── */}
+      <div className="mb-4">
+        <SimuladorCuota saldoPendiente={stats.saldoPendiente} defaultCuota={advanced.avgMonthly} />
       </div>
 
       {/* ── Monthly chart ── */}
