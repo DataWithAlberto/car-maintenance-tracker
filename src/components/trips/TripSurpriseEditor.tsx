@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Gift, Sparkles } from 'lucide-react';
+import { Gift, Sparkles, Eye } from 'lucide-react';
 import type { SurpriseConfig, SurpriseAnimation } from '../../types';
 
 interface Props {
   enabled: boolean;
   config?: SurpriseConfig | null;
+  shareToken?: string | null;
   onChange: (enabled: boolean, config: SurpriseConfig | null) => Promise<void>;
 }
 
@@ -14,7 +15,7 @@ const ANIMATIONS: { value: SurpriseAnimation; label: string; emoji: string }[] =
   { value: 'envelope', label: 'Sobre', emoji: '✉️' },
 ];
 
-export const TripSurpriseEditor = ({ enabled, config, onChange }: Props) => {
+export const TripSurpriseEditor = ({ enabled, config, shareToken, onChange }: Props) => {
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<SurpriseConfig>({
     message: config?.message ?? '',
@@ -142,7 +143,32 @@ export const TripSurpriseEditor = ({ enabled, config, onChange }: Props) => {
               ))}
             </select>
           </div>
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end" style={{ gap: 8 }}>
+            {shareToken && (
+              <a
+                href={`/viajes/surprise/${shareToken}`}
+                target="_blank"
+                rel="noreferrer"
+                className="transition-opacity hover:opacity-75"
+                style={{
+                  background: 'transparent',
+                  color: '#FF5A5F',
+                  borderRadius: 999,
+                  border: '1px solid #FF5A5F',
+                  padding: '7px 14px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  textDecoration: 'none',
+                }}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Vista previa
+              </a>
+            )}
             <button
               onClick={saveDraft}
               type="button"
