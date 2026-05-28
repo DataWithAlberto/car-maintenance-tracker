@@ -1,15 +1,23 @@
 import { useState } from 'react';
-import { Gift, Sparkles, Eye, Send } from 'lucide-react';
+import { Gift, Sparkles, Eye, Send, CheckCircle2 } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 import type { SurpriseConfig, SurpriseAnimation } from '../../types';
 import { SurpriseAudioInput } from './SurpriseAudioInput';
 import { SurpriseCoverInput } from './SurpriseCoverInput';
 import { SurpriseQRCode } from './SurpriseQRCode';
+import { SurpriseHintsEditor } from './SurpriseHintsEditor';
+import { SurpriseFunFactsEditor } from './SurpriseFunFactsEditor';
+import { SurpriseBoardingPass } from './SurpriseBoardingPass';
 
 interface Props {
   tripId: string;
   enabled: boolean;
   config?: SurpriseConfig | null;
   shareToken?: string | null;
+  destination?: string | null;
+  startDate?: string | null;
+  startLocation?: string | null;
   onChange: (enabled: boolean, config: SurpriseConfig | null) => Promise<void>;
 }
 
@@ -19,7 +27,16 @@ const ANIMATIONS: { value: SurpriseAnimation; label: string; emoji: string }[] =
   { value: 'envelope', label: 'Sobre', emoji: '✉️' },
 ];
 
-export const TripSurpriseEditor = ({ tripId, enabled, config, shareToken, onChange }: Props) => {
+export const TripSurpriseEditor = ({
+  tripId,
+  enabled,
+  config,
+  shareToken,
+  destination,
+  startDate,
+  startLocation,
+  onChange,
+}: Props) => {
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<SurpriseConfig>({
     message: config?.message ?? '',
@@ -28,7 +45,13 @@ export const TripSurpriseEditor = ({ tripId, enabled, config, shareToken, onChan
     cover_url: config?.cover_url ?? null,
     audio_url: config?.audio_url ?? null,
     reactions: config?.reactions ?? undefined,
+    reason: config?.reason ?? '',
+    hints: config?.hints ?? [],
+    fun_facts: config?.fun_facts ?? [],
+    opened_at: config?.opened_at ?? null,
   });
+
+  const openedAt = config?.opened_at ?? null;
 
   const toggle = async () => {
     setSaving(true);
@@ -169,6 +192,26 @@ export const TripSurpriseEditor = ({ tripId, enabled, config, shareToken, onChan
             </select>
           </div>
 
+          <textarea
+            value={draft.reason ?? ''}
+            onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
+            placeholder="¿Por qué te llevo allí? (aparecerá con efecto máquina de escribir tras el reveal)"
+            rows={3}
+            style={{
+              width: '100%',
+              background: 'var(--surface-card)',
+              border: '1px solid var(--color-silver-mist)',
+              borderRadius: 10,
+              padding: '8px 12px',
+              fontSize: 14,
+              color: 'var(--color-ink)',
+              outline: 'none',
+              resize: 'vertical',
+              fontFamily: 'inherit',
+              lineHeight: 1.45,
+            }}
+          />
+
           <SurpriseCoverInput
             tripId={tripId}
             value={draft.cover_url}
@@ -179,6 +222,37 @@ export const TripSurpriseEditor = ({ tripId, enabled, config, shareToken, onChan
             value={draft.audio_url}
             onChange={(url) => patchAndSave({ audio_url: url })}
           />
+
+          <SurpriseHintsEditor
+            value={draft.hints ?? []}
+            onChange={(hints) => setDraft({ ...draft, hints })}
+          />
+
+          <SurpriseFunFactsEditor
+            destination={destination ?? null}
+            value={draft.fun_facts ?? []}
+            onChange={(fun_facts) => setDraft({ ...draft, fun_facts })}
+          />
+
+          {openedAt && (
+            <div
+              className="flex items-center"
+              style={{
+                gap: 8,
+                padding: '8px 12px',
+                background: 'rgba(28,176,92,.10)',
+                border: '1px solid rgba(28,176,92,.3)',
+                borderRadius: 10,
+                fontSize: 12,
+                color: '#1cb05c',
+                fontWeight: 600,
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Sorpresa abierta el{' '}
+              {format(parseISO(openedAt), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+            </div>
+          )}
 
           <div
             className="flex items-center justify-between flex-wrap"
@@ -236,6 +310,14 @@ export const TripSurpriseEditor = ({ tripId, enabled, config, shareToken, onChan
                 </a>
               )}
               {publicUrl && <SurpriseQRCode url={publicUrl} />}
+              {destination && (
+                <SurpriseBoardingPass
+                  destination={destination}
+                  startDate={startDate}
+                  startLocation={startLocation}
+                  shareToken={shareToken}
+                />
+              )}
             </div>
             <button
               onClick={saveDraft}

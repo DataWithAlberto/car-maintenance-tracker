@@ -6,6 +6,8 @@ import { TripActivityCard } from '../components/trips/TripActivityCard';
 import { SurpriseConfetti } from '../components/trips/SurpriseConfetti';
 import { SurpriseCountdown } from '../components/trips/SurpriseCountdown';
 import { SurpriseReaction } from '../components/trips/SurpriseReaction';
+import { SurpriseTypewriter } from '../components/trips/SurpriseTypewriter';
+import { SurpriseRouteMap } from '../components/trips/SurpriseRouteMap';
 import type { PublicTripResponse, PublicTripPhoto, SurpriseAnimation } from '../types';
 
 export const SurpriseRevealPage = () => {
@@ -33,6 +35,7 @@ export const SurpriseRevealPage = () => {
         revealDate={data.reveal_date}
         messagePreview={data.message_preview}
         coverUrl={data.cover_url ?? null}
+        hints={data.hints_revealed ?? []}
       />
     );
   }
@@ -41,11 +44,21 @@ export const SurpriseRevealPage = () => {
   const coverUrl = data.trip.surprise_config?.cover_url ?? null;
   const audioUrl = data.trip.surprise_config?.audio_url ?? null;
   const reactions = data.trip.surprise_config?.reactions ?? {};
+  const reason = data.trip.surprise_config?.reason ?? '';
+  const funFacts = data.trip.surprise_config?.fun_facts ?? [];
+
+  const handleOpen = () => {
+    setOpened(true);
+    if (token) {
+      // Best-effort: si falla, no afecta la experiencia del destinatario
+      tripsService.markSurpriseOpened(token).catch(() => undefined);
+    }
+  };
 
   if (!opened) {
-    if (animation === 'scratch') return <ScratchCard onOpen={() => setOpened(true)} />;
-    if (animation === 'envelope') return <EnvelopeBox onOpen={() => setOpened(true)} />;
-    return <GiftBox onOpen={() => setOpened(true)} />;
+    if (animation === 'scratch') return <ScratchCard onOpen={handleOpen} />;
+    if (animation === 'envelope') return <EnvelopeBox onOpen={handleOpen} />;
+    return <GiftBox onOpen={handleOpen} />;
   }
 
   return (
@@ -170,7 +183,26 @@ export const SurpriseRevealPage = () => {
         )}
       </header>
 
+      {reason && <SurpriseTypewriter text={reason} />}
+
       {audioUrl && <AudioMessage url={audioUrl} />}
+
+      <SurpriseRouteMap
+        origin={
+          data.trip.start_lat != null && data.trip.start_lng != null
+            ? {
+                lat: data.trip.start_lat,
+                lng: data.trip.start_lng,
+                label: data.trip.start_location,
+              }
+            : null
+        }
+        destination={
+          data.trip.end_lat != null && data.trip.end_lng != null
+            ? { lat: data.trip.end_lat, lng: data.trip.end_lng, label: data.trip.end_location }
+            : null
+        }
+      />
 
       <section
         className="max-w-4xl mx-auto"
@@ -185,12 +217,64 @@ export const SurpriseRevealPage = () => {
         )}
       </section>
 
+      {funFacts.length > 0 && <FunFactsSection facts={funFacts} />}
+
       <RevealAlbum photos={data.photos ?? []} />
 
       {token && <SurpriseReaction token={token} initialCounts={reactions} />}
     </main>
   );
 };
+
+/* ─── Sección de curiosidades generadas por IA ─────────────────────────── */
+const FunFactsSection = ({ facts }: { facts: string[] }) => (
+  <section className="max-w-4xl mx-auto" style={{ padding: '20px 24px 40px' }}>
+    <header className="flex items-center" style={{ gap: 12, marginBottom: 16 }}>
+      <Sparkles className="h-5 w-5" color="#a64dff" />
+      <h2
+        className="text-ink"
+        style={{
+          fontFamily: 'Inter, var(--font-sf-pro-display)',
+          fontWeight: 700,
+          fontSize: 'clamp(22px, 3vw, 28px)',
+          letterSpacing: '-0.4px',
+          margin: 0,
+        }}
+      >
+        Curiosidades del destino
+      </h2>
+    </header>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+        gap: 12,
+      }}
+    >
+      {facts.map((f, i) => (
+        <article
+          key={i}
+          style={{
+            background: 'rgba(166,77,255,.06)',
+            border: '1px solid rgba(166,77,255,.18)',
+            borderRadius: 14,
+            padding: '16px 18px',
+          }}
+        >
+          <span
+            className="font-mono"
+            style={{ fontSize: 11, color: '#a64dff', fontWeight: 700, letterSpacing: '.1em' }}
+          >
+            ✦ {String(i + 1).padStart(2, '0')}
+          </span>
+          <p className="text-ink" style={{ margin: '6px 0 0', fontSize: 14, lineHeight: 1.5 }}>
+            {f}
+          </p>
+        </article>
+      ))}
+    </div>
+  </section>
+);
 
 /* ─── Reproductor del mensaje de voz ────────────────────────────────────── */
 const AudioMessage = ({ url }: { url: string }) => {
@@ -844,8 +928,9 @@ interface LockedScreenProps {
   revealDate: string;
   messagePreview: string;
   coverUrl?: string | null;
+  hints?: string[];
 }
-const LockedScreen = ({ revealDate, messagePreview, coverUrl }: LockedScreenProps) => (
+const LockedScreen = ({ revealDate, messagePreview, coverUrl, hints = [] }: LockedScreenProps) => (
   <main
     className="min-h-screen flex flex-col items-center justify-center relative"
     style={{
@@ -887,6 +972,71 @@ const LockedScreen = ({ revealDate, messagePreview, coverUrl }: LockedScreenProp
       .
     </p>
     <SurpriseCountdown revealDate={revealDate} />
+
+    {hints.length > 0 && (
+      <section
+        style={{
+          marginTop: 32,
+          maxWidth: 480,
+          width: '100%',
+          textAlign: 'left',
+        }}
+      >
+        <p
+          className="font-mono uppercase text-graphite"
+          style={{
+            fontSize: 11,
+            letterSpacing: '.18em',
+            textAlign: 'center',
+            marginBottom: 12,
+          }}
+        >
+          ✦ {hints.length === 1 ? 'Tu primera pista' : `${hints.length} pistas reveladas`}
+        </p>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {hints.map((h, i) => (
+            <li
+              key={i}
+              style={{
+                background: '#fff',
+                border: '1px solid var(--color-silver-mist, #e5e5ea)',
+                borderRadius: 12,
+                padding: '12px 16px',
+                marginBottom: 8,
+                fontSize: 14,
+                color: 'var(--color-ink)',
+                lineHeight: 1.4,
+                animation: `hint-in .6s ease-out ${i * 0.1}s both`,
+                display: 'flex',
+                gap: 10,
+                alignItems: 'flex-start',
+              }}
+            >
+              <span
+                className="font-mono"
+                style={{
+                  color: '#FF5A5F',
+                  fontWeight: 700,
+                  fontSize: 11,
+                  letterSpacing: '.08em',
+                  minWidth: 32,
+                  paddingTop: 2,
+                }}
+              >
+                D{i + 1}
+              </span>
+              <span>{h}</span>
+            </li>
+          ))}
+        </ul>
+        <style>{`
+          @keyframes hint-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+      </section>
+    )}
   </main>
 );
 

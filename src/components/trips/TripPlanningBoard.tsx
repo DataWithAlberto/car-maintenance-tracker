@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Sparkles, Calendar, Printer } from 'lucide-react';
 import { printItinerary } from '../../utils/printItinerary';
+import { TripWeatherCard } from './TripWeatherCard';
+import { TripDistanceCard } from './TripDistanceCard';
+import { TripAISuggestionsButton } from './TripAISuggestionsButton';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { TripTimeline } from './TripTimeline';
@@ -24,6 +27,7 @@ interface Props {
   bookings: TripActivity[];
   checklist: TripChecklistItem[];
   onAddBooking: () => void;
+  onAddSuggestion?: (data: CreateTripActivityInput) => Promise<void>;
   onDeleteBooking: (id: string) => Promise<void>;
   onSaveBooking?: (id: string, patch: Partial<CreateTripActivityInput>) => Promise<void>;
   onAddChecklist: (text: string) => Promise<void>;
@@ -42,6 +46,7 @@ export const TripPlanningBoard = ({
   bookings,
   checklist,
   onAddBooking,
+  onAddSuggestion,
   onDeleteBooking,
   onSaveBooking,
   onAddChecklist,
@@ -107,6 +112,14 @@ export const TripPlanningBoard = ({
           </div>
 
           <div className="flex items-center" style={{ gap: 8, flexWrap: 'wrap' }}>
+            {onAddSuggestion && (
+              <TripAISuggestionsButton
+                destination={trip.end_location}
+                startDate={trip.start_date ?? trip.start_datetime}
+                endDate={trip.end_date ?? trip.end_datetime}
+                onAdd={onAddSuggestion}
+              />
+            )}
             <button
               type="button"
               onClick={() => printItinerary({ trip, activities: bookings, checklist })}
@@ -190,6 +203,18 @@ export const TripPlanningBoard = ({
               status={trip.status}
               isSurprise={trip.is_surprise}
               isPublic={trip.is_public}
+            />
+            <TripDistanceCard
+              startLat={trip.start_lat}
+              startLng={trip.start_lng}
+              endLat={trip.end_lat}
+              endLng={trip.end_lng}
+            />
+            <TripWeatherCard
+              lat={trip.end_lat}
+              lng={trip.end_lng}
+              date={trip.start_date ?? trip.start_datetime}
+              destination={trip.end_location}
             />
             <TripVehicleSummaryCard vehicle={vehicle} />
             <TripOBD2SnapshotCard tripId={trip.id} label="start" />

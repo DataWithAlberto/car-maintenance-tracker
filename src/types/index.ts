@@ -201,6 +201,14 @@ export interface SurpriseConfig {
   cover_url?: string | null;
   audio_url?: string | null;
   reactions?: Partial<Record<SurpriseReaction, number>>;
+  /** Razón emocional: aparece en el reveal con efecto máquina de escribir. */
+  reason?: string;
+  /** Pistas progresivas (1 por día hasta la fecha de reveal). */
+  hints?: string[];
+  /** 3 curiosidades del destino generadas por IA. */
+  fun_facts?: string[];
+  /** Marca temporal en la que el destinatario abrió la sorpresa por 1ª vez. */
+  opened_at?: string | null;
 }
 
 export interface TripCollaborator {
@@ -247,6 +255,8 @@ export interface LockedSurprisePayload {
   animation: SurpriseAnimation;
   message_preview: string;
   cover_url?: string | null;
+  /** Pistas que se van desvelando 1 por día hasta reveal_date. */
+  hints_revealed?: string[];
 }
 export type PublicTripResponse = PublicTripPayload | LockedSurprisePayload;
 

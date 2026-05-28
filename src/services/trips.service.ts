@@ -128,6 +128,11 @@ export const tripsService = {
     if (error) throw error;
   },
 
+  async markSurpriseOpened(token: string): Promise<void> {
+    const { error } = await supabase.rpc('mark_surprise_opened', { p_token: token });
+    if (error) throw error;
+  },
+
   async delete(id: string): Promise<void> {
     const { error, count } = await supabase.from('trips').delete({ count: 'exact' }).eq('id', id);
     if (error) throw error;
@@ -152,6 +157,102 @@ export const tripsService = {
   async deleteWaypoint(id: string): Promise<void> {
     const { error } = await supabase.from('trip_waypoints').delete().eq('id', id);
     if (error) throw error;
+  },
+
+  async fetchForecast(
+    lat: number,
+    lng: number,
+    targetIso: string,
+  ): Promise<{
+    condition: string;
+    icon: string;
+    temp: number;
+    temp_min: number;
+    temp_max: number;
+    wind_kmh: number;
+    pop: number;
+    note: 'forecast' | 'climate';
+  } | null> {
+    const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
+    if (!apiKey) return null;
+    const targetTs = Date.parse(targetIso);
+    if (Number.isNaN(targetTs)) return null;
+    const diffDays = (targetTs - Date.now()) / 86_400_000;
+    // Forecast 5d/3h sólo cubre los próximos ~5 días
+    if (diffDays > 5 || diffDays < -0.1) {
+      return {
+        condition: 'climate',
+        icon: '01d',
+        temp: 0,
+        temp_min: 0,
+        temp_max: 0,
+        wind_kmh: 0,
+        pop: 0,
+        note: 'climate',
+      };
+    }
+    try {
+      const res = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric&lang=es`,
+      );
+      if (!res.ok) return null;
+      const json = await res.json();
+      const list = Array.isArray(json.list) ? json.list : [];
+      if (list.length === 0) return null;
+      // Selecciona el slot más cercano al target
+      const closest = list.reduce(
+        (best: { d: number; item: unknown } | null, item: { dt: number }) => {
+          const d = Math.abs(item.dt * 1000 - targetTs);
+          if (!best || d < best.d) return { d, item };
+          return best;
+        },
+        null,
+      );
+      if (!closest) return null;
+      const it = closest.item as {
+        main: { temp: number; temp_min: number; temp_max: number };
+        weather: { main: string; description: string; icon: string }[];
+        wind: { speed: number };
+        pop?: number;
+      };
+      return {
+        condition: it.weather?.[0]?.description ?? it.weather?.[0]?.main ?? '',
+        icon: it.weather?.[0]?.icon ?? '01d',
+        temp: Math.round(it.main.temp),
+        temp_min: Math.round(it.main.temp_min),
+        temp_max: Math.round(it.main.temp_max),
+        wind_kmh: Math.round((it.wind?.speed ?? 0) * 3.6),
+        pop: Math.round((it.pop ?? 0) * 100),
+        note: 'forecast',
+      };
+    } catch {
+      return null;
+    }
+  },
+
+  async fetchDirections(
+    fromLat: number,
+    fromLng: number,
+    toLat: number,
+    toLng: number,
+  ): Promise<{ distance_km: number; duration_min: number } | null> {
+    const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+    if (!token) return null;
+    try {
+      const coords = `${fromLng},${fromLat};${toLng},${toLat}`;
+      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?geometries=geojson&overview=simplified&access_token=${token}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const json = await res.json();
+      const route = json.routes?.[0];
+      if (!route) return null;
+      return {
+        distance_km: Math.round(route.distance / 1000),
+        duration_min: Math.round(route.duration / 60),
+      };
+    } catch {
+      return null;
+    }
   },
 
   async fetchWeather(lat: number, lng: number): Promise<Partial<CreateTripInput> | null> {

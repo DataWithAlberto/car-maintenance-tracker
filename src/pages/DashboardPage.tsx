@@ -8,6 +8,7 @@ import { VehicleForm } from '../components/vehicle/VehicleForm';
 import { maintenanceService } from '../services/maintenance.service';
 import { expensesService } from '../services/expenses.service';
 import { tripsService } from '../services/trips.service';
+import { TripAnniversaryBanner } from '../components/trips/TripAnniversaryBanner';
 import { documentsService } from '../services/documents.service';
 import { calculateAlerts, calculateDocumentAlerts } from '../utils/calculations';
 import { sendAlertNotifications } from '../utils/notifications';
@@ -705,6 +706,12 @@ export const DashboardPage = () => {
           )}
         </div>
       </section>
+
+      {primaryStats?.trips && primaryStats.trips.length > 0 && (
+        <div className="mx-5 md:mx-10 mt-5">
+          <TripAnniversaryBanner trips={primaryStats.trips} />
+        </div>
+      )}
 
       {/* ═══ BLOCK 2 · EDITORIAL BODY ════════════════════════════════════════ */}
       <div className="dashboard-body" style={{ display: 'flex', flexDirection: 'column' }}>

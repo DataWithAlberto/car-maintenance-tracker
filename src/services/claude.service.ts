@@ -246,6 +246,80 @@ ${expenseSummary.length ? JSON.stringify(expenseSummary, null, 2) : 'Sin gastos.
       throw new Error('La respuesta de la IA no tuvo el formato esperado');
     }
   },
+
+  /* Genera 3 curiosidades cortas y verificables sobre un destino. */
+  async surpriseFunFacts({
+    apiKey,
+    destination,
+    signal,
+  }: {
+    apiKey: string;
+    destination: string;
+    signal?: AbortSignal;
+  }): Promise<string[]> {
+    const text = await callGemini({
+      apiKey,
+      system:
+        'Genera 3 curiosidades cortas, ciertas y poco conocidas sobre un destino turístico. Responde SOLO con JSON: {"facts": ["...", "...", "..."]}. Cada curiosidad debe ocupar como máximo 2 líneas (160 caracteres). Escribe en español.',
+      userParts: [{ text: `Destino: ${destination}` }],
+      maxTokens: 512,
+      signal,
+    });
+    try {
+      const parsed = JSON.parse(stripJson(text));
+      const facts = Array.isArray(parsed.facts) ? parsed.facts : [];
+      return facts.filter((f: unknown): f is string => typeof f === 'string').slice(0, 3);
+    } catch {
+      throw new Error('La IA no devolvió curiosidades en el formato esperado');
+    }
+  },
+
+  /* Sugiere actividades para un destino según fecha y duración. */
+  async suggestTripActivities({
+    apiKey,
+    destination,
+    startDate,
+    days,
+    signal,
+  }: {
+    apiKey: string;
+    destination: string;
+    startDate?: string | null;
+    days?: number;
+    signal?: AbortSignal;
+  }): Promise<Array<{ title: string; type: string; notes: string }>> {
+    const text = await callGemini({
+      apiKey,
+      system: `Sugiere actividades turísticas reales y bien valoradas para un destino.
+Responde SOLO con JSON válido:
+{ "activities": [ { "title": "string", "type": "experience"|"museum"|"food"|"lodging", "notes": "explicación breve en 1-2 frases" } ] }
+- Máximo 6 actividades, variadas (cultural, gastronomía, ocio).
+- "title" debe ser concreto y específico (no genérico).
+- "type" debe ser uno de: experience, museum, food, lodging.
+- Escribe en español.`,
+      userParts: [
+        {
+          text: `Destino: ${destination}\nFechas: ${startDate ?? 'sin fecha concreta'}\nDuración: ${days ?? 2} días`,
+        },
+      ],
+      maxTokens: 1024,
+      signal,
+    });
+    try {
+      const parsed = JSON.parse(stripJson(text));
+      const list = Array.isArray(parsed.activities) ? parsed.activities : [];
+      return list
+        .filter(
+          (a: unknown): a is { title: string; type: string; notes: string } =>
+            typeof a === 'object' &&
+            a !== null &&
+            typeof (a as { title?: unknown }).title === 'string',
+        )
+        .slice(0, 6);
+    } catch {
+      throw new Error('La IA no devolvió actividades en el formato esperado');
+    }
+  },
 };
 
 // Alias para compatibilidad con importaciones existentes

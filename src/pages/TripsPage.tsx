@@ -10,6 +10,7 @@ import { QuickPlanTripForm } from '../components/trips/QuickPlanTripForm';
 import { TripPlanningBoard } from '../components/trips/TripPlanningBoard';
 import { TripPublicToggle } from '../components/trips/TripPublicToggle';
 import { TripSurpriseEditor } from '../components/trips/TripSurpriseEditor';
+import { TripSummaryModal } from '../components/trips/TripSummaryModal';
 import { TripActivityCard } from '../components/trips/TripActivityCard';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { useVehicleStore } from '../store/vehicleStore';
@@ -143,6 +144,7 @@ export const TripsPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [showQuickPlan, setShowQuickPlan] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [summaryTripId, setSummaryTripId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [statusFilter, setStatusFilter] = useState<'registered' | 'planning'>('registered');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -632,6 +634,9 @@ export const TripsPage = () => {
                   enabled={selectedTrip.is_surprise}
                   config={selectedTrip.surprise_config}
                   shareToken={selectedTrip.share_token}
+                  destination={selectedTrip.end_location}
+                  startDate={selectedTrip.start_date ?? selectedTrip.start_datetime}
+                  startLocation={selectedTrip.start_location}
                   onChange={handleSurpriseChange}
                 />
               </div>
@@ -755,6 +760,7 @@ export const TripsPage = () => {
                   bookings={bookings}
                   checklist={checklist}
                   onAddBooking={() => setShowBookingForm(true)}
+                  onAddSuggestion={(data) => createBooking(user.id, data).then(() => undefined)}
                   onDeleteBooking={handleDeleteBooking}
                   onSaveBooking={handleSaveBooking}
                   onAddChecklist={handleAddChecklist}
@@ -802,6 +808,9 @@ export const TripsPage = () => {
                   enabled={selectedTrip.is_surprise}
                   config={selectedTrip.surprise_config}
                   shareToken={selectedTrip.share_token}
+                  destination={selectedTrip.end_location}
+                  startDate={selectedTrip.start_date ?? selectedTrip.start_datetime}
+                  startLocation={selectedTrip.start_location}
                   onChange={handleSurpriseChange}
                 />
               </div>
@@ -1438,6 +1447,34 @@ export const TripsPage = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  setSummaryTripId(r.trip.id);
+                                }}
+                                aria-label="Ver recuerdo del viaje"
+                                className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                style={{
+                                  position: 'absolute',
+                                  top: 10,
+                                  right: 24,
+                                  background: 'var(--color-snow)',
+                                  color: '#FF5A5F',
+                                  border: '1px solid rgba(255,90,95,.4)',
+                                  borderRadius: 999,
+                                  padding: '2px 9px',
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  letterSpacing: '.06em',
+                                  cursor: 'pointer',
+                                  height: 22,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 3,
+                                }}
+                              >
+                                ★ Recuerdo
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   handleDelete(r.trip.id);
                                 }}
                                 aria-label="Eliminar viaje"
@@ -1604,6 +1641,12 @@ export const TripsPage = () => {
       {showBookingForm && selectedTrip && (
         <TripBookingForm onSubmit={handleCreateBooking} onClose={() => setShowBookingForm(false)} />
       )}
+      {summaryTripId &&
+        (() => {
+          const t = trips.find((x) => x.id === summaryTripId);
+          if (!t) return null;
+          return <TripSummaryModal trip={t} onClose={() => setSummaryTripId(null)} />;
+        })()}
     </>
   );
 };
