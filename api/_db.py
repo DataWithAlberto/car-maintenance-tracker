@@ -3,6 +3,8 @@ Operaciones contra Supabase con service_role key (bypassa RLS).
 Incluye persistencia del cursor de Dropbox para entornos serverless.
 """
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dataclasses import asdict
 from datetime import datetime, timezone
 

@@ -6,6 +6,9 @@ POST → notificación de cambio: detecta y procesa CSVs nuevos
 """
 import json
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 
