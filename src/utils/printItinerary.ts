@@ -32,19 +32,21 @@ export const printItinerary = ({ trip, activities, checklist }: Params): void =>
 
   const activitiesHtml = confirmed.length
     ? confirmed
-        .map(
-          (a) => `
+        .map((a) => {
+          const address =
+            typeof a.metadata?.address === 'string' ? (a.metadata.address as string) : '';
+          return `
       <article class="card">
         <header>
-          <span class="kind">${esc(a.activity_type ?? 'actividad')}</span>
+          <span class="kind">${esc(a.type ?? 'actividad')}</span>
           <h3>${esc(a.title ?? 'Sin título')}</h3>
           <p class="date">${fmtDate(a.start_datetime ?? null)}</p>
         </header>
-        ${a.location ? `<p class="meta">📍 ${esc(a.location)}</p>` : ''}
+        ${address ? `<p class="meta">📍 ${esc(address)}</p>` : ''}
         ${a.price != null ? `<p class="meta">💶 ${nf0.format(a.price)} €</p>` : ''}
         ${a.notes ? `<p class="notes">${esc(a.notes)}</p>` : ''}
-      </article>`,
-        )
+      </article>`;
+        })
         .join('')
     : '<p class="empty">Sin actividades confirmadas.</p>';
 
