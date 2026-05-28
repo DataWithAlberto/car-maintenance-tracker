@@ -7,6 +7,7 @@ import { SurpriseAudioInput } from './SurpriseAudioInput';
 import { SurpriseCoverInput } from './SurpriseCoverInput';
 import { SurpriseQRCode } from './SurpriseQRCode';
 import { SurpriseHintsEditor } from './SurpriseHintsEditor';
+import { SurpriseHintsScheduler } from './SurpriseHintsScheduler';
 import { SurpriseFunFactsEditor } from './SurpriseFunFactsEditor';
 import { SurpriseBoardingPass } from './SurpriseBoardingPass';
 
@@ -226,6 +227,12 @@ export const TripSurpriseEditor = ({
           <SurpriseHintsEditor
             value={draft.hints ?? []}
             onChange={(hints) => setDraft({ ...draft, hints })}
+          />
+
+          <SurpriseHintsScheduler
+            hints={draft.hints ?? []}
+            revealDate={draft.reveal_date}
+            publicUrl={publicUrl}
           />
 
           <SurpriseFunFactsEditor
