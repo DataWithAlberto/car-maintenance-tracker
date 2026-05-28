@@ -1,5 +1,6 @@
 -- Un viaje sorpresa debe ser accesible por share_token aunque visibility = 'private'.
 -- El creador no debería tener que activar dos toggles (Privacidad + Sorpresa).
+-- También devuelve cover_url en payload bloqueado para mostrar imagen de fondo.
 CREATE OR REPLACE FUNCTION public.get_public_trip(p_token TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -30,7 +31,8 @@ BEGIN
       'locked',          true,
       'reveal_date',     v_trip.surprise_config->'reveal_date',
       'animation',       COALESCE(v_trip.surprise_config->>'animation', 'gift'),
-      'message_preview', LEFT(COALESCE(v_trip.surprise_config->>'message', ''), 40)
+      'message_preview', LEFT(COALESCE(v_trip.surprise_config->>'message', ''), 40),
+      'cover_url',       v_trip.surprise_config->>'cover_url'
     );
   END IF;
 

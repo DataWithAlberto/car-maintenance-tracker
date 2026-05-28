@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Check } from 'lucide-react';
+import { Plus, Trash2, Check, Sparkles } from 'lucide-react';
 import type { TripChecklistItem } from '../../types';
 
 interface Props {
@@ -17,9 +17,61 @@ const SUGGESTIONS = [
   'Cargar líquidos (parabrisas, refrigerante)',
 ];
 
+interface Template {
+  key: string;
+  label: string;
+  emoji: string;
+  items: string[];
+}
+
+const TEMPLATES: Template[] = [
+  {
+    key: 'cultural',
+    label: 'Escapada cultural',
+    emoji: '🏛️',
+    items: [
+      'Reservar entradas a museos',
+      'Cargar mapa offline de la ciudad',
+      'Llevar calzado cómodo',
+      'Comprobar horario de visitas guiadas',
+      'Sacar efectivo para propinas',
+      'Llevar adaptador de cargador',
+    ],
+  },
+  {
+    key: 'carretera',
+    label: 'Viaje de carretera',
+    emoji: '🛣️',
+    items: [
+      'Revisar presión de neumáticos',
+      'Comprobar nivel de aceite y refrigerante',
+      'Cargar líquido del parabrisas',
+      'Llevar triángulos y chaleco',
+      'Cargar música y podcasts offline',
+      'Snacks y botellas de agua',
+      'Documentación + carnet',
+      'Tarjeta de la grúa / seguro',
+    ],
+  },
+  {
+    key: 'romantica',
+    label: 'Escapada romántica',
+    emoji: '💖',
+    items: [
+      'Reservar restaurante con vistas',
+      'Llevar ropa elegante para la cena',
+      'Cargar la cámara / móvil',
+      'Pequeño detalle sorpresa',
+      'Playlist compartida en el coche',
+      'Confirmar el check-in del hotel',
+    ],
+  },
+];
+
 export const TripChecklist = ({ items, onAdd, onToggle, onDelete }: Props) => {
   const [text, setText] = useState('');
   const [adding, setAdding] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   const submit = async (value: string) => {
     if (!value.trim()) return;
@@ -29,6 +81,16 @@ export const TripChecklist = ({ items, onAdd, onToggle, onDelete }: Props) => {
       setText('');
     } finally {
       setAdding(false);
+    }
+  };
+
+  const applyTemplate = async (tpl: Template) => {
+    setTemplatesOpen(false);
+    const existing = new Set(items.map((i) => i.text.toLowerCase().trim()));
+    for (const t of tpl.items) {
+      if (!existing.has(t.toLowerCase().trim())) {
+        await onAdd(t);
+      }
     }
   };
 
@@ -75,13 +137,93 @@ export const TripChecklist = ({ items, onAdd, onToggle, onDelete }: Props) => {
         />
       </div>
 
+      <div
+        className="flex items-center justify-between"
+        style={{ marginTop: 14, gap: 8, position: 'relative' }}
+      >
+        <span className="text-graphite" style={{ fontSize: 11 }}>
+          ¿Empezar desde una plantilla?
+        </span>
+        <button
+          type="button"
+          onClick={() => setTemplatesOpen((v) => !v)}
+          className="transition-colors hover:bg-fog"
+          style={{
+            background: 'var(--surface-card)',
+            border: '1px solid var(--color-silver-mist)',
+            borderRadius: 999,
+            padding: '5px 12px',
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'var(--color-graphite)',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+          }}
+        >
+          <Sparkles className="h-3 w-3" />
+          Plantillas
+        </button>
+        {templatesOpen && (
+          <div
+            role="menu"
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 6px)',
+              right: 0,
+              background: '#fff',
+              border: '1px solid var(--color-silver-mist)',
+              borderRadius: 14,
+              boxShadow: '0 12px 32px rgba(0,0,0,.12)',
+              padding: 6,
+              minWidth: 220,
+              zIndex: 20,
+            }}
+          >
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => applyTemplate(t)}
+                className="transition-colors hover:bg-fog"
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: 'var(--color-ink)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                <span style={{ fontSize: 18 }}>{t.emoji}</span>
+                <span>
+                  {t.label}
+                  <br />
+                  <span style={{ fontSize: 11, color: '#a1a1a6', fontWeight: 400 }}>
+                    + {t.items.length} tareas
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
           submit(text);
         }}
         className="flex items-center gap-2"
-        style={{ marginTop: 14 }}
+        style={{ marginTop: 10 }}
       >
         <input
           value={text}

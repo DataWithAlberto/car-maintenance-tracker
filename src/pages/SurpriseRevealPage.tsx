@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Gift, Sparkles, Loader2, Images } from 'lucide-react';
+import { Gift, Sparkles, Loader2, Images, Play, Pause } from 'lucide-react';
 import { tripsService } from '../services/trips.service';
 import { TripActivityCard } from '../components/trips/TripActivityCard';
+import { SurpriseConfetti } from '../components/trips/SurpriseConfetti';
+import { SurpriseCountdown } from '../components/trips/SurpriseCountdown';
+import { SurpriseReaction } from '../components/trips/SurpriseReaction';
 import type { PublicTripResponse, PublicTripPhoto, SurpriseAnimation } from '../types';
 
 export const SurpriseRevealPage = () => {
@@ -25,10 +28,19 @@ export const SurpriseRevealPage = () => {
       <CenterMessage icon={<Loader2 className="h-6 w-6 animate-spin" />} title="Cargando viaje…" />
     );
   if (data.locked) {
-    return <LockedScreen revealDate={data.reveal_date} messagePreview={data.message_preview} />;
+    return (
+      <LockedScreen
+        revealDate={data.reveal_date}
+        messagePreview={data.message_preview}
+        coverUrl={data.cover_url ?? null}
+      />
+    );
   }
 
   const animation: SurpriseAnimation = data.trip.surprise_config?.animation ?? 'gift';
+  const coverUrl = data.trip.surprise_config?.cover_url ?? null;
+  const audioUrl = data.trip.surprise_config?.audio_url ?? null;
+  const reactions = data.trip.surprise_config?.reactions ?? {};
 
   if (!opened) {
     if (animation === 'scratch') return <ScratchCard onOpen={() => setOpened(true)} />;
@@ -44,6 +56,7 @@ export const SurpriseRevealPage = () => {
         animation: 'reveal-fade .8s ease-out',
       }}
     >
+      <SurpriseConfetti trigger={opened} />
       <style>{`
         @keyframes reveal-fade {
           from { opacity: 0; transform: translateY(8px); }
@@ -53,39 +66,111 @@ export const SurpriseRevealPage = () => {
 
       <header
         style={{
-          padding: '64px 24px 40px',
+          position: 'relative',
+          padding: coverUrl ? '0' : '64px 24px 40px',
           textAlign: 'center',
-          background: 'radial-gradient(circle at 50% 0%, rgba(255,90,95,.12), transparent 60%)',
+          background: coverUrl
+            ? 'transparent'
+            : 'radial-gradient(circle at 50% 0%, rgba(255,90,95,.12), transparent 60%)',
+          overflow: 'hidden',
         }}
       >
-        <span
-          className="font-mono uppercase"
-          style={{ fontSize: 11, letterSpacing: '.22em', color: '#FF5A5F' }}
-        >
-          ✦ Sorpresa desvelada · {new Date().toLocaleDateString('es-ES')}
-        </span>
-        <h1
-          style={{
-            fontFamily: 'Inter, var(--font-sf-pro-display)',
-            fontWeight: 700,
-            fontSize: 'clamp(48px, 8vw, 96px)',
-            letterSpacing: '-2.4px',
-            lineHeight: 1,
-            margin: '16px 0 12px',
-            background: 'linear-gradient(135deg, #1d1d1f 0%, #FF5A5F 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          {data.trip.title ?? data.trip.end_location ?? 'Tu viaje'}
-        </h1>
-        <p
-          className="text-graphite"
-          style={{ fontSize: 18, fontWeight: 300, maxWidth: 560, margin: '0 auto' }}
-        >
-          {data.trip.notes ?? data.trip.end_location ?? ''}
-        </p>
+        {coverUrl && (
+          <div
+            style={{
+              position: 'relative',
+              height: 'min(60vh, 480px)',
+              background: `url(${coverUrl}) center/cover no-repeat`,
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 70%, rgba(255,255,255,1) 100%)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                padding: '24px 24px 40px',
+                color: '#fff',
+              }}
+            >
+              <span
+                className="font-mono uppercase"
+                style={{ fontSize: 11, letterSpacing: '.22em', opacity: 0.85 }}
+              >
+                ✦ Sorpresa desvelada · {new Date().toLocaleDateString('es-ES')}
+              </span>
+              <h1
+                style={{
+                  fontFamily: 'Inter, var(--font-sf-pro-display)',
+                  fontWeight: 700,
+                  fontSize: 'clamp(48px, 8vw, 96px)',
+                  letterSpacing: '-2.4px',
+                  lineHeight: 1,
+                  margin: '16px 0 12px',
+                  textShadow: '0 4px 24px rgba(0,0,0,.4)',
+                }}
+              >
+                {data.trip.title ?? data.trip.end_location ?? 'Tu viaje'}
+              </h1>
+              <p
+                style={{
+                  fontSize: 18,
+                  fontWeight: 300,
+                  maxWidth: 560,
+                  margin: '0 auto',
+                  opacity: 0.92,
+                  textShadow: '0 2px 12px rgba(0,0,0,.3)',
+                }}
+              >
+                {data.trip.notes ?? data.trip.end_location ?? ''}
+              </p>
+            </div>
+          </div>
+        )}
+        {!coverUrl && (
+          <>
+            <span
+              className="font-mono uppercase"
+              style={{ fontSize: 11, letterSpacing: '.22em', color: '#FF5A5F' }}
+            >
+              ✦ Sorpresa desvelada · {new Date().toLocaleDateString('es-ES')}
+            </span>
+            <h1
+              style={{
+                fontFamily: 'Inter, var(--font-sf-pro-display)',
+                fontWeight: 700,
+                fontSize: 'clamp(48px, 8vw, 96px)',
+                letterSpacing: '-2.4px',
+                lineHeight: 1,
+                margin: '16px 0 12px',
+                background: 'linear-gradient(135deg, #1d1d1f 0%, #FF5A5F 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              {data.trip.title ?? data.trip.end_location ?? 'Tu viaje'}
+            </h1>
+            <p
+              className="text-graphite"
+              style={{ fontSize: 18, fontWeight: 300, maxWidth: 560, margin: '0 auto' }}
+            >
+              {data.trip.notes ?? data.trip.end_location ?? ''}
+            </p>
+          </>
+        )}
       </header>
+
+      {audioUrl && <AudioMessage url={audioUrl} />}
 
       <section
         className="max-w-4xl mx-auto"
@@ -101,7 +186,80 @@ export const SurpriseRevealPage = () => {
       </section>
 
       <RevealAlbum photos={data.photos ?? []} />
+
+      {token && <SurpriseReaction token={token} initialCounts={reactions} />}
     </main>
+  );
+};
+
+/* ─── Reproductor del mensaje de voz ────────────────────────────────────── */
+const AudioMessage = ({ url }: { url: string }) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  const toggle = () => {
+    if (!audioRef.current) return;
+    if (playing) audioRef.current.pause();
+    else audioRef.current.play();
+  };
+
+  return (
+    <section
+      className="max-w-2xl mx-auto"
+      style={{ padding: '0 24px', marginTop: -8, marginBottom: 24 }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          background: '#fff',
+          border: '1px solid var(--color-silver-mist, #e5e5ea)',
+          borderRadius: 999,
+          padding: '10px 16px 10px 10px',
+          boxShadow: '0 8px 24px rgba(0,0,0,.08)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={playing ? 'Pausar' : 'Reproducir'}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 999,
+            border: 'none',
+            background: '#FF5A5F',
+            color: '#fff',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p
+            className="font-mono uppercase text-graphite"
+            style={{ fontSize: 10, letterSpacing: '.18em', margin: 0 }}
+          >
+            Mensaje de voz
+          </p>
+          <audio
+            ref={audioRef}
+            src={url}
+            preload="metadata"
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onEnded={() => setPlaying(false)}
+            controls
+            style={{ width: '100%', marginTop: 4 }}
+          />
+        </div>
+      </div>
+    </section>
   );
 };
 
@@ -685,24 +843,51 @@ const GiftBox = ({ onOpen }: { onOpen: () => void }) => (
 interface LockedScreenProps {
   revealDate: string;
   messagePreview: string;
+  coverUrl?: string | null;
 }
-const LockedScreen = ({ revealDate, messagePreview }: LockedScreenProps) => (
-  <CenterMessage
-    icon={<Sparkles className="h-8 w-8" color="#FF5A5F" />}
-    title="Aún no es el momento"
-    body={
-      <>
-        {messagePreview && (
-          <p style={{ fontStyle: 'italic', marginBottom: 8 }}>"{messagePreview}…"</p>
-        )}
-        Se desvela el{' '}
-        <b>
-          {new Date(revealDate).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' })}
-        </b>
-        .
-      </>
-    }
-  />
+const LockedScreen = ({ revealDate, messagePreview, coverUrl }: LockedScreenProps) => (
+  <main
+    className="min-h-screen flex flex-col items-center justify-center relative"
+    style={{
+      padding: 32,
+      textAlign: 'center',
+      background: coverUrl
+        ? `linear-gradient(180deg, rgba(255,255,255,.7) 0%, rgba(255,255,255,.95) 100%), url(${coverUrl}) center/cover no-repeat`
+        : 'radial-gradient(circle at 50% 30%, rgba(255,90,95,.10), #fff 70%)',
+    }}
+  >
+    <Sparkles className="h-10 w-10" color="#FF5A5F" />
+    <h1
+      style={{
+        fontFamily: 'Inter, var(--font-sf-pro-display)',
+        fontWeight: 700,
+        fontSize: 'clamp(36px, 6vw, 64px)',
+        letterSpacing: '-1.5px',
+        margin: '20px 0 12px',
+        background: 'linear-gradient(135deg, #1d1d1f 0%, #FF5A5F 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+      }}
+    >
+      Aún no es el momento.
+    </h1>
+    {messagePreview && (
+      <p
+        className="text-graphite"
+        style={{ fontStyle: 'italic', fontSize: 16, maxWidth: 480, marginBottom: 12 }}
+      >
+        "{messagePreview}…"
+      </p>
+    )}
+    <p className="text-graphite" style={{ fontSize: 13, maxWidth: 360 }}>
+      Se desvela el{' '}
+      <b>
+        {new Date(revealDate).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' })}
+      </b>
+      .
+    </p>
+    <SurpriseCountdown revealDate={revealDate} />
+  </main>
 );
 
 interface CenterMessageProps {

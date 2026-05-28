@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Sparkles, Calendar } from 'lucide-react';
+import { Sparkles, Calendar, Printer } from 'lucide-react';
+import { printItinerary } from '../../utils/printItinerary';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { TripTimeline } from './TripTimeline';
@@ -105,27 +106,51 @@ export const TripPlanningBoard = ({
             </p>
           </div>
 
-          <button
-            onClick={() => setShowConfirm(true)}
-            disabled={bookings.length === 0}
-            className="transition-opacity hover:opacity-85 disabled:opacity-40"
-            style={{
-              background: 'linear-gradient(135deg, #1d1d1f 0%, #2d2d30 100%)',
-              color: '#fff',
-              borderRadius: 999,
-              border: 'none',
-              padding: '12px 22px',
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: bookings.length === 0 ? 'not-allowed' : 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <Sparkles className="h-4 w-4" />
-            Confirmar y lanzar viaje
-          </button>
+          <div className="flex items-center" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => printItinerary({ trip, activities: bookings, checklist })}
+              disabled={bookings.length === 0 && checklist.length === 0}
+              className="transition-colors hover:bg-fog disabled:opacity-40"
+              style={{
+                background: 'var(--surface-card)',
+                color: 'var(--color-ink)',
+                borderRadius: 999,
+                border: '1px solid var(--color-silver-mist)',
+                padding: '11px 18px',
+                fontWeight: 500,
+                fontSize: 13,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Printer className="h-4 w-4" />
+              Imprimir · PDF
+            </button>
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={bookings.length === 0}
+              className="transition-opacity hover:opacity-85 disabled:opacity-40"
+              style={{
+                background: 'linear-gradient(135deg, #1d1d1f 0%, #2d2d30 100%)',
+                color: '#fff',
+                borderRadius: 999,
+                border: 'none',
+                padding: '12px 22px',
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: bookings.length === 0 ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <Sparkles className="h-4 w-4" />
+              Confirmar y lanzar viaje
+            </button>
+          </div>
         </div>
       </div>
 

@@ -120,6 +120,14 @@ export const tripsService = {
     return data as PublicTripResponse;
   },
 
+  async addSurpriseReaction(token: string, emoji: string): Promise<void> {
+    const { error } = await supabase.rpc('add_surprise_reaction', {
+      p_token: token,
+      p_emoji: emoji,
+    });
+    if (error) throw error;
+  },
+
   async delete(id: string): Promise<void> {
     const { error, count } = await supabase.from('trips').delete({ count: 'exact' }).eq('id', id);
     if (error) throw error;

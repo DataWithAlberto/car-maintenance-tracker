@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { Gift, Sparkles, Eye } from 'lucide-react';
+import { Gift, Sparkles, Eye, Send } from 'lucide-react';
 import type { SurpriseConfig, SurpriseAnimation } from '../../types';
+import { SurpriseAudioInput } from './SurpriseAudioInput';
+import { SurpriseCoverInput } from './SurpriseCoverInput';
+import { SurpriseQRCode } from './SurpriseQRCode';
 
 interface Props {
+  tripId: string;
   enabled: boolean;
   config?: SurpriseConfig | null;
   shareToken?: string | null;
@@ -15,12 +19,15 @@ const ANIMATIONS: { value: SurpriseAnimation; label: string; emoji: string }[] =
   { value: 'envelope', label: 'Sobre', emoji: '✉️' },
 ];
 
-export const TripSurpriseEditor = ({ enabled, config, shareToken, onChange }: Props) => {
+export const TripSurpriseEditor = ({ tripId, enabled, config, shareToken, onChange }: Props) => {
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<SurpriseConfig>({
     message: config?.message ?? '',
     reveal_date: config?.reveal_date ?? '',
     animation: config?.animation ?? 'gift',
+    cover_url: config?.cover_url ?? null,
+    audio_url: config?.audio_url ?? null,
+    reactions: config?.reactions ?? undefined,
   });
 
   const toggle = async () => {
@@ -40,6 +47,24 @@ export const TripSurpriseEditor = ({ enabled, config, shareToken, onChange }: Pr
       setSaving(false);
     }
   };
+
+  // Auto-guarda los uploads de audio e imagen sin que el usuario tenga que
+  // pulsar «Guardar» (los inputs ya muestran toast de éxito)
+  const patchAndSave = async (patch: Partial<SurpriseConfig>) => {
+    const next = { ...draft, ...patch };
+    setDraft(next);
+    if (enabled) {
+      await onChange(true, next);
+    }
+  };
+
+  const publicUrl =
+    shareToken && typeof window !== 'undefined'
+      ? `${window.location.origin}/viajes/surprise/${shareToken}`
+      : '';
+  const whatsappUrl = publicUrl
+    ? `https://wa.me/?text=${encodeURIComponent(`Tengo una sorpresa para ti ✦ ${publicUrl}`)}`
+    : '';
 
   return (
     <div
@@ -143,32 +168,75 @@ export const TripSurpriseEditor = ({ enabled, config, shareToken, onChange }: Pr
               ))}
             </select>
           </div>
-          <div className="flex items-center justify-end" style={{ gap: 8 }}>
-            {shareToken && (
-              <a
-                href={`/viajes/surprise/${shareToken}`}
-                target="_blank"
-                rel="noreferrer"
-                className="transition-opacity hover:opacity-75"
-                style={{
-                  background: 'transparent',
-                  color: '#FF5A5F',
-                  borderRadius: 999,
-                  border: '1px solid #FF5A5F',
-                  padding: '7px 14px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  textDecoration: 'none',
-                }}
-              >
-                <Eye className="h-3.5 w-3.5" />
-                Vista previa
-              </a>
-            )}
+
+          <SurpriseCoverInput
+            tripId={tripId}
+            value={draft.cover_url}
+            onChange={(url) => patchAndSave({ cover_url: url })}
+          />
+          <SurpriseAudioInput
+            tripId={tripId}
+            value={draft.audio_url}
+            onChange={(url) => patchAndSave({ audio_url: url })}
+          />
+
+          <div
+            className="flex items-center justify-between flex-wrap"
+            style={{ gap: 8, paddingTop: 4 }}
+          >
+            <div className="flex items-center" style={{ gap: 8, flexWrap: 'wrap' }}>
+              {shareToken && (
+                <a
+                  href={`/viajes/surprise/${shareToken}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-opacity hover:opacity-75"
+                  style={{
+                    background: 'transparent',
+                    color: '#FF5A5F',
+                    borderRadius: 999,
+                    border: '1px solid #FF5A5F',
+                    padding: '7px 14px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    textDecoration: 'none',
+                  }}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Vista previa
+                </a>
+              )}
+              {whatsappUrl && (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-opacity hover:opacity-75"
+                  style={{
+                    background: '#25D366',
+                    color: '#fff',
+                    borderRadius: 999,
+                    border: 'none',
+                    padding: '7px 14px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    textDecoration: 'none',
+                  }}
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  WhatsApp
+                </a>
+              )}
+              {publicUrl && <SurpriseQRCode url={publicUrl} />}
+            </div>
             <button
               onClick={saveDraft}
               type="button"

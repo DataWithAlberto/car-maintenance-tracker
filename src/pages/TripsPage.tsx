@@ -628,6 +628,7 @@ export const TripsPage = () => {
                   onChange={handlePublicChange}
                 />
                 <TripSurpriseEditor
+                  tripId={selectedTrip.id}
                   enabled={selectedTrip.is_surprise}
                   config={selectedTrip.surprise_config}
                   shareToken={selectedTrip.share_token}
@@ -797,6 +798,7 @@ export const TripsPage = () => {
                   onChange={handlePublicChange}
                 />
                 <TripSurpriseEditor
+                  tripId={selectedTrip.id}
                   enabled={selectedTrip.is_surprise}
                   config={selectedTrip.surprise_config}
                   shareToken={selectedTrip.share_token}

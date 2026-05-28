@@ -192,10 +192,15 @@ export interface Trip {
 export type TripVisibility = 'private' | 'public_link' | 'collaborative';
 export type SurpriseAnimation = 'gift' | 'scratch' | 'envelope';
 
+export type SurpriseReaction = '🥹' | '😍' | '🎉' | '😱';
+
 export interface SurpriseConfig {
   message?: string;
   reveal_date?: string;
   animation?: SurpriseAnimation;
+  cover_url?: string | null;
+  audio_url?: string | null;
+  reactions?: Partial<Record<SurpriseReaction, number>>;
 }
 
 export interface TripCollaborator {
@@ -241,6 +246,7 @@ export interface LockedSurprisePayload {
   reveal_date: string;
   animation: SurpriseAnimation;
   message_preview: string;
+  cover_url?: string | null;
 }
 export type PublicTripResponse = PublicTripPayload | LockedSurprisePayload;
 
