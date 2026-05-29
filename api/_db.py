@@ -25,15 +25,17 @@ def get_client() -> Client:
 # ── Cursor de Dropbox ──────────────────────────────────────────────────────
 
 def get_cursor() -> str | None:
+    """Lee el cursor de Dropbox guardado en Supabase. Robusto contra 'no rows'."""
     result = (
         get_client()
         .table("ingestor_config")
         .select("value")
         .eq("key", "dropbox_cursor")
-        .maybe_single()
+        .limit(1)
         .execute()
     )
-    return result.data["value"] if result.data else None
+    rows = result.data if result else None
+    return rows[0]["value"] if rows else None
 
 
 def save_cursor(cursor: str) -> None:
@@ -53,11 +55,12 @@ def find_or_create_viaje(dropbox_path: str, vehicle_id: str) -> tuple[str, bool]
         .table("viajes_telemetria")
         .select("id")
         .eq("dropbox_path", dropbox_path)
-        .maybe_single()
+        .limit(1)
         .execute()
     )
-    if existing.data:
-        return existing.data["id"], False
+    rows = existing.data if existing else None
+    if rows:
+        return rows[0]["id"], False
 
     nombre = dropbox_path.split("/")[-1].replace(".csv", "")
     result = (
