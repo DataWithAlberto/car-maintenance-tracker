@@ -39,6 +39,34 @@ export class ErrorBoundary extends Component<Props, State> {
           <p className="font-text text-graphite mt-2" style={{ fontSize: 15, lineHeight: 1.45 }}>
             Esta sección ha encontrado un error inesperado. Puedes reintentar o recargar la página.
           </p>
+          {this.state.error && (
+            <details style={{ marginTop: 12, textAlign: 'left', maxWidth: '100%' }}>
+              <summary
+                className="font-mono"
+                style={{ fontSize: 11, color: '#a1a1a6', cursor: 'pointer' }}
+              >
+                Detalles del error
+              </summary>
+              <pre
+                style={{
+                  marginTop: 8,
+                  padding: '10px 12px',
+                  background: '#f5f5f7',
+                  borderRadius: 8,
+                  fontSize: 11,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  color: '#b64400',
+                  maxHeight: 200,
+                  overflowY: 'auto',
+                }}
+              >
+                {this.state.error.message}
+                {'\n'}
+                {this.state.error.stack?.split('\n').slice(0, 6).join('\n')}
+              </pre>
+            </details>
+          )}
           <div className="flex gap-3 mt-6">
             <Button variant="secondary" onClick={() => this.setState({ error: null })}>
               Reintentar
