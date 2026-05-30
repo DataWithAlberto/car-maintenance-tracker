@@ -7,6 +7,7 @@ import type {
   MaintenanceInsight,
   Expense,
 } from '../types';
+import type { AIConfig } from '../store/apiKeyStore';
 import { EXPENSE_CATEGORIES } from '../utils/constants';
 
 const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
@@ -124,6 +125,110 @@ async function callGemini({
   }
 
   throw new Error(lastMessage);
+}
+
+/* ─── Ollama local ────────────────────────────────────────────────────────
+ * Ollama acepta una API estilo chat con `format: "json"` que fuerza al
+ * modelo a devolver JSON parseable.
+ * Requisitos en el host: `OLLAMA_ORIGINS="*"` (o el origen concreto) para
+ * permitir CORS desde el navegador. La URL típica es http://localhost:11434. */
+interface OllamaCall {
+  url: string;
+  model: string;
+  system: string;
+  userText: string;
+  maxTokens: number;
+  signal?: AbortSignal;
+}
+
+async function callOllama({
+  url,
+  model,
+  system,
+  userText,
+  maxTokens,
+  signal,
+}: OllamaCall): Promise<string> {
+  const base = url.replace(/\/+$/, '');
+  let res: Response;
+  try {
+    res = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        stream: false,
+        format: 'json',
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: userText },
+        ],
+        options: { num_predict: maxTokens },
+      }),
+    });
+  } catch (err) {
+    throw new Error(
+      `No se pudo conectar a Ollama en ${base}. ¿Lo tienes corriendo y con OLLAMA_ORIGINS="*"? (${
+        err instanceof Error ? err.message : 'fetch failed'
+      })`,
+      { cause: err },
+    );
+  }
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    if (res.status === 404) {
+      throw new Error(`Ollama no encuentra el modelo "${model}". Ejecuta: ollama pull ${model}`);
+    }
+    throw new Error(`Ollama devolvió ${res.status}: ${errText || res.statusText}`);
+  }
+  const json = await res.json();
+  return json.message?.content ?? '';
+}
+
+/* Concatena las partes de Gemini en un string plano para Ollama. */
+const partsToText = (parts: unknown[]): string =>
+  parts
+    .map((p) => {
+      if (typeof p === 'string') return p;
+      if (p && typeof p === 'object' && 'text' in p) return String((p as { text: unknown }).text);
+      return '';
+    })
+    .filter(Boolean)
+    .join('\n');
+
+/* Router unificado: elige Gemini cloud u Ollama local según AIConfig. */
+async function callAI({
+  config,
+  system,
+  userParts,
+  maxTokens,
+  signal,
+}: {
+  config: AIConfig;
+  system: string;
+  userParts: unknown[];
+  maxTokens: number;
+  signal?: AbortSignal;
+}): Promise<string> {
+  if (config.provider === 'ollama') {
+    return callOllama({
+      url: config.ollamaUrl,
+      model: config.ollamaModel,
+      system,
+      userText: partsToText(userParts),
+      maxTokens,
+      signal,
+    });
+  }
+  return callGemini({
+    apiKey: config.geminiApiKey,
+    system,
+    userParts,
+    maxTokens,
+    signal,
+  });
 }
 
 export const aiService = {
@@ -249,16 +354,16 @@ ${expenseSummary.length ? JSON.stringify(expenseSummary, null, 2) : 'Sin gastos.
 
   /* Genera 3 curiosidades cortas y verificables sobre un destino. */
   async surpriseFunFacts({
-    apiKey,
+    config,
     destination,
     signal,
   }: {
-    apiKey: string;
+    config: AIConfig;
     destination: string;
     signal?: AbortSignal;
   }): Promise<string[]> {
-    const text = await callGemini({
-      apiKey,
+    const text = await callAI({
+      config,
       system:
         'Genera 3 curiosidades cortas, ciertas y poco conocidas sobre un destino turístico. Responde SOLO con JSON: {"facts": ["...", "...", "..."]}. Cada curiosidad debe ocupar como máximo 2 líneas (160 caracteres). Escribe en español.',
       userParts: [{ text: `Destino: ${destination}` }],
@@ -276,20 +381,20 @@ ${expenseSummary.length ? JSON.stringify(expenseSummary, null, 2) : 'Sin gastos.
 
   /* Sugiere actividades para un destino según fecha y duración. */
   async suggestTripActivities({
-    apiKey,
+    config,
     destination,
     startDate,
     days,
     signal,
   }: {
-    apiKey: string;
+    config: AIConfig;
     destination: string;
     startDate?: string | null;
     days?: number;
     signal?: AbortSignal;
   }): Promise<Array<{ title: string; type: string; notes: string }>> {
-    const text = await callGemini({
-      apiKey,
+    const text = await callAI({
+      config,
       system: `Sugiere actividades turísticas reales y bien valoradas para un destino.
 Responde SOLO con JSON válido:
 { "activities": [ { "title": "string", "type": "experience"|"museum"|"food"|"lodging", "notes": "explicación breve en 1-2 frases" } ] }
@@ -318,6 +423,45 @@ Responde SOLO con JSON válido:
         .slice(0, 6);
     } catch {
       throw new Error('La IA no devolvió actividades en el formato esperado');
+    }
+  },
+
+  /* Ping a Ollama: comprueba que el servidor responde y que el modelo existe. */
+  async checkOllama({
+    url,
+    model,
+    signal,
+  }: {
+    url: string;
+    model: string;
+    signal?: AbortSignal;
+  }): Promise<{ ok: true; tags: string[] } | { ok: false; reason: string }> {
+    const base = url.replace(/\/+$/, '');
+    try {
+      const res = await fetch(`${base}/api/tags`, { signal });
+      if (!res.ok) {
+        return { ok: false, reason: `Ollama respondió ${res.status}` };
+      }
+      const json = await res.json();
+      const tags = Array.isArray(json.models)
+        ? json.models.map((m: { name: string }) => m.name)
+        : [];
+      // Aceptamos tanto "llama3.1" como "llama3.1:latest"
+      const found = tags.some((t: string) => t === model || t.startsWith(`${model}:`));
+      if (!found && tags.length > 0) {
+        return {
+          ok: false,
+          reason: `Modelo "${model}" no instalado. Disponibles: ${tags.slice(0, 5).join(', ')}. Ejecuta: ollama pull ${model}`,
+        };
+      }
+      return { ok: true, tags };
+    } catch (err) {
+      return {
+        ok: false,
+        reason: `No se pudo conectar a ${base}. ¿Está Ollama corriendo con OLLAMA_ORIGINS="*"? (${
+          err instanceof Error ? err.message : 'fetch error'
+        })`,
+      };
     }
   },
 };

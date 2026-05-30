@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { Wand2, Trash2, Loader2, KeyRound } from 'lucide-react';
-import { useApiKeyStore } from '../../store/apiKeyStore';
+import {
+  useApiKeyStore,
+  selectAIConfig,
+  isAIReady,
+  aiReadinessMessage,
+} from '../../store/apiKeyStore';
 import { aiService } from '../../services/claude.service';
 import toast from 'react-hot-toast';
 
@@ -11,7 +16,9 @@ interface Props {
 }
 
 export const SurpriseFunFactsEditor = ({ destination, value, onChange }: Props) => {
-  const { geminiApiKey } = useApiKeyStore();
+  const config = useApiKeyStore(selectAIConfig);
+  const ready = isAIReady(config);
+  const notReadyMsg = aiReadinessMessage(config);
   const [loading, setLoading] = useState(false);
 
   const generate = async () => {
@@ -19,14 +26,14 @@ export const SurpriseFunFactsEditor = ({ destination, value, onChange }: Props) 
       toast.error('Define primero el destino del viaje');
       return;
     }
-    if (!geminiApiKey) {
-      toast.error('Configura tu API key de Gemini en Ajustes');
+    if (!ready) {
+      toast.error(notReadyMsg ?? 'Configura un proveedor de IA');
       return;
     }
     setLoading(true);
     try {
       const facts = await aiService.surpriseFunFacts({
-        apiKey: geminiApiKey,
+        config,
         destination,
       });
       if (facts.length === 0) {
@@ -104,13 +111,13 @@ export const SurpriseFunFactsEditor = ({ destination, value, onChange }: Props) 
         </div>
       </div>
 
-      {!geminiApiKey && (
+      {!ready && (
         <p
           className="flex items-center text-graphite"
           style={{ fontSize: 11, gap: 6, marginBottom: 8 }}
         >
           <KeyRound className="h-3 w-3" />
-          Añade tu API key de Gemini en Ajustes para activar esta función.
+          {notReadyMsg}
         </p>
       )}
 

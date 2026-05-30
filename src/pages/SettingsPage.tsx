@@ -41,7 +41,17 @@ export const SettingsPage = () => {
   const { updateVehicle, deleteVehicle } = useVehicle();
   const { logout, user } = useAuth();
   const { pushEnabled, setPushEnabled } = useSettingsStore();
-  const { geminiApiKey, setGeminiApiKey, clearGeminiApiKey } = useApiKeyStore();
+  const {
+    geminiApiKey,
+    setGeminiApiKey,
+    clearGeminiApiKey,
+    aiProvider,
+    setAIProvider,
+    ollamaUrl,
+    setOllamaUrl,
+    ollamaModel,
+    setOllamaModel,
+  } = useApiKeyStore();
   const { exporting, exportingTax, exportReport, exportTaxReport } =
     useVehicleExport(selectedVehicle);
   const { shareUrl, shareBusy, generateShare, disableShare, copyShare } =
@@ -50,6 +60,9 @@ export const SettingsPage = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [apiKeyDraft, setApiKeyDraft] = useState(geminiApiKey);
+  const [ollamaUrlDraft, setOllamaUrlDraft] = useState(ollamaUrl);
+  const [ollamaModelDraft, setOllamaModelDraft] = useState(ollamaModel);
+  const [testingOllama, setTestingOllama] = useState(false);
   const [nameDraft, setNameDraft] = useState(
     (user?.user_metadata?.full_name as string | undefined) ?? '',
   );
@@ -91,6 +104,30 @@ export const SettingsPage = () => {
     clearGeminiApiKey();
     setApiKeyDraft('');
     toast.success('API key eliminada');
+  };
+
+  const handleSaveOllama = () => {
+    setOllamaUrl(ollamaUrlDraft.trim() || 'http://localhost:11434');
+    setOllamaModel(ollamaModelDraft.trim() || 'llama3.1');
+    toast.success('Configuración de Ollama guardada');
+  };
+
+  const handleTestOllama = async () => {
+    setTestingOllama(true);
+    try {
+      const { aiService } = await import('../services/claude.service');
+      const res = await aiService.checkOllama({
+        url: ollamaUrlDraft.trim() || 'http://localhost:11434',
+        model: ollamaModelDraft.trim() || 'llama3.1',
+      });
+      if (res.ok) {
+        toast.success(`Ollama responde. Modelos: ${res.tags.slice(0, 3).join(', ') || '—'}`);
+      } else {
+        toast.error(res.reason);
+      }
+    } finally {
+      setTestingOllama(false);
+    }
   };
 
   if (!selectedVehicle) {
@@ -219,6 +256,141 @@ export const SettingsPage = () => {
         >
           Inteligencia artificial
         </h2>
+
+        {/* Selector de proveedor */}
+        <div className="mb-6">
+          <p className="font-text text-graphite mb-3" style={{ fontSize: 13, fontWeight: 500 }}>
+            Proveedor activo
+          </p>
+          <div
+            className="inline-flex"
+            style={{ gap: 0, padding: 4, background: 'var(--color-fog)', borderRadius: 999 }}
+          >
+            {(['gemini', 'ollama'] as const).map((p) => {
+              const active = aiProvider === p;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setAIProvider(p)}
+                  className="transition-colors"
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 999,
+                    border: 'none',
+                    background: active ? '#1d1d1f' : 'transparent',
+                    color: active ? '#fff' : '#707070',
+                    fontWeight: 500,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {p === 'gemini' ? '☁ Gemini cloud' : '🖥 Ollama local'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Bloque Ollama (se muestra siempre, configurable independientemente) */}
+        {aiProvider === 'ollama' && (
+          <div
+            className="flex items-start gap-4 mb-6 pb-6"
+            style={{ borderBottom: '1px solid var(--color-silver-mist)' }}
+          >
+            <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
+              <Sparkles className="h-5 w-5 text-graphite" strokeWidth={1.6} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className="font-display text-ink"
+                style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px' }}
+              >
+                Ollama local
+              </p>
+              <p
+                className="font-text text-graphite mt-2 mb-4 max-w-xl"
+                style={{ fontSize: 15, lineHeight: 1.45 }}
+              >
+                Corre el modelo en tu máquina. Instala{' '}
+                <a
+                  href="https://ollama.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-azure"
+                >
+                  ollama.com
+                </a>{' '}
+                y descarga un modelo:{' '}
+                <code
+                  style={{ background: 'var(--color-fog)', padding: '2px 6px', borderRadius: 4 }}
+                >
+                  ollama pull llama3.1
+                </code>
+                . Para que el navegador pueda llamarlo desde Vercel, arranca Ollama con{' '}
+                <code
+                  style={{ background: 'var(--color-fog)', padding: '2px 6px', borderRadius: 4 }}
+                >
+                  OLLAMA_ORIGINS="*"
+                </code>
+                .
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
+                <FloatingInput
+                  label="URL del servidor (http://localhost:11434)"
+                  value={ollamaUrlDraft}
+                  onChange={(e) => setOllamaUrlDraft(e.target.value)}
+                />
+                <FloatingInput
+                  label="Modelo (ej. llama3.1)"
+                  value={ollamaModelDraft}
+                  onChange={(e) => setOllamaModelDraft(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center gap-3 mt-4 flex-wrap">
+                <Button
+                  variant="accent"
+                  size="sm"
+                  onClick={handleSaveOllama}
+                  disabled={
+                    ollamaUrlDraft.trim() === ollamaUrl && ollamaModelDraft.trim() === ollamaModel
+                  }
+                  iconLeft={<Check className="h-4 w-4" strokeWidth={1.8} />}
+                >
+                  Guardar
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleTestOllama}
+                  disabled={testingOllama}
+                >
+                  {testingOllama ? 'Probando…' : 'Probar conexión'}
+                </Button>
+                {ollamaUrl && ollamaModel && (
+                  <span
+                    className="inline-flex items-center gap-1.5 font-text"
+                    style={{ fontSize: 13, color: '#2f6b34' }}
+                  >
+                    <Check className="h-3.5 w-3.5" strokeWidth={2} />
+                    {ollamaModel} @ {ollamaUrl.replace(/^https?:\/\//, '')}
+                  </span>
+                )}
+              </div>
+
+              <p
+                className="font-text text-graphite mt-3 max-w-xl"
+                style={{ fontSize: 12.5, lineHeight: 1.4 }}
+              >
+                Nota: las llamadas van directas del navegador a tu Ollama. La app deployada en HTTPS
+                puede llamar a http://localhost porque los navegadores permiten esa excepción.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-start gap-4">
           <div className="h-11 w-11 rounded-[12px] bg-fog flex items-center justify-center shrink-0">
             <Sparkles className="h-5 w-5 text-graphite" strokeWidth={1.6} />

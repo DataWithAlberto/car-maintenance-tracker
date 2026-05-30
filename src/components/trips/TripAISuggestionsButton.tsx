@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { Wand2, Loader2 } from 'lucide-react';
-import { useApiKeyStore } from '../../store/apiKeyStore';
+import {
+  useApiKeyStore,
+  selectAIConfig,
+  isAIReady,
+  aiReadinessMessage,
+} from '../../store/apiKeyStore';
 import { aiService } from '../../services/claude.service';
 import type { CreateTripActivityInput, TripActivityType } from '../../types';
 import toast from 'react-hot-toast';
@@ -20,7 +25,7 @@ const TYPE_MAP: Record<string, TripActivityType> = {
 };
 
 export const TripAISuggestionsButton = ({ destination, startDate, endDate, onAdd }: Props) => {
-  const { geminiApiKey } = useApiKeyStore();
+  const config = useApiKeyStore(selectAIConfig);
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -28,8 +33,8 @@ export const TripAISuggestionsButton = ({ destination, startDate, endDate, onAdd
       toast.error('Define primero el destino del viaje');
       return;
     }
-    if (!geminiApiKey) {
-      toast.error('Configura tu API key de Gemini en Ajustes');
+    if (!isAIReady(config)) {
+      toast.error(aiReadinessMessage(config) ?? 'Configura un proveedor de IA');
       return;
     }
     setLoading(true);
@@ -39,7 +44,7 @@ export const TripAISuggestionsButton = ({ destination, startDate, endDate, onAdd
           ? Math.max(1, Math.round((Date.parse(endDate) - Date.parse(startDate)) / 86_400_000))
           : 2;
       const suggestions = await aiService.suggestTripActivities({
-        apiKey: geminiApiKey,
+        config,
         destination,
         startDate,
         days,
