@@ -1,4 +1,9 @@
 import { decodeDtcBytes } from '../utils/dtcCodes';
+import { createTransport, type OBD2Transport } from './obd2';
+
+// Re-exportado para compatibilidad con consumidores existentes.
+export { getKnownBLEProfiles } from './obd2/profiles';
+export type { BLEProfile } from './obd2/profiles';
 
 export interface LiveData {
   rpm: number | null;
@@ -32,119 +37,53 @@ export interface DTC {
   raw: string;
 }
 
-// ─── Known ELM327 / STN BLE profiles ───────────────────────────────────────────
-// Listado en orden de prioridad: primero los perfiles "premium" (OBDLink),
-// después los genéricos. El método _connectDevice los prueba en secuencia.
-export interface BLEProfile {
-  /** Nombre legible para logs y depuración. */
-  name: string;
-  serviceUUID: string;
-  writeUUID: string;
-  notifyUUID: string;
-}
-
-const BLE_PROFILES: BLEProfile[] = [
-  {
-    // OBDLink MX+ / LX / CX (chipset STN2120 con módulo BLE Microchip RN4870/71).
-    // Servicio "Microchip Transparent UART" — el mismo que usan todas las
-    // herramientas oficiales de OBDLink Suite, OBDLink app y BlueDriver.
-    name: 'OBDLink (Microchip BLE)',
-    serviceUUID: '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-    writeUUID: '49535343-8841-43f4-a8d4-ecbe34729bb3',
-    notifyUUID: '49535343-1e4d-4bd9-ba61-23c647249616',
-  },
-  {
-    // Nordic UART Service (adaptadores BLE genéricos basados en nRF).
-    name: 'Nordic UART',
-    serviceUUID: '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
-    writeUUID: '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
-    notifyUUID: '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
-  },
-  {
-    // ELM327 chinos baratos basados en SPP-over-BLE (Vgate iCar Pro, Veepeak…).
-    name: 'ELM327 generic (FFF0)',
-    serviceUUID: '0000fff0-0000-1000-8000-00805f9b34fb',
-    writeUUID: '0000fff2-0000-1000-8000-00805f9b34fb',
-    notifyUUID: '0000fff1-0000-1000-8000-00805f9b34fb',
-  },
-  {
-    // BTLE-miniOBD / TI CC254x clones (servicio FFE0, único char read/write).
-    name: 'TI CC254x / miniOBD (FFE0)',
-    serviceUUID: '0000ffe0-0000-1000-8000-00805f9b34fb',
-    writeUUID: '0000ffe1-0000-1000-8000-00805f9b34fb',
-    notifyUUID: '0000ffe1-0000-1000-8000-00805f9b34fb',
-  },
-];
-
-/** Solo lectura, útil para UI/diagnóstico. */
-export const getKnownBLEProfiles = (): ReadonlyArray<BLEProfile> => BLE_PROFILES;
+import type { BLEProfile } from './obd2/profiles';
 
 class OBD2Service {
-  private device: BluetoothDevice | null = null;
-  private writeChar: BluetoothRemoteGATTCharacteristic | null = null;
-  private notifyChar: BluetoothRemoteGATTCharacteristic | null = null;
+  private transport: OBD2Transport = createTransport();
   private rxBuffer = '';
   private pendingResolve: ((v: string) => void) | null = null;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
-  private matchedProfile: BLEProfile | null = null;
+  private readonly decoder = new TextDecoder();
+  private readonly encoder = new TextEncoder();
+
+  constructor() {
+    // El transporte solo entrega bytes crudos; el buffering hasta el prompt
+    // '>' del ELM327 y la resolución de comandos viven aquí (nivel protocolo).
+    this.transport.onData((chunk) => this.onChunk(chunk));
+    this.transport.onDisconnect(() => this.stopPolling());
+  }
 
   /** Perfil BLE que casó en la última conexión exitosa (para diagnóstico). */
   get connectedProfile(): BLEProfile | null {
-    return this.matchedProfile;
+    return this.transport.matchedProfile;
   }
 
   /** ¿Es probable que el dispositivo conectado sea un OBDLink MX+/LX? */
   get isOBDLinkDevice(): boolean {
-    const name = this.device?.name?.toLowerCase() ?? '';
-    if (name.includes('obdlink')) return true;
-    return this.matchedProfile?.name.includes('OBDLink') ?? false;
+    return this.transport.isOBDLinkDevice;
   }
 
   get isSupported(): boolean {
-    return 'bluetooth' in navigator;
+    return this.transport.isSupported;
   }
 
   get isConnected(): boolean {
-    return this.device?.gatt?.connected === true;
+    return this.transport.isConnected;
   }
 
   get deviceName(): string {
-    return this.device?.name ?? 'Adaptador OBD-II';
+    return this.transport.deviceName;
   }
 
   // ─── Connection ──────────────────────────────────────────────────────────────
 
-  /** Shared GATT setup once we already have a BluetoothDevice handle. */
-  private async _connectDevice(device: BluetoothDevice): Promise<void> {
-    if (!device.gatt) throw new Error('Dispositivo no soporta GATT');
-
-    const server = await device.gatt.connect();
-
-    let connected = false;
-    this.matchedProfile = null;
-    for (const profile of BLE_PROFILES) {
-      try {
-        const service = await server.getPrimaryService(profile.serviceUUID);
-        this.writeChar = await service.getCharacteristic(profile.writeUUID);
-        this.notifyChar = await service.getCharacteristic(profile.notifyUUID);
-        this.matchedProfile = profile;
-        connected = true;
-        if (import.meta.env.DEV) {
-          console.info(`[obd2] Conectado usando perfil: ${profile.name}`);
-        }
-        break;
-      } catch {
-        // try next profile
-      }
-    }
-
-    if (!connected)
-      throw new Error('Adaptador no reconocido. Asegúrate de que es un ELM327/STN compatible.');
-
-    await this.notifyChar!.startNotifications();
-    this.notifyChar!.addEventListener('characteristicvaluechanged', this.onData);
-
-    // ── Inicialización ELM327/STN estándar ─────────────────────────────────
+  /**
+   * Inicialización ELM327/STN estándar. Se ejecuta tras conectar el transporte
+   * (que ya dejó el GATT enlazado y las notificaciones suscritas), de modo que
+   * es idéntica para Web Bluetooth y para BLE nativo.
+   */
+  private async initElm(): Promise<void> {
     await this.sendRaw('ATZ\r', 2000); // reset
     await this.sendRaw('ATE0\r'); // echo off
     await this.sendRaw('ATL0\r'); // linefeeds off
@@ -156,120 +95,55 @@ class OBD2Service {
     // El chip STN2120 acepta extensiones AT/ST para reducir la latencia y
     // forzar timing más agresivo que la ELM327 base. Las ignora cualquier
     // adaptador no-STN, así que es seguro enviarlas siempre.
-    if (this.matchedProfile?.name.includes('OBDLink')) {
+    if (this.transport.matchedProfile?.name.includes('OBDLink')) {
       await this.sendRaw('STBR115200\r', 500).catch(() => null); // baud rate alta
       await this.sendRaw('ATAT2\r', 500).catch(() => null); // adaptive timing agresivo
       await this.sendRaw('ATST32\r', 500).catch(() => null); // timeout 200ms (50ms*4)
     }
-
-    device.addEventListener('gattserverdisconnected', () => {
-      this.writeChar = null;
-      this.notifyChar = null;
-      this.stopPolling();
-    });
   }
 
-  /** First-time connection: shows the browser Bluetooth picker. */
+  /** First-time connection: shows the device picker / scans for the adapter. */
   async connect(): Promise<void> {
-    if (!this.isSupported) throw new Error('Web Bluetooth no está disponible en este navegador');
-
-    const optionalServices = BLE_PROFILES.map((p) => p.serviceUUID);
-    this.device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices,
-    });
-
-    await this._connectDevice(this.device);
+    if (!this.isSupported) throw new Error('Bluetooth no está disponible en este entorno');
+    await this.transport.connect();
+    await this.initElm();
   }
 
   /**
-   * Auto-reconnect: silently tries to reconnect to the last permitted device
-   * using navigator.bluetooth.getDevices() (Chrome 85+, no user gesture needed).
+   * Auto-reconnect: silently tries to reconnect to the last permitted device.
    * Returns the device name on success, null if not possible.
    */
   async tryAutoConnect(): Promise<string | null> {
-    if (!this.isSupported) return null;
-
-    // getDevices() is a newer API — cast to avoid missing type declaration
-    const bt = navigator.bluetooth as Bluetooth & {
-      getDevices?: () => Promise<BluetoothDevice[]>;
-    };
-    if (typeof bt.getDevices !== 'function') return null;
-
-    let devices: BluetoothDevice[];
-    try {
-      devices = await bt.getDevices();
-    } catch {
-      return null;
-    }
-
-    if (devices.length === 0) return null;
-
-    // Try devices in order (most recently used is first in Chrome)
-    for (const device of devices) {
-      try {
-        this.device = device;
-        await this._connectDevice(device);
-        return device.name ?? 'Adaptador OBD-II';
-      } catch {
-        this.device = null;
-        this.writeChar = null;
-        this.notifyChar = null;
-      }
-    }
-
-    return null;
+    const name = await this.transport.tryAutoConnect();
+    if (name) await this.initElm();
+    return name;
   }
 
   /** Returns names of previously permitted devices (for showing a reconnect hint). */
-  async getPreviousDevices(): Promise<string[]> {
-    if (!this.isSupported) return [];
-    const bt = navigator.bluetooth as Bluetooth & {
-      getDevices?: () => Promise<BluetoothDevice[]>;
-    };
-    if (typeof bt.getDevices !== 'function') return [];
-    try {
-      const devices = await bt.getDevices();
-      return devices.map((d) => d.name ?? 'Adaptador OBD-II');
-    } catch {
-      return [];
-    }
+  getPreviousDevices(): Promise<string[]> {
+    return this.transport.getPreviousDevices();
   }
 
   async disconnect(): Promise<void> {
     this.stopPolling();
-    if (this.notifyChar) {
-      try {
-        await this.notifyChar.stopNotifications();
-      } catch {
-        /* ignore */
-      }
-      this.notifyChar.removeEventListener('characteristicvaluechanged', this.onData);
-    }
-    this.device?.gatt?.disconnect();
-    this.device = null;
-    this.writeChar = null;
-    this.notifyChar = null;
+    await this.transport.disconnect();
   }
 
   // ─── Data handler ─────────────────────────────────────────────────────────────
 
-  private onData = (event: Event) => {
-    const value = (event.target as BluetoothRemoteGATTCharacteristic).value!;
-    const chunk = new TextDecoder().decode(value);
-    this.rxBuffer += chunk;
+  private onChunk(chunk: Uint8Array): void {
+    this.rxBuffer += this.decoder.decode(chunk);
     if (this.rxBuffer.includes('>')) {
       const response = this.rxBuffer.trim();
       this.rxBuffer = '';
       this.pendingResolve?.(response);
       this.pendingResolve = null;
     }
-  };
+  }
 
   // ─── Send / receive ──────────────────────────────────────────────────────────
 
   private async sendRaw(cmd: string, timeoutMs = 1500): Promise<string> {
-    if (!this.writeChar) throw new Error('No conectado');
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pendingResolve = null;
@@ -279,7 +153,7 @@ class OBD2Service {
         clearTimeout(timer);
         resolve(v);
       };
-      this.writeChar!.writeValue(new TextEncoder().encode(cmd)).catch(reject);
+      this.transport.write(this.encoder.encode(cmd)).catch(reject);
     });
   }
 
