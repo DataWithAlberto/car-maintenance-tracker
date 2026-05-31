@@ -1,23 +1,22 @@
-import { useState, useId } from 'react';
+import { useState, useId, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { loginSchema } from '../utils/validators';
 import toast from 'react-hot-toast';
 
-const GRADIENT_INDIGO =
-  'linear-gradient(184deg, rgb(29,29,31) 18%, rgb(168,211,251) 45%, rgb(0,18,249) 78%, rgb(37,53,224) 98%)';
+const BACKGROUND_IMAGES = [
+  'mpu07nqe-IMG_1786.jpeg',
+  'mpu0bjhx-IMG_1783.jpeg',
+  'mpu0bji5-IMG_1407.jpeg',
+  'mpu0bjid-FullSizeRender.jpeg',
+  'mpu0bjih-IMG_1356.jpeg',
+];
 
-function Mark({ size = 18, color = '#ffffff' }: { size?: number; color?: string }) {
+function Mark({ size = 20, color = '#ffffff' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="10.25" stroke={color} strokeWidth="1.5" />
-      <circle cx="12" cy="12" r="2.4" fill={color} />
-      <path
-        d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
+      <rect x="3" y="3" width="18" height="18" rx="4" stroke={color} strokeWidth="1.5" />
+      <circle cx="12" cy="12" r="3" fill={color} />
     </svg>
   );
 }
@@ -29,6 +28,16 @@ export const LoginPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Carousel State
+  const [imageIndex, setImageIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setImageIndex((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
+    }, 15000); // 15 seconds duration per image
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,187 +62,92 @@ export const LoginPage = () => {
     }
   };
 
-  const inputBase: React.CSSProperties = {
-    width: '100%',
-    background: 'var(--color-snow)',
-    border: '1px solid var(--color-silver-mist)',
-    borderRadius: 12,
-    padding: '14px 16px',
-    fontSize: 17,
-    fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif',
-    color: 'var(--color-ink)',
-    outline: 'none',
-    boxSizing: 'border-box',
-  };
-
-  const labelBase: React.CSSProperties = {
-    display: 'block',
-    fontSize: 12,
-    fontWeight: 600,
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase',
-    color: 'var(--color-ink)',
-    marginBottom: 8,
-    fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif',
-  };
-
   return (
-    <div
-      data-theme="light"
-      className="min-h-screen relative overflow-hidden"
-      style={{
-        background: GRADIENT_INDIGO,
-        fontFamily: 'SF Pro Text, ui-sans-serif, system-ui, -apple-system, sans-serif',
-      }}
-    >
-      {/* ── Top nav ── */}
-      <nav
-        className="absolute inset-x-0 top-0 z-10 flex items-center justify-between"
-        style={{
-          height: 44,
-          padding: '0 40px',
-          background: 'rgba(0,0,0,.18)',
-          backdropFilter: 'saturate(180%) blur(16px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(16px)',
-          borderBottom: '1px solid rgba(255,255,255,.08)',
-        }}
-      >
-        <div className="flex items-center gap-2.5">
-          <Mark size={18} />
-          <span
-            style={{
-              font: '600 13px/1 inherit',
-              color: 'rgba(255,255,255,.92)',
-              letterSpacing: '-0.06px',
-            }}
-          >
-            FocusHub
-          </span>
-        </div>
-        <div />
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.6)' }}>ES</span>
-      </nav>
+    <div className="relative w-screen h-screen bg-black font-sans text-white overflow-hidden selection:bg-white/30 selection:text-white">
+      <style>{`
+        .film-grain {
+          position: absolute; inset: 0; pointer-events: none; z-index: 10;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.06'/%3E%3C/svg%3E");
+        }
+        .ken-burns {
+          animation: kenBurns 40s ease-in-out infinite alternate;
+          will-change: transform;
+        }
+        @keyframes kenBurns {
+          0% { transform: scale(1.05) translate(0, 0); }
+          100% { transform: scale(1.15) translate(-1.5%, -1%); }
+        }
+        .glass-panel {
+          background: rgba(10, 10, 12, 0.45);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        .input-glass {
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #fff;
+          transition: all 0.2s ease;
+        }
+        .input-glass:focus {
+          background: rgba(0, 0, 0, 0.5);
+          border-color: rgba(255, 255, 255, 0.5);
+          outline: none;
+        }
+        .input-glass::placeholder { color: rgba(255, 255, 255, 0.3); }
+      `}</style>
 
-      {/* ── Mobile / tablet stacked layout ── */}
-      <div className="lg:hidden flex flex-col items-center justify-center min-h-screen px-6 pt-24 pb-16 gap-10">
-        <div className="text-center">
-          <h1
-            style={{
-              fontSize: 56,
-              fontWeight: 700,
-              lineHeight: 1.02,
-              letterSpacing: '-0.9px',
-              color: '#ffffff',
-              margin: '0 0 12px',
-            }}
-          >
-            Toma el
-            <br />
-            volante.
-          </h1>
-          <p
-            style={{
-              fontSize: 18,
-              fontWeight: 400,
-              color: 'rgba(255,255,255,.82)',
-              lineHeight: 1.4,
-            }}
-          >
-            Control total sobre tu vehículo.
-          </p>
-        </div>
-        <AuthCard
-          form={form}
-          setForm={setForm}
-          errors={errors}
-          loading={loading}
-          showPassword={showPassword}
-          setShowPassword={setShowPassword}
-          handleSubmit={handleSubmit}
-          inputBase={inputBase}
-          labelBase={labelBase}
-          style={{ width: '100%', maxWidth: 420, padding: 24 }}
-        />
+      {/* ── Background Image Carousel ── */}
+      <div className="absolute inset-0 z-0 bg-black">
+        {BACKGROUND_IMAGES.map((img, idx) => (
+          <img
+            key={img}
+            src={`/${img}`} /* Ajusta esta ruta según la carpeta pública de tus assets (ej. /images/...) */
+            alt="Vehicle Background"
+            className={`absolute inset-0 w-full h-full object-cover ken-burns transition-opacity duration-[3000ms] ease-in-out ${idx === imageIndex ? 'opacity-90' : 'opacity-0'}`}
+            style={
+              {
+                filter: 'contrast(1.15) saturate(1.1) brightness(0.85)',
+                imageRendering: 'high-quality',
+              } as unknown as React.CSSProperties
+            }
+          />
+        ))}
+        <div className="film-grain" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,transparent_0%,rgba(0,0,0,0.8)_100%)]" />
       </div>
 
-      {/* ── Desktop layout (grid responsivo) ── */}
-      <div
-        className="hidden lg:grid min-h-screen items-center"
-        style={{
-          gridTemplateColumns: '1fr minmax(360px, 420px)',
-          columnGap: 64,
-          padding: '88px 80px 80px',
-        }}
-      >
-        {/* Left column */}
-        <div style={{ maxWidth: 620 }}>
-          <span
-            style={{
-              display: 'block',
-              fontSize: 14,
-              fontWeight: 600,
-              letterSpacing: '.12em',
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,.7)',
-              marginBottom: 20,
-            }}
-          >
-            FocusHub · 2026
-          </span>
-          <h1
-            style={{
-              fontSize: 'clamp(64px, 7vw, 96px)',
-              fontWeight: 700,
-              lineHeight: 1.02,
-              letterSpacing: '-2.11px',
-              color: '#ffffff',
-              margin: '0 0 20px',
-            }}
-          >
-            Toma el
-            <br />
-            volante.
-          </h1>
-          <p
-            style={{
-              fontSize: 22,
-              fontWeight: 300,
-              lineHeight: 1.4,
-              letterSpacing: '-0.2px',
-              color: 'rgba(255,255,255,.82)',
-              maxWidth: 480,
-              margin: 0,
-            }}
-          >
-            Control total sobre el mantenimiento, gastos y documentación de tu vehículo — desde una
-            sola interfaz.
-          </p>
-        </div>
+      {/* ── Main Layout - Vignette (Left Focus) ── */}
+      <div className="absolute inset-0 z-20 flex items-center p-8 lg:p-24">
+        <div className="w-full max-w-[400px]">
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <Mark size={32} />
+            </div>
+            <h1 className="text-5xl font-light tracking-tighter leading-none text-white drop-shadow-2xl mb-2">
+              Toma el
+              <br />
+              <span className="font-medium text-white/90">volante.</span>
+            </h1>
+          </div>
 
-        {/* Auth card */}
-        <div className="flex justify-end">
-          <AuthCard
-            form={form}
-            setForm={setForm}
-            errors={errors}
-            loading={loading}
-            showPassword={showPassword}
-            setShowPassword={setShowPassword}
-            handleSubmit={handleSubmit}
-            inputBase={inputBase}
-            labelBase={labelBase}
-            style={{ width: '100%', maxWidth: 420, padding: 36 }}
-          />
+          <div className="p-8 glass-panel rounded-lg border-l-2 border-l-white/50 border-t-0 border-r-0 border-b-0 shadow-2xl">
+            <AuthCard
+              form={form}
+              setForm={setForm}
+              errors={errors}
+              loading={loading}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              handleSubmit={handleSubmit}
+            />
+          </div>
         </div>
+      </div>
 
-        {/* Bottom plate */}
-        <div
-          className="absolute inset-x-0 bottom-0 flex items-center justify-between"
-          style={{ height: 48, padding: '0 40px', fontSize: 12, color: 'rgba(255,255,255,.7)' }}
-        >
-          <span>Acabado mostrado · Indigo</span>
-          <span>Conexión cifrada · TLS 1.3</span>
-        </div>
+      <div className="absolute bottom-6 right-8 z-50 text-white/30 text-[10px] font-mono tracking-widest uppercase hidden md:block">
+        FocusHub // 4K Cinematic // Live
       </div>
     </div>
   );
@@ -248,9 +162,6 @@ interface AuthCardProps {
   showPassword: boolean;
   setShowPassword: React.Dispatch<React.SetStateAction<boolean>>;
   handleSubmit: (e: React.FormEvent) => void;
-  inputBase: React.CSSProperties;
-  labelBase: React.CSSProperties;
-  style?: React.CSSProperties;
 }
 
 function AuthCard({
@@ -261,72 +172,21 @@ function AuthCard({
   showPassword,
   setShowPassword,
   handleSubmit,
-  inputBase,
-  labelBase,
-  style,
 }: AuthCardProps) {
   const uid = useId();
   const emailId = `${uid}-email`;
   const passwordId = `${uid}-password`;
+
   return (
-    <div
-      style={{
-        background: 'rgba(255,255,255,.78)',
-        backdropFilter: 'saturate(180%) blur(28px)',
-        WebkitBackdropFilter: 'saturate(180%) blur(28px)',
-        borderRadius: 28,
-        border: '1px solid rgba(255,255,255,.5)',
-        color: 'var(--color-ink)',
-        ...style,
-      }}
-    >
-      {/* Eyebrow */}
-      <div className="flex items-center gap-2 mb-3.5">
-        <span
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 999,
-            background: '#1cb05c',
-            boxShadow: '0 0 6px rgba(28,176,92,.6)',
-            display: 'inline-block',
-            flexShrink: 0,
-          }}
-        />
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 500,
-            color: 'var(--color-slate)',
-            letterSpacing: '-0.04px',
-          }}
-        >
-          Acceso seguro
-        </span>
-      </div>
-
-      <h2
-        style={{
-          fontSize: 40,
-          fontWeight: 700,
-          lineHeight: 1.1,
-          letterSpacing: '-0.6px',
-          margin: '0 0 6px',
-        }}
-      >
-        Iniciar sesión
-      </h2>
-      <p
-        style={{ fontSize: 15, lineHeight: 1.43, color: 'var(--color-slate)', margin: '0 0 22px' }}
-      >
-        Introduce tus credenciales para acceder a tu garaje.
-      </p>
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="w-full">
+      <form className="flex flex-col gap-5 w-full" onSubmit={handleSubmit}>
         {/* Email */}
         <div>
-          <label htmlFor={emailId} style={labelBase}>
-            Email
+          <label
+            htmlFor={emailId}
+            className="block text-[10px] font-mono text-white/50 uppercase tracking-widest mb-2"
+          >
+            IDENTIFICACIÓN
           </label>
           <input
             id={emailId}
@@ -334,27 +194,14 @@ function AuthCard({
             autoComplete="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            placeholder="nombre@dominio.com"
+            placeholder="Piloto // Email"
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? `${emailId}-error` : undefined}
-            style={{
-              ...inputBase,
-              borderColor: errors.email ? '#d70015' : 'var(--color-silver-mist)',
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = 'var(--color-ink)';
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = errors.email
-                ? '#d70015'
-                : 'var(--color-silver-mist)';
-            }}
+            className="w-full input-glass rounded-sm px-4 py-3 text-sm font-light"
+            style={{ borderColor: errors.email ? '#ef4444' : undefined }}
           />
           {errors.email && (
-            <p
-              id={`${emailId}-error`}
-              style={{ fontSize: 12, color: '#d70015', marginTop: 6, marginLeft: 2 }}
-            >
+            <p id={`${emailId}-error`} className="text-xs text-[#ef4444] mt-2 font-medium">
               {errors.email}
             </p>
           )}
@@ -362,10 +209,13 @@ function AuthCard({
 
         {/* Password */}
         <div>
-          <label htmlFor={passwordId} style={labelBase}>
-            Contraseña
+          <label
+            htmlFor={passwordId}
+            className="block text-[10px] font-mono text-white/50 uppercase tracking-widest mb-2 flex justify-between"
+          >
+            <span>CREDENCIAL</span>
           </label>
-          <div style={{ position: 'relative' }}>
+          <div className="relative">
             <input
               id={passwordId}
               type={showPassword ? 'text' : 'password'}
@@ -375,18 +225,11 @@ function AuthCard({
               placeholder="••••••••"
               aria-invalid={!!errors.password}
               aria-describedby={errors.password ? `${passwordId}-error` : undefined}
+              className="w-full input-glass rounded-sm px-4 py-3 text-sm font-mono tracking-widest"
               style={{
-                ...inputBase,
-                paddingRight: 90,
-                borderColor: errors.password ? '#d70015' : 'var(--color-silver-mist)',
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-ink)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = errors.password
-                  ? '#d70015'
-                  : 'var(--color-silver-mist)';
+                borderColor: errors.password ? '#ef4444' : undefined,
+                paddingRight: '80px',
+                letterSpacing: showPassword ? 'normal' : '0.15em',
               }}
             />
             <button
@@ -394,86 +237,41 @@ function AuthCard({
               onClick={() => setShowPassword((s) => !s)}
               aria-controls={passwordId}
               aria-pressed={showPassword}
-              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              style={{
-                position: 'absolute',
-                right: 8,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'transparent',
-                border: 0,
-                color: '#0066cc',
-                fontSize: 13,
-                cursor: 'pointer',
-                padding: '8px 10px',
-                fontFamily: 'inherit',
-              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-[11px] font-mono uppercase tracking-wide text-white/50 hover:text-white transition-colors"
             >
               {showPassword ? 'Ocultar' : 'Mostrar'}
             </button>
           </div>
           {errors.password && (
-            <p
-              id={`${passwordId}-error`}
-              style={{ fontSize: 12, color: '#d70015', marginTop: 6, marginLeft: 2 }}
-            >
+            <p id={`${passwordId}-error`} className="text-xs text-[#ef4444] mt-2 font-medium">
               {errors.password}
             </p>
           )}
         </div>
 
-        {/* Primary CTA — dark pill (gradient backdrop rule) */}
+        {/* Primary CTA */}
         <button
           type="submit"
           disabled={loading}
-          style={{
-            marginTop: 14,
-            width: '100%',
-            padding: '14px 22px',
-            fontSize: 17,
-            fontWeight: 400,
-            fontFamily: 'inherit',
-            background: loading ? '#333' : '#000000',
-            color: '#ffffff',
-            border: 0,
-            borderRadius: 999,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.6 : 1,
-            transition: 'opacity 0.1s ease',
-          }}
+          className="w-full py-3.5 mt-2 bg-white hover:bg-gray-200 text-black font-medium text-sm transition-colors rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Verificando...' : 'Entrar'}
+          {loading ? 'VERIFICANDO...' : 'INICIAR SISTEMA'}
         </button>
 
         {/* Footer links */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: 10,
-          }}
-        >
+        <div className="mt-8 pt-6 border-t border-white/10 flex justify-between items-center text-xs font-light text-white/40">
           <button
             type="button"
             onClick={() => toast('Contacta con soporte para recuperar tu acceso.')}
-            style={{
-              fontSize: 14,
-              color: '#0066cc',
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
+            className="hover:text-white transition-colors"
           >
-            Recuperar acceso
+            Soporte técnico
           </button>
           <Link
             to="/register"
-            style={{ fontSize: 14, color: '#0066cc', textDecoration: 'none', fontWeight: 500 }}
+            className="hover:text-white transition-colors uppercase tracking-wider text-[10px] font-mono"
           >
-            Crear cuenta →
+            Crear ID ↗
           </Link>
         </div>
       </form>
