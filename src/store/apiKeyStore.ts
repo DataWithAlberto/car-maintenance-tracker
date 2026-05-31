@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 
 export type AIProvider = 'gemini' | 'ollama';
 
@@ -53,6 +54,12 @@ export const selectAIConfig = (state: ApiKeyState): AIConfig => ({
   ollamaUrl: state.ollamaUrl,
   ollamaModel: state.ollamaModel,
 });
+
+/** Hook reactivo a la config de IA.
+ * Usa useShallow para evitar el bucle infinito de renders: el selector
+ * crea un objeto nuevo en cada llamada y zustand v5 compara con Object.is,
+ * así que sin comparación shallow re-renderizaría sin parar. */
+export const useAIConfig = (): AIConfig => useApiKeyStore(useShallow(selectAIConfig));
 
 /** Comprueba si el provider activo está listo para usarse. */
 export const isAIReady = (cfg: AIConfig): boolean => {

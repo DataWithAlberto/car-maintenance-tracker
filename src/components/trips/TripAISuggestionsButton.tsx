@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { Wand2, Loader2 } from 'lucide-react';
-import {
-  useApiKeyStore,
-  selectAIConfig,
-  isAIReady,
-  aiReadinessMessage,
-} from '../../store/apiKeyStore';
+import { useAIConfig, isAIReady, aiReadinessMessage } from '../../store/apiKeyStore';
 import { aiService } from '../../services/claude.service';
 import type { CreateTripActivityInput, TripActivityType } from '../../types';
 import toast from 'react-hot-toast';
@@ -25,7 +20,7 @@ const TYPE_MAP: Record<string, TripActivityType> = {
 };
 
 export const TripAISuggestionsButton = ({ destination, startDate, endDate, onAdd }: Props) => {
-  const config = useApiKeyStore(selectAIConfig);
+  const config = useAIConfig();
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {

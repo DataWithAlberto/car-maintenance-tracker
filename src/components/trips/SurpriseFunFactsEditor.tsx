@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { Wand2, Trash2, Loader2, KeyRound } from 'lucide-react';
-import {
-  useApiKeyStore,
-  selectAIConfig,
-  isAIReady,
-  aiReadinessMessage,
-} from '../../store/apiKeyStore';
+import { useAIConfig, isAIReady, aiReadinessMessage } from '../../store/apiKeyStore';
 import { aiService } from '../../services/claude.service';
 import toast from 'react-hot-toast';
 
@@ -16,7 +11,7 @@ interface Props {
 }
 
 export const SurpriseFunFactsEditor = ({ destination, value, onChange }: Props) => {
-  const config = useApiKeyStore(selectAIConfig);
+  const config = useAIConfig();
   const ready = isAIReady(config);
   const notReadyMsg = aiReadinessMessage(config);
   const [loading, setLoading] = useState(false);
