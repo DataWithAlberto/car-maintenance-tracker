@@ -1,6 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Trip, TripActivity, TripChecklistItem } from '../types';
+import { printHtml } from './printHtml';
 
 const esc = (s: string) =>
   s.replace(
@@ -22,9 +23,6 @@ interface Params {
 /* Abre una ventana nueva con el itinerario en formato imprimible y dispara
  * el diálogo de impresión (que también permite "Guardar como PDF"). */
 export const printItinerary = ({ trip, activities, checklist }: Params): void => {
-  const win = window.open('', '_blank', 'width=900,height=1200');
-  if (!win) return;
-
   const title = trip.title || trip.end_location || 'Viaje';
   const subtitle = `${trip.start_location ?? ''} → ${trip.end_location ?? ''}`;
 
@@ -59,7 +57,7 @@ export const printItinerary = ({ trip, activities, checklist }: Params): void =>
         .join('')}</ul>`
     : '<p class="empty">Sin preparativos.</p>';
 
-  win.document.write(`<!doctype html>
+  const html = `<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -113,6 +111,6 @@ export const printItinerary = ({ trip, activities, checklist }: Params): void =>
   <footer>Generado por FocusHub · car-maintenance-tracker</footer>
   <script>setTimeout(() => window.print(), 400);</script>
 </body>
-</html>`);
-  win.document.close();
+</html>`;
+  void printHtml(html, `Itinerario · ${title}`);
 };

@@ -6,6 +6,7 @@ import type {
   OBD2Reading,
   OBD2Anomaly,
 } from '../types';
+import { printHtml } from '../utils/printHtml';
 
 const esc = (s: unknown): string =>
   String(s ?? '').replace(
@@ -156,7 +157,7 @@ export const exportService = {
 </body>
 </html>`;
 
-    openPrintWindow(html);
+    void printHtml(html, 'Informe');
   },
 
   exportTaxReport(
@@ -243,7 +244,7 @@ export const exportService = {
 </body>
 </html>`;
 
-    openPrintWindow(html);
+    void printHtml(html, 'Informe');
   },
 
   exportDetailedReport(vehicle: Vehicle, expenses: Expense[], records: MaintenanceRecord[]): void {
@@ -381,7 +382,7 @@ export const exportService = {
 </body>
 </html>`;
 
-    openPrintWindow(html);
+    void printHtml(html, 'Informe');
   },
   exportOBD2Report(vehicle: Vehicle, readings: OBD2Reading[], anomalies: OBD2Anomaly[]): void {
     const generatedAt = new Date().toLocaleString('es-ES');
@@ -629,13 +630,6 @@ export const exportService = {
 </body>
 </html>`;
 
-    openPrintWindow(html);
+    void printHtml(html, 'Informe OBD-II');
   },
 };
-
-function openPrintWindow(html: string): void {
-  const win = window.open('', '_blank');
-  if (!win) throw new Error('No se pudo abrir la ventana de impresión');
-  win.document.write(html);
-  win.document.close();
-}
