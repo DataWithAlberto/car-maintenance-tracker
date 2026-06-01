@@ -9,6 +9,7 @@ import { SurpriseQRCode } from './SurpriseQRCode';
 import { SurpriseHintsEditor } from './SurpriseHintsEditor';
 import { SurpriseHintsScheduler } from './SurpriseHintsScheduler';
 import { SurpriseRouteStopsEditor } from './SurpriseRouteStopsEditor';
+import { SurpriseMusicInput } from './SurpriseMusicInput';
 import { SurpriseFunFactsEditor } from './SurpriseFunFactsEditor';
 import { SurpriseBoardingPass } from './SurpriseBoardingPass';
 
@@ -51,6 +52,7 @@ export const TripSurpriseEditor = ({
     hints: config?.hints ?? [],
     fun_facts: config?.fun_facts ?? [],
     route_stops: config?.route_stops ?? [],
+    music_url: config?.music_url ?? null,
     opened_at: config?.opened_at ?? null,
   });
 
@@ -229,6 +231,11 @@ export const TripSurpriseEditor = ({
             tripId={tripId}
             value={draft.audio_url}
             onChange={(url) => patchAndSave({ audio_url: url })}
+          />
+          <SurpriseMusicInput
+            tripId={tripId}
+            value={draft.music_url}
+            onChange={(url) => patchAndSave({ music_url: url })}
           />
 
           <SurpriseHintsEditor

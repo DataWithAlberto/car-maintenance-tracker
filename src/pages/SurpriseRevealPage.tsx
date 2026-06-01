@@ -8,6 +8,7 @@ import { SurpriseCountdown } from '../components/trips/SurpriseCountdown';
 import { SurpriseReaction } from '../components/trips/SurpriseReaction';
 import { SurpriseTypewriter } from '../components/trips/SurpriseTypewriter';
 import { SurpriseFlyTo } from '../components/trips/SurpriseFlyTo';
+import { SurpriseMusicPlayer } from '../components/trips/SurpriseMusicPlayer';
 import type { PublicTripResponse, PublicTripPhoto, SurpriseAnimation } from '../types';
 
 export const SurpriseRevealPage = () => {
@@ -46,6 +47,7 @@ export const SurpriseRevealPage = () => {
   const reactions = data.trip.surprise_config?.reactions ?? {};
   const reason = data.trip.surprise_config?.reason ?? '';
   const funFacts = data.trip.surprise_config?.fun_facts ?? [];
+  const musicUrl = data.trip.surprise_config?.music_url ?? null;
 
   // Paradas del tour: usa las configuradas, o cae a origen → destino
   const configStops = data.trip.surprise_config?.route_stops ?? [];
@@ -79,6 +81,7 @@ export const SurpriseRevealPage = () => {
       }}
     >
       <SurpriseConfetti trigger={opened} />
+      {musicUrl && <SurpriseMusicPlayer url={musicUrl} />}
       <style>{`
         @keyframes reveal-fade {
           from { opacity: 0; transform: translateY(8px); }

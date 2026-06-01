@@ -34,6 +34,8 @@ export const SurpriseFlyTo = ({ stops }: Props) => {
   const [lineCoords, setLineCoords] = useState<[number, number][]>([]);
   const [activeLeg, setActiveLeg] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Posición y rumbo del avión mientras recorre un tramo (null = oculto)
+  const [plane, setPlane] = useState<{ lng: number; lat: number; bearing: number } | null>(null);
 
   // Geocodifica todas las paradas en orden
   useEffect(() => {
@@ -67,11 +69,14 @@ export const SurpriseFlyTo = ({ stops }: Props) => {
   // Anima la polilínea del tramo a→b durante `ms`, extendiendo lineCoords
   const animateLeg = (a: Stop, b: Stop, base: [number, number][], ms: number) =>
     new Promise<void>((resolve) => {
+      // Rumbo del avión (grados) hacia el destino del tramo
+      const bearing = (Math.atan2(b.lng - a.lng, b.lat - a.lat) * 180) / Math.PI;
       const start = performance.now();
       const tick = (t: number) => {
         const p = Math.min(1, (t - start) / ms);
         const head: [number, number] = [lerp(a.lng, b.lng, p), lerp(a.lat, b.lat, p)];
         setLineCoords([...base, head]);
+        setPlane({ lng: head[0], lat: head[1], bearing });
         if (p < 1) {
           rafRef.current = requestAnimationFrame(tick);
         } else {
@@ -89,6 +94,7 @@ export const SurpriseFlyTo = ({ stops }: Props) => {
     setReached(0);
     setLineCoords([]);
     setActiveLeg(null);
+    setPlane(null);
 
     // Vista mundo
     map.jumpTo({ center: [10, 25], zoom: 1.4, pitch: 0, bearing: 0 });
@@ -133,6 +139,7 @@ export const SurpriseFlyTo = ({ stops }: Props) => {
     // Encuadre final de toda la ruta
     await delay(500);
     setActiveLeg(null);
+    setPlane(null); // el avión "aterriza", se oculta
     if (coords.length > 1) {
       const lngs = coords.map((c) => c.lng);
       const lats = coords.map((c) => c.lat);
@@ -199,6 +206,23 @@ export const SurpriseFlyTo = ({ stops }: Props) => {
                 paint={{ 'line-color': '#FF5A5F', 'line-width': 3.5, 'line-opacity': 0.95 }}
               />
             </Source>
+          )}
+
+          {/* Avión recorriendo la estela */}
+          {plane && (
+            <Marker longitude={plane.lng} latitude={plane.lat} anchor="center">
+              <div
+                style={{
+                  fontSize: 26,
+                  lineHeight: 1,
+                  transform: `rotate(${plane.bearing - 45}deg)`,
+                  filter: 'drop-shadow(0 3px 6px rgba(0,0,0,.5))',
+                  willChange: 'transform',
+                }}
+              >
+                ✈️
+              </div>
+            </Marker>
           )}
 
           {coords.slice(0, reached).map((stop, i) => (

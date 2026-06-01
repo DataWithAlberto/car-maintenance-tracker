@@ -212,6 +212,8 @@ export interface SurpriseConfig {
   /** Paradas de la ruta (nombres en orden) para el tour animado del reveal.
    * Ej: ["Gijón", "Valladolid", "Segovia"]. Se geocodifican en runtime. */
   route_stops?: string[];
+  /** Música de fondo que suena al abrir el reveal (URL de Storage). */
+  music_url?: string | null;
 }
 
 export interface TripCollaborator {
