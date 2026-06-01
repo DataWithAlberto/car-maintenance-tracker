@@ -1,8 +1,9 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import MapGL, { Marker, Source, Layer } from 'react-map-gl/mapbox';
 import type { MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { MapPin } from 'lucide-react';
+import { tripsService } from '../../services/trips.service';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
@@ -15,19 +16,55 @@ interface Coord {
 interface Props {
   destination: Coord | null;
   origin?: Coord | null;
+  /** Nombres para geocodificar si no hay coordenadas guardadas. */
+  destinationName?: string | null;
+  originName?: string | null;
 }
 
 /* Zoom cinematográfico: arranca viendo el mundo y hace flyTo en picado hasta
  * la ciudad. Al aterrizar aparece el pin + el nombre, y si hay origen se
- * traza la ruta. El botón "Volar al destino" relanza la animación. */
-export const SurpriseFlyTo = ({ destination, origin }: Props) => {
+ * traza la ruta. El botón "Volar al destino" relanza la animación.
+ * Si el viaje no tiene coordenadas guardadas, geocodifica el nombre. */
+export const SurpriseFlyTo = ({ destination, origin, destinationName, originName }: Props) => {
   const mapRef = useRef<MapRef | null>(null);
   const [landed, setLanded] = useState(false);
   const [flying, setFlying] = useState(false);
 
+  // Coordenadas resueltas: usa las guardadas o geocodifica el nombre
+  const [destCoord, setDestCoord] = useState<Coord | null>(destination);
+  const [originCoord, setOriginCoord] = useState<Coord | null>(origin ?? null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (destination) {
+      setDestCoord(destination);
+    } else if (destinationName) {
+      tripsService.geocodePlace(destinationName).then((c) => {
+        if (!cancelled && c) setDestCoord({ ...c, label: destinationName });
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [destination, destinationName]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (origin) {
+      setOriginCoord(origin);
+    } else if (originName) {
+      tripsService.geocodePlace(originName).then((c) => {
+        if (!cancelled && c) setOriginCoord({ ...c, label: originName });
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [origin, originName]);
+
   const runFlight = useCallback(() => {
     const map = mapRef.current;
-    if (!map || !destination) return;
+    if (!map || !destCoord) return;
     setLanded(false);
     setFlying(true);
 
@@ -37,7 +74,7 @@ export const SurpriseFlyTo = ({ destination, origin }: Props) => {
     // 2) Tras una pausa breve, vuela en picado hasta la ciudad
     window.setTimeout(() => {
       map.flyTo({
-        center: [destination.lng, destination.lat],
+        center: [destCoord.lng, destCoord.lat],
         zoom: 12,
         pitch: 55,
         bearing: -20,
@@ -46,12 +83,20 @@ export const SurpriseFlyTo = ({ destination, origin }: Props) => {
         essential: true,
       });
     }, 700);
-  }, [destination]);
+  }, [destCoord]);
 
   const handleLoad = useCallback(() => {
-    // Lanza la secuencia automáticamente al montar
-    runFlight();
-  }, [runFlight]);
+    // Lanza la secuencia automáticamente al montar (si ya hay coords)
+    if (destCoord) runFlight();
+  }, [runFlight, destCoord]);
+
+  // Si las coords llegan después del onLoad (geocoding async), lanza el vuelo
+  useEffect(() => {
+    if (destCoord && mapRef.current && !landed && !flying) {
+      runFlight();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destCoord]);
 
   const handleMoveEnd = useCallback(() => {
     if (flying) {
@@ -60,18 +105,18 @@ export const SurpriseFlyTo = ({ destination, origin }: Props) => {
     }
   }, [flying]);
 
-  if (!MAPBOX_TOKEN || !destination) return null;
+  if (!MAPBOX_TOKEN || (!destCoord && !destinationName)) return null;
 
   const routeGeoJSON =
-    origin && landed
+    originCoord && destCoord && landed
       ? {
           type: 'Feature' as const,
           properties: {},
           geometry: {
             type: 'LineString' as const,
             coordinates: [
-              [origin.lng, origin.lat],
-              [destination.lng, destination.lat],
+              [originCoord.lng, originCoord.lat],
+              [destCoord.lng, destCoord.lat],
             ],
           },
         }
@@ -111,8 +156,8 @@ export const SurpriseFlyTo = ({ destination, origin }: Props) => {
             </Source>
           )}
 
-          {origin && landed && (
-            <Marker longitude={origin.lng} latitude={origin.lat} anchor="center">
+          {originCoord && landed && (
+            <Marker longitude={originCoord.lng} latitude={originCoord.lat} anchor="center">
               <div
                 style={{
                   width: 12,
@@ -126,8 +171,8 @@ export const SurpriseFlyTo = ({ destination, origin }: Props) => {
             </Marker>
           )}
 
-          {landed && (
-            <Marker longitude={destination.lng} latitude={destination.lat} anchor="bottom">
+          {landed && destCoord && (
+            <Marker longitude={destCoord.lng} latitude={destCoord.lat} anchor="bottom">
               <div
                 style={{
                   display: 'flex',
@@ -136,7 +181,7 @@ export const SurpriseFlyTo = ({ destination, origin }: Props) => {
                   animation: 'pin-drop .6s cubic-bezier(.16,.84,.36,1) both',
                 }}
               >
-                {destination.label && (
+                {destCoord.label && (
                   <div
                     style={{
                       background: '#FF5A5F',
@@ -151,7 +196,7 @@ export const SurpriseFlyTo = ({ destination, origin }: Props) => {
                       boxShadow: '0 6px 18px rgba(255,90,95,.5)',
                     }}
                   >
-                    {destination.label}
+                    {destCoord.label}
                   </div>
                 )}
                 <MapPin
@@ -185,7 +230,7 @@ export const SurpriseFlyTo = ({ destination, origin }: Props) => {
             backdropFilter: 'blur(4px)',
           }}
         >
-          {flying ? '✈ Despegando…' : `✦ ${destination.label ?? 'Destino'}`}
+          {flying ? '✈ Despegando…' : `✦ ${destCoord?.label ?? destinationName ?? 'Destino'}`}
         </div>
 
         {/* Botón para repetir el vuelo */}

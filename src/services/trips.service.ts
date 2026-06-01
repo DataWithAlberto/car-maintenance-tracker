@@ -133,6 +133,26 @@ export const tripsService = {
     if (error) throw error;
   },
 
+  /** Geocodifica un nombre de lugar a coordenadas usando Mapbox Geocoding.
+   * Devuelve null si no hay token o no se encuentra. */
+  async geocodePlace(query: string): Promise<{ lat: number; lng: number } | null> {
+    const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+    if (!token || !query.trim()) return null;
+    try {
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        query,
+      )}.json?access_token=${token}&limit=1&language=es`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const json = await res.json();
+      const center = json.features?.[0]?.center;
+      if (!Array.isArray(center) || center.length < 2) return null;
+      return { lng: center[0], lat: center[1] };
+    } catch {
+      return null;
+    }
+  },
+
   async delete(id: string): Promise<void> {
     const { error, count } = await supabase.from('trips').delete({ count: 'exact' }).eq('id', id);
     if (error) throw error;

@@ -197,11 +197,13 @@ export const SurpriseRevealPage = () => {
               }
             : null
         }
+        originName={data.trip.start_location ?? null}
         destination={
           data.trip.end_lat != null && data.trip.end_lng != null
             ? { lat: data.trip.end_lat, lng: data.trip.end_lng, label: data.trip.end_location }
             : null
         }
+        destinationName={data.trip.end_location ?? null}
       />
 
       <section
