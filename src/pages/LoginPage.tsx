@@ -4,13 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 import { loginSchema } from '../utils/validators';
 import toast from 'react-hot-toast';
 
-const BACKGROUND_IMAGES = [
-  'mpu07nqe-IMG_1786.jpeg',
-  'mpu0bjhx-IMG_1783.jpeg',
-  'mpu0bji5-IMG_1407.jpeg',
-  'mpu0bjid-FullSizeRender.jpeg',
-  'mpu0bjih-IMG_1356.jpeg',
-];
+// Coloca tus fotos en public/ y añade aquí sus nombres (rutas relativas a public/, ej. 'mi-foto.jpeg').
+// De momento solo apunta a la imagen real que existe en public/.
+const BACKGROUND_IMAGES = ['ford-focus.png'];
 
 function Mark({ size = 20, color = '#ffffff' }: { size?: number; color?: string }) {
   return (
