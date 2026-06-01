@@ -47,6 +47,15 @@ export const SurpriseRevealPage = () => {
   const reason = data.trip.surprise_config?.reason ?? '';
   const funFacts = data.trip.surprise_config?.fun_facts ?? [];
 
+  // Paradas del tour: usa las configuradas, o cae a origen → destino
+  const configStops = data.trip.surprise_config?.route_stops ?? [];
+  const routeStops =
+    configStops.length > 0
+      ? configStops
+      : [data.trip.start_location, data.trip.end_location].filter(
+          (s): s is string => !!s && s.trim().length > 0,
+        );
+
   const handleOpen = () => {
     setOpened(true);
     if (token) {
@@ -187,24 +196,7 @@ export const SurpriseRevealPage = () => {
 
       {audioUrl && <AudioMessage url={audioUrl} />}
 
-      <SurpriseFlyTo
-        origin={
-          data.trip.start_lat != null && data.trip.start_lng != null
-            ? {
-                lat: data.trip.start_lat,
-                lng: data.trip.start_lng,
-                label: data.trip.start_location,
-              }
-            : null
-        }
-        originName={data.trip.start_location ?? null}
-        destination={
-          data.trip.end_lat != null && data.trip.end_lng != null
-            ? { lat: data.trip.end_lat, lng: data.trip.end_lng, label: data.trip.end_location }
-            : null
-        }
-        destinationName={data.trip.end_location ?? null}
-      />
+      <SurpriseFlyTo stops={routeStops} />
 
       <section
         className="max-w-4xl mx-auto"

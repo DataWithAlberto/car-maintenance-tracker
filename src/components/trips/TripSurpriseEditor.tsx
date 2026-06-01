@@ -8,6 +8,7 @@ import { SurpriseCoverInput } from './SurpriseCoverInput';
 import { SurpriseQRCode } from './SurpriseQRCode';
 import { SurpriseHintsEditor } from './SurpriseHintsEditor';
 import { SurpriseHintsScheduler } from './SurpriseHintsScheduler';
+import { SurpriseRouteStopsEditor } from './SurpriseRouteStopsEditor';
 import { SurpriseFunFactsEditor } from './SurpriseFunFactsEditor';
 import { SurpriseBoardingPass } from './SurpriseBoardingPass';
 
@@ -49,6 +50,7 @@ export const TripSurpriseEditor = ({
     reason: config?.reason ?? '',
     hints: config?.hints ?? [],
     fun_facts: config?.fun_facts ?? [],
+    route_stops: config?.route_stops ?? [],
     opened_at: config?.opened_at ?? null,
   });
 
@@ -211,6 +213,11 @@ export const TripSurpriseEditor = ({
               fontFamily: 'inherit',
               lineHeight: 1.45,
             }}
+          />
+
+          <SurpriseRouteStopsEditor
+            value={draft.route_stops ?? []}
+            onChange={(route_stops) => setDraft({ ...draft, route_stops })}
           />
 
           <SurpriseCoverInput

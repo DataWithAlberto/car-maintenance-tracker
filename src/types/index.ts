@@ -209,6 +209,9 @@ export interface SurpriseConfig {
   fun_facts?: string[];
   /** Marca temporal en la que el destinatario abrió la sorpresa por 1ª vez. */
   opened_at?: string | null;
+  /** Paradas de la ruta (nombres en orden) para el tour animado del reveal.
+   * Ej: ["Gijón", "Valladolid", "Segovia"]. Se geocodifican en runtime. */
+  route_stops?: string[];
 }
 
 export interface TripCollaborator {
