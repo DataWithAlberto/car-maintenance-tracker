@@ -4,9 +4,14 @@ import { useAuth } from '../hooks/useAuth';
 import { loginSchema } from '../utils/validators';
 import toast from 'react-hot-toast';
 
-// Coloca tus fotos en public/ y añade aquí sus nombres (rutas relativas a public/, ej. 'mi-foto.jpeg').
-// De momento solo apunta a la imagen real que existe en public/.
-const BACKGROUND_IMAGES = ['ford-focus.png'];
+// Fotos del carrusel (ubicadas en public/, servidas en la raíz).
+const BACKGROUND_IMAGES = [
+  'login-01.jpg',
+  'login-02.jpg',
+  'login-03.jpg',
+  'login-04.jpg',
+  'login-05.jpg',
+];
 
 function Mark({ size = 20, color = '#ffffff' }: { size?: number; color?: string }) {
   return (
