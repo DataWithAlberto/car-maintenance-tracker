@@ -26,6 +26,8 @@ interface Props {
   /** Si se provee junto con userId, se renderiza el carrusel de fotos vinculadas. */
   userId?: string | null;
   vehicleId?: string | null;
+  /** Oculta el precio (p. ej. en la página de sorpresa pública). */
+  hidePrice?: boolean;
 }
 
 const fmtMoney = (n: number, c = 'EUR') =>
@@ -39,6 +41,7 @@ export const TripActivityCard = ({
   onDelete,
   userId = null,
   vehicleId = null,
+  hidePrice = false,
 }: Props) => {
   const t = getBookingTheme(activity.provider);
   const isLodging = activity.type === 'lodging';
@@ -147,7 +150,7 @@ export const TripActivityCard = ({
       </header>
 
       {!isEditing && !confirmDelete && (
-        <ReadView activity={activity} theme={t} isLodging={isLodging} />
+        <ReadView activity={activity} theme={t} isLodging={isLodging} hidePrice={hidePrice} />
       )}
 
       {isEditing && (
@@ -279,8 +282,9 @@ interface ReadViewProps {
   activity: TripActivity;
   theme: BookingTheme;
   isLodging: boolean;
+  hidePrice?: boolean;
 }
-const ReadView = ({ activity, theme: t, isLodging }: ReadViewProps) => (
+const ReadView = ({ activity, theme: t, isLodging, hidePrice = false }: ReadViewProps) => (
   <>
     <div className="flex items-start justify-between gap-3">
       <h3
@@ -353,7 +357,7 @@ const ReadView = ({ activity, theme: t, isLodging }: ReadViewProps) => (
       className="flex items-center justify-between"
       style={{ borderTop: `1px solid ${t.border}`, paddingTop: 12, marginTop: 4 }}
     >
-      {activity.price != null ? (
+      {activity.price != null && !hidePrice ? (
         <span style={{ color: t.textPrimary, fontWeight: 700, fontSize: 16 }}>
           {fmtMoney(activity.price, activity.currency ?? 'EUR')}
         </span>

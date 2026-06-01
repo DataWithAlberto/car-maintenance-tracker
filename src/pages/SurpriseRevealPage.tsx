@@ -7,7 +7,7 @@ import { SurpriseConfetti } from '../components/trips/SurpriseConfetti';
 import { SurpriseCountdown } from '../components/trips/SurpriseCountdown';
 import { SurpriseReaction } from '../components/trips/SurpriseReaction';
 import { SurpriseTypewriter } from '../components/trips/SurpriseTypewriter';
-import { SurpriseRouteMap } from '../components/trips/SurpriseRouteMap';
+import { SurpriseFlyTo } from '../components/trips/SurpriseFlyTo';
 import type { PublicTripResponse, PublicTripPhoto, SurpriseAnimation } from '../types';
 
 export const SurpriseRevealPage = () => {
@@ -187,7 +187,7 @@ export const SurpriseRevealPage = () => {
 
       {audioUrl && <AudioMessage url={audioUrl} />}
 
-      <SurpriseRouteMap
+      <SurpriseFlyTo
         origin={
           data.trip.start_lat != null && data.trip.start_lng != null
             ? {
@@ -213,7 +213,9 @@ export const SurpriseRevealPage = () => {
             Sin actividades confirmadas en este viaje.
           </p>
         ) : (
-          data.activities.map((a) => <TripActivityCard key={a.id} activity={a} editable={false} />)
+          data.activities.map((a) => (
+            <TripActivityCard key={a.id} activity={a} editable={false} hidePrice />
+          ))
         )}
       </section>
 
