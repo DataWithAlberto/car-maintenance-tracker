@@ -135,7 +135,7 @@ export const SurpriseRevealPage = () => {
                 style={{
                   fontFamily: 'Inter, var(--font-sf-pro-display)',
                   fontWeight: 700,
-                  fontSize: 'clamp(48px, 8vw, 96px)',
+                  fontSize: 'clamp(38px, 9vw, 96px)',
                   letterSpacing: '-2.4px',
                   lineHeight: 1,
                   margin: '16px 0 12px',
@@ -171,7 +171,7 @@ export const SurpriseRevealPage = () => {
               style={{
                 fontFamily: 'Inter, var(--font-sf-pro-display)',
                 fontWeight: 700,
-                fontSize: 'clamp(48px, 8vw, 96px)',
+                fontSize: 'clamp(38px, 9vw, 96px)',
                 letterSpacing: '-2.4px',
                 lineHeight: 1,
                 margin: '16px 0 12px',
@@ -555,6 +555,9 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
         .env-opening { animation: none; }
         .flap-open { animation: flap-open .9s cubic-bezier(.32,.72,0,1) forwards; transform-origin: top center; }
         .letter-rise { animation: letter-rise .7s .6s cubic-bezier(.16,.84,.36,1) both; }
+        @media (max-width: 360px) {
+          .env-scale { transform: scale(.82); }
+        }
       `}</style>
 
       <span
@@ -581,7 +584,7 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
         type="button"
         onClick={handleClick}
         disabled={phase !== 'idle'}
-        className={phase === 'idle' ? 'env-idle' : 'env-opening'}
+        className={`env-scale ${phase === 'idle' ? 'env-idle' : 'env-opening'}`}
         style={{
           background: 'none',
           border: 'none',

@@ -44,7 +44,7 @@ export const SurpriseCountdown = ({ revealDate }: { revealDate: string }) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        minWidth: 64,
+        minWidth: 'clamp(44px, 16vw, 64px)',
       }}
     >
       <span
@@ -52,7 +52,7 @@ export const SurpriseCountdown = ({ revealDate }: { revealDate: string }) => {
         style={{
           fontFamily: 'Inter, var(--font-sf-pro-display)',
           fontWeight: 700,
-          fontSize: 'clamp(36px, 6vw, 56px)',
+          fontSize: 'clamp(30px, 9vw, 56px)',
           letterSpacing: '-1.5px',
           lineHeight: 1,
           background: 'linear-gradient(135deg, #1d1d1f 0%, #FF5A5F 100%)',
@@ -64,7 +64,7 @@ export const SurpriseCountdown = ({ revealDate }: { revealDate: string }) => {
       </span>
       <span
         className="font-mono uppercase text-graphite"
-        style={{ fontSize: 10, letterSpacing: '.18em', marginTop: 6 }}
+        style={{ fontSize: 10, letterSpacing: '.14em', marginTop: 6 }}
       >
         {label}
       </span>
@@ -77,9 +77,10 @@ export const SurpriseCountdown = ({ revealDate }: { revealDate: string }) => {
       aria-live="polite"
       style={{
         display: 'flex',
-        gap: 12,
+        gap: 'clamp(4px, 2vw, 12px)',
         marginTop: 24,
-        padding: '20px 24px',
+        maxWidth: '100%',
+        padding: 'clamp(14px, 4vw, 20px) clamp(12px, 4vw, 24px)',
         background: 'var(--color-snow, #fff)',
         border: '1px solid var(--color-silver-mist, #e5e5ea)',
         borderRadius: 18,
