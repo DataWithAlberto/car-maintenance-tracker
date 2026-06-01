@@ -10,6 +10,7 @@ import { SurpriseHintsEditor } from './SurpriseHintsEditor';
 import { SurpriseHintsScheduler } from './SurpriseHintsScheduler';
 import { SurpriseRouteStopsEditor } from './SurpriseRouteStopsEditor';
 import { SurpriseMusicInput } from './SurpriseMusicInput';
+import { SurpriseSpotifyInput } from './SurpriseSpotifyInput';
 import { SurpriseFunFactsEditor } from './SurpriseFunFactsEditor';
 import { SurpriseBoardingPass } from './SurpriseBoardingPass';
 
@@ -53,6 +54,7 @@ export const TripSurpriseEditor = ({
     fun_facts: config?.fun_facts ?? [],
     route_stops: config?.route_stops ?? [],
     music_url: config?.music_url ?? null,
+    spotify_url: config?.spotify_url ?? null,
     opened_at: config?.opened_at ?? null,
   });
 
@@ -236,6 +238,10 @@ export const TripSurpriseEditor = ({
             tripId={tripId}
             value={draft.music_url}
             onChange={(url) => patchAndSave({ music_url: url })}
+          />
+          <SurpriseSpotifyInput
+            value={draft.spotify_url}
+            onChange={(url) => patchAndSave({ spotify_url: url })}
           />
 
           <SurpriseHintsEditor

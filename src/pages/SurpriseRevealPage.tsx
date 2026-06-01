@@ -9,6 +9,7 @@ import { SurpriseReaction } from '../components/trips/SurpriseReaction';
 import { SurpriseTypewriter } from '../components/trips/SurpriseTypewriter';
 import { SurpriseFlyTo } from '../components/trips/SurpriseFlyTo';
 import { SurpriseMusicPlayer } from '../components/trips/SurpriseMusicPlayer';
+import { toSpotifyEmbedUrl } from '../utils/spotify';
 import type { PublicTripResponse, PublicTripPhoto, SurpriseAnimation } from '../types';
 
 export const SurpriseRevealPage = () => {
@@ -48,6 +49,9 @@ export const SurpriseRevealPage = () => {
   const reason = data.trip.surprise_config?.reason ?? '';
   const funFacts = data.trip.surprise_config?.fun_facts ?? [];
   const musicUrl = data.trip.surprise_config?.music_url ?? null;
+  const spotifyEmbed = data.trip.surprise_config?.spotify_url
+    ? toSpotifyEmbedUrl(data.trip.surprise_config.spotify_url)
+    : null;
 
   // Paradas del tour: usa las configuradas, o cae a origen → destino
   const configStops = data.trip.surprise_config?.route_stops ?? [];
@@ -198,6 +202,25 @@ export const SurpriseRevealPage = () => {
       {reason && <SurpriseTypewriter text={reason} />}
 
       {audioUrl && <AudioMessage url={audioUrl} />}
+
+      {spotifyEmbed && (
+        <section className="max-w-2xl mx-auto" style={{ padding: '0 24px', marginBottom: 24 }}>
+          <div
+            style={{ borderRadius: 14, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,.1)' }}
+          >
+            <iframe
+              title="Spotify"
+              src={spotifyEmbed}
+              width="100%"
+              height={152}
+              frameBorder={0}
+              loading="lazy"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              style={{ border: 'none', display: 'block' }}
+            />
+          </div>
+        </section>
+      )}
 
       <SurpriseFlyTo stops={routeStops} />
 

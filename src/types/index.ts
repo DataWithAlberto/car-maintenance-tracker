@@ -214,6 +214,8 @@ export interface SurpriseConfig {
   route_stops?: string[];
   /** Música de fondo que suena al abrir el reveal (URL de Storage). */
   music_url?: string | null;
+  /** Enlace de Spotify (canción o playlist) embebido en el reveal. */
+  spotify_url?: string | null;
 }
 
 export interface TripCollaborator {
