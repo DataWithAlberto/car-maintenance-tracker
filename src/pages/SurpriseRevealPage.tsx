@@ -39,6 +39,10 @@ const displayGradient: React.CSSProperties = {
   backgroundClip: 'text',
 };
 
+/* Foco cinematográfico opaco. Usa colores sólidos (no rgba) para que el fondo
+ * claro del body global —body{background:var(--color-fog)}— no se transparente. */
+const spotlight = (y = 40) => `radial-gradient(circle at 50% ${y}%, #18181b 0%, ${C.bg} 70%)`;
+
 export const SurpriseRevealPage = () => {
   const { token } = useParams<{ token: string }>();
   const [data, setData] = useState<PublicTripResponse | null>(null);
@@ -166,7 +170,8 @@ export const SurpriseRevealPage = () => {
                   fontSize: 11,
                   letterSpacing: '.22em',
                   textTransform: 'uppercase',
-                  color: C.muted,
+                  color: 'rgba(245,245,247,.8)',
+                  textShadow: '0 1px 8px rgba(0,0,0,.6)',
                 }}
               >
                 ✦ Sorpresa desvelada · {new Date().toLocaleDateString('es-ES')}
@@ -179,7 +184,8 @@ export const SurpriseRevealPage = () => {
                   letterSpacing: '-0.05em',
                   lineHeight: 1.05,
                   margin: '16px 0 12px',
-                  textShadow: '0 4px 32px rgba(0,0,0,.5)',
+                  color: C.fg,
+                  textShadow: '0 4px 32px rgba(0,0,0,.6)',
                 }}
               >
                 {data.trip.title ?? data.trip.end_location ?? 'Tu viaje'}
@@ -496,7 +502,7 @@ const ScratchCard = ({ onOpen }: { onOpen: () => void }) => {
     <main
       className="min-h-screen flex flex-col items-center justify-center"
       style={{
-        background: `radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), ${C.bg} 70%)`,
+        background: spotlight(40),
         color: C.fg,
         padding: 24,
       }}
@@ -628,7 +634,7 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
     <main
       className="min-h-screen flex flex-col items-center justify-center"
       style={{
-        background: `radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), ${C.bg} 70%)`,
+        background: spotlight(40),
         color: C.fg,
         padding: 24,
       }}
@@ -972,7 +978,7 @@ const GiftBox = ({ onOpen }: { onOpen: () => void }) => (
   <main
     className="min-h-screen flex flex-col items-center justify-center"
     style={{
-      background: `radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), ${C.bg} 70%)`,
+      background: spotlight(40),
       color: C.fg,
       padding: 24,
     }}
@@ -1075,7 +1081,7 @@ const LockedScreen = ({ revealDate, messagePreview, coverUrl, hints = [] }: Lock
       color: C.fg,
       background: coverUrl
         ? `linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.9) 100%), url(${coverUrl}) center/cover no-repeat`
-        : `radial-gradient(circle at 50% 30%, rgba(255,255,255,.06), ${C.bg} 70%)`,
+        : spotlight(30),
     }}
   >
     <Sparkles className="h-10 w-10" color={C.fg} />
