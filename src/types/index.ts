@@ -491,6 +491,55 @@ export interface OBD2Reading {
 }
 
 /**
+ * Viaje de telemetría ingerido automáticamente desde OBDLink → Dropbox →
+ * Supabase. Cada CSV que sube la app móvil al terminar un viaje se convierte
+ * en una fila de `viajes_telemetria`. Ver `api/webhook.py`.
+ */
+export interface ViajeTelemetria {
+  id: string;
+  vehicle_id: string;
+  nombre: string;
+  fecha: string;
+  dropbox_path: string | null;
+  distancia_km: number | null;
+  duracion_seg: number | null;
+  created_at?: string;
+}
+
+/**
+ * Punto individual de telemetría dentro de un viaje (una fila del CSV, ~1 Hz).
+ * Incluye posición GPS para pintar la ruta en Mapbox y los PIDs clave.
+ */
+export interface TelemetriaPunto {
+  id?: number;
+  viaje_id: string;
+  timestamp_ms: number;
+  latitude: number | null;
+  longitude: number | null;
+  rpm: number | null;
+  velocidad: number | null;
+  carga_motor: number | null;
+  temp_refrigerante: number | null;
+  presion_admision: number | null;
+  temp_admision: number | null;
+  flujo_maf: number | null;
+  posicion_acelerador: number | null;
+}
+
+/**
+ * Estadísticas derivadas de los puntos de un viaje (calculadas en cliente).
+ */
+export interface ViajeTelemetriaStats {
+  puntos: number;
+  distanciaKm: number;
+  duracionSeg: number;
+  velocidadMax: number | null;
+  velocidadMedia: number | null;
+  rpmMax: number | null;
+  tempRefrigeranteMax: number | null;
+}
+
+/**
  * Snapshot OBD2 capturado al planificar o confirmar un viaje. Sirve para
  * registrar las condiciones de partida del vehículo y derivar consumo,
  * variación de batería o desgaste tras el viaje.

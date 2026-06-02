@@ -41,6 +41,7 @@ import { OBD2HistoryChart } from '../components/obd2/OBD2HistoryChart';
 import { OBD2AnomalyLog } from '../components/obd2/OBD2AnomalyLog';
 import { OBD2ThresholdsPanel } from '../components/obd2/OBD2ThresholdsPanel';
 import { SyncStatusBadge } from '../components/obd2/SyncStatusBadge';
+import { TelemetryTripsSection } from '../components/obd2/TelemetryTripsSection';
 import type { OBD2Reading } from '../types';
 import toast from 'react-hot-toast';
 
@@ -488,8 +489,9 @@ export const OBD2Page = () => {
           className="font-text text-graphite mt-3 max-w-xl"
           style={{ fontSize: 15, lineHeight: 1.45 }}
         >
-          Conecta un adaptador ELM327 Bluetooth para leer datos en tiempo real, códigos de error y
-          el VIN de tu coche.
+          Tus viajes con OBDLink se registran solos con ruta GPS y telemetría. Y si quieres datos al
+          instante, conecta un adaptador ELM327 Bluetooth para ver RPM, códigos de error y el VIN en
+          vivo.
         </p>
       </header>
 
@@ -597,6 +599,9 @@ export const OBD2Page = () => {
           )}
         </div>
       </section>
+
+      {/* Viajes registrados automáticamente (OBDLink → Dropbox → Supabase) */}
+      <TelemetryTripsSection vehicleId={selectedVehicle.id} />
 
       {/* Live data */}
       {connected && (
