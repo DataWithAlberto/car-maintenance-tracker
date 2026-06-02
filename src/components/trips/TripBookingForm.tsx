@@ -24,6 +24,15 @@ const TYPE_OPTIONS = (Object.keys(BOOKING_TYPE_LABEL) as TripBookingType[]).map(
 const toLocalDatetimeString = (d: Date) =>
   new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
+/* Convierte el string de un <input type="datetime-local"> (hora LOCAL, sin
+ * zona, ej. "2026-06-15T20:30") al ISO UTC correcto. Sin esto, Postgres
+ * interpreta el string como UTC y la hora se guarda desfasada. */
+const localInputToISO = (s: string | undefined | null): string | undefined => {
+  if (!s) return undefined;
+  const d = new Date(s); // el constructor interpreta el string sin zona como hora local
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+};
+
 export const TripBookingForm = ({ onSubmit, onClose }: TripBookingFormProps) => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<CreateTripBookingInput>({
@@ -66,7 +75,12 @@ export const TripBookingForm = ({ onSubmit, onClose }: TripBookingFormProps) => 
     e.preventDefault();
     setLoading(true);
     try {
-      await onSubmit(form);
+      // Normaliza las fechas locales a ISO UTC para que la hora se guarde bien
+      await onSubmit({
+        ...form,
+        start_datetime: localInputToISO(form.start_datetime) ?? form.start_datetime,
+        end_datetime: localInputToISO(form.end_datetime),
+      });
       onClose();
     } finally {
       setLoading(false);

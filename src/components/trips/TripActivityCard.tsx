@@ -32,6 +32,21 @@ interface Props {
 
 const fmtMoney = (n: number, c = 'EUR') =>
   new Intl.NumberFormat('es-ES', { style: 'currency', currency: c }).format(n);
+
+/* ISO (con zona) → valor para <input type="datetime-local"> en hora local. */
+const isoToLocalInput = (iso: string | undefined | null): string | undefined => {
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+
+/* Valor de datetime-local (hora local) → ISO UTC para guardar sin desfase. */
+const localInputToISO = (s: string | undefined | null): string | undefined => {
+  if (!s) return undefined;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+};
 const fmtDate = (iso: string) => format(parseISO(iso), 'd MMM · HH:mm', { locale: es });
 
 export const TripActivityCard = ({
@@ -60,8 +75,8 @@ export const TripActivityCard = ({
       booking_url: activity.booking_url,
       confirmation_code: activity.confirmation_code,
       notes: activity.notes,
-      start_datetime: activity.start_datetime,
-      end_datetime: activity.end_datetime,
+      start_datetime: isoToLocalInput(activity.start_datetime),
+      end_datetime: isoToLocalInput(activity.end_datetime),
     });
     setIsEditing(true);
   };
@@ -76,7 +91,16 @@ export const TripActivityCard = ({
     setSaving(true);
     try {
       startTransition(() => setIsEditing(false));
-      await onSave(activity.id, draft);
+      // Convierte las fechas locales del input a ISO UTC antes de guardar
+      await onSave(activity.id, {
+        ...draft,
+        ...(draft.start_datetime !== undefined && {
+          start_datetime: localInputToISO(draft.start_datetime),
+        }),
+        ...(draft.end_datetime !== undefined && {
+          end_datetime: localInputToISO(draft.end_datetime),
+        }),
+      });
     } catch {
       setIsEditing(true);
     } finally {
