@@ -67,7 +67,6 @@ export const SurpriseRevealPage = () => {
       <LockedScreen
         revealDate={data.reveal_date}
         messagePreview={data.message_preview}
-        coverUrl={data.cover_url ?? null}
         hints={data.hints_revealed ?? []}
       />
     );
@@ -1069,19 +1068,17 @@ const GiftBox = ({ onOpen }: { onOpen: () => void }) => (
 interface LockedScreenProps {
   revealDate: string;
   messagePreview: string;
-  coverUrl?: string | null;
   hints?: string[];
 }
-const LockedScreen = ({ revealDate, messagePreview, coverUrl, hints = [] }: LockedScreenProps) => (
+// Sin imagen de portada: la pantalla de espera NO debe delatar el destino.
+const LockedScreen = ({ revealDate, messagePreview, hints = [] }: LockedScreenProps) => (
   <main
     className="min-h-screen flex flex-col items-center justify-center relative"
     style={{
       padding: 32,
       textAlign: 'center',
       color: C.fg,
-      background: coverUrl
-        ? `linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.9) 100%), url(${coverUrl}) center/cover no-repeat`
-        : spotlight(30),
+      background: spotlight(30),
     }}
   >
     <Sparkles className="h-10 w-10" color={C.fg} />
