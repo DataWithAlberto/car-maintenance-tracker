@@ -637,6 +637,8 @@ export const TripsPage = () => {
                   destination={selectedTrip.end_location}
                   startDate={selectedTrip.start_date ?? selectedTrip.start_datetime}
                   startLocation={selectedTrip.start_location}
+                  userId={user.id}
+                  vehicleId={selectedVehicle.id}
                   onChange={handleSurpriseChange}
                 />
               </div>
@@ -811,6 +813,8 @@ export const TripsPage = () => {
                   destination={selectedTrip.end_location}
                   startDate={selectedTrip.start_date ?? selectedTrip.start_datetime}
                   startLocation={selectedTrip.start_location}
+                  userId={user.id}
+                  vehicleId={selectedVehicle.id}
                   onChange={handleSurpriseChange}
                 />
               </div>

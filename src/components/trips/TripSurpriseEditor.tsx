@@ -11,6 +11,7 @@ import { SurpriseHintsScheduler } from './SurpriseHintsScheduler';
 import { SurpriseRouteStopsEditor } from './SurpriseRouteStopsEditor';
 import { SurpriseMusicInput } from './SurpriseMusicInput';
 import { SurpriseSpotifyInput } from './SurpriseSpotifyInput';
+import { SurprisePhotosEditor } from './SurprisePhotosEditor';
 import { SurpriseFunFactsEditor } from './SurpriseFunFactsEditor';
 import { SurpriseBoardingPass } from './SurpriseBoardingPass';
 
@@ -22,6 +23,8 @@ interface Props {
   destination?: string | null;
   startDate?: string | null;
   startLocation?: string | null;
+  userId?: string | null;
+  vehicleId?: string | null;
   onChange: (enabled: boolean, config: SurpriseConfig | null) => Promise<void>;
 }
 
@@ -39,6 +42,8 @@ export const TripSurpriseEditor = ({
   destination,
   startDate,
   startLocation,
+  userId = null,
+  vehicleId = null,
   onChange,
 }: Props) => {
   const [saving, setSaving] = useState(false);
@@ -229,6 +234,7 @@ export const TripSurpriseEditor = ({
             value={draft.cover_url}
             onChange={(url) => patchAndSave({ cover_url: url })}
           />
+          {userId && <SurprisePhotosEditor tripId={tripId} userId={userId} vehicleId={vehicleId} />}
           <SurpriseAudioInput
             tripId={tripId}
             value={draft.audio_url}
