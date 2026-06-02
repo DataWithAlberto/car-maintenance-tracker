@@ -12,6 +12,33 @@ import { SurpriseMusicPlayer } from '../components/trips/SurpriseMusicPlayer';
 import { toSpotifyEmbedUrl } from '../utils/spotify';
 import type { PublicTripResponse, PublicTripPhoto, SurpriseAnimation } from '../types';
 
+/* ─── Keynote · tokens del sistema de diseño ─────────────────────────────────
+ * Estética oscura, cinematográfica y enfocada en el contenido (estilo Apple):
+ * negros profundos, gradientes metálicos y tipografía display de gran tamaño. */
+const C = {
+  bg: '#000000',
+  surface1: '#111111',
+  surface2: '#1a1a1c',
+  surface3: '#222222',
+  border: '#333333',
+  borderHover: '#555555',
+  fg: '#f5f5f7',
+  muted: '#86868b',
+  mutedDark: '#a1a1a6',
+} as const;
+
+const FONT_DISPLAY =
+  '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", system-ui, sans-serif';
+const FONT_MONO = 'ui-monospace, SFMono-Regular, Menlo, monospace';
+
+/* Degradado metálico blanco → gris para titulares display */
+const displayGradient: React.CSSProperties = {
+  background: `linear-gradient(180deg, #fff 0%, ${C.muted} 100%)`,
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',
+};
+
 export const SurpriseRevealPage = () => {
   const { token } = useParams<{ token: string }>();
   const [data, setData] = useState<PublicTripResponse | null>(null);
@@ -80,7 +107,8 @@ export const SurpriseRevealPage = () => {
     <main
       className="min-h-screen"
       style={{
-        background: 'linear-gradient(180deg, #fff 0%, var(--color-fog) 100%)',
+        background: C.bg,
+        color: C.fg,
         animation: 'reveal-fade .8s ease-out',
       }}
     >
@@ -96,11 +124,11 @@ export const SurpriseRevealPage = () => {
       <header
         style={{
           position: 'relative',
-          padding: coverUrl ? '0' : '64px 24px 40px',
+          padding: coverUrl ? '0' : '88px 24px 48px',
           textAlign: 'center',
           background: coverUrl
             ? 'transparent'
-            : 'radial-gradient(circle at 50% 0%, rgba(255,90,95,.12), transparent 60%)',
+            : 'radial-gradient(circle at 50% 0%, rgba(255,255,255,.07), transparent 60%)',
           overflow: 'hidden',
         }}
       >
@@ -108,7 +136,7 @@ export const SurpriseRevealPage = () => {
           <div
             style={{
               position: 'relative',
-              height: 'min(60vh, 480px)',
+              height: 'min(64vh, 520px)',
               background: `url(${coverUrl}) center/cover no-repeat`,
             }}
           >
@@ -117,7 +145,7 @@ export const SurpriseRevealPage = () => {
                 position: 'absolute',
                 inset: 0,
                 background:
-                  'linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 70%, rgba(255,255,255,1) 100%)',
+                  'linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,.65) 65%, #000 100%)',
               }}
             />
             <div
@@ -128,37 +156,42 @@ export const SurpriseRevealPage = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'flex-end',
-                padding: '24px 24px 40px',
-                color: '#fff',
+                padding: '24px 24px 48px',
+                color: C.fg,
               }}
             >
               <span
-                className="font-mono uppercase"
-                style={{ fontSize: 11, letterSpacing: '.22em', opacity: 0.85 }}
+                style={{
+                  fontFamily: FONT_MONO,
+                  fontSize: 11,
+                  letterSpacing: '.22em',
+                  textTransform: 'uppercase',
+                  color: C.muted,
+                }}
               >
                 ✦ Sorpresa desvelada · {new Date().toLocaleDateString('es-ES')}
               </span>
               <h1
                 style={{
-                  fontFamily: 'Inter, var(--font-sf-pro-display)',
+                  fontFamily: FONT_DISPLAY,
                   fontWeight: 700,
-                  fontSize: 'clamp(38px, 9vw, 96px)',
-                  letterSpacing: '-2.4px',
-                  lineHeight: 1,
+                  fontSize: 'clamp(48px, 9vw, 96px)',
+                  letterSpacing: '-0.05em',
+                  lineHeight: 1.05,
                   margin: '16px 0 12px',
-                  textShadow: '0 4px 24px rgba(0,0,0,.4)',
+                  textShadow: '0 4px 32px rgba(0,0,0,.5)',
                 }}
               >
                 {data.trip.title ?? data.trip.end_location ?? 'Tu viaje'}
               </h1>
               <p
                 style={{
-                  fontSize: 18,
-                  fontWeight: 300,
-                  maxWidth: 560,
+                  fontSize: 20,
+                  fontWeight: 400,
+                  maxWidth: 600,
                   margin: '0 auto',
-                  opacity: 0.92,
-                  textShadow: '0 2px 12px rgba(0,0,0,.3)',
+                  color: C.mutedDark,
+                  textShadow: '0 2px 16px rgba(0,0,0,.4)',
                 }}
               >
                 {data.trip.notes ?? data.trip.end_location ?? ''}
@@ -169,29 +202,37 @@ export const SurpriseRevealPage = () => {
         {!coverUrl && (
           <>
             <span
-              className="font-mono uppercase"
-              style={{ fontSize: 11, letterSpacing: '.22em', color: '#FF5A5F' }}
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: 11,
+                letterSpacing: '.22em',
+                textTransform: 'uppercase',
+                color: C.muted,
+              }}
             >
               ✦ Sorpresa desvelada · {new Date().toLocaleDateString('es-ES')}
             </span>
             <h1
               style={{
-                fontFamily: 'Inter, var(--font-sf-pro-display)',
+                fontFamily: FONT_DISPLAY,
                 fontWeight: 700,
-                fontSize: 'clamp(38px, 9vw, 96px)',
-                letterSpacing: '-2.4px',
-                lineHeight: 1,
+                fontSize: 'clamp(48px, 9vw, 96px)',
+                letterSpacing: '-0.05em',
+                lineHeight: 1.05,
                 margin: '16px 0 12px',
-                background: 'linear-gradient(135deg, #1d1d1f 0%, #FF5A5F 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                ...displayGradient,
               }}
             >
               {data.trip.title ?? data.trip.end_location ?? 'Tu viaje'}
             </h1>
             <p
-              className="text-graphite"
-              style={{ fontSize: 18, fontWeight: 300, maxWidth: 560, margin: '0 auto' }}
+              style={{
+                fontSize: 20,
+                fontWeight: 400,
+                maxWidth: 600,
+                margin: '0 auto',
+                color: C.mutedDark,
+              }}
             >
               {data.trip.notes ?? data.trip.end_location ?? ''}
             </p>
@@ -206,7 +247,12 @@ export const SurpriseRevealPage = () => {
       {spotifyEmbed && (
         <section className="max-w-2xl mx-auto" style={{ padding: '0 24px', marginBottom: 24 }}>
           <div
-            style={{ borderRadius: 14, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,.1)' }}
+            style={{
+              borderRadius: 12,
+              overflow: 'hidden',
+              border: `1px solid ${C.border}`,
+              boxShadow: '0 8px 24px rgba(0,0,0,.5)',
+            }}
           >
             <iframe
               title="Spotify"
@@ -229,7 +275,7 @@ export const SurpriseRevealPage = () => {
         style={{ padding: '20px 24px 40px', display: 'grid', gap: 16 }}
       >
         {data.activities.length === 0 ? (
-          <p className="text-graphite text-center" style={{ fontSize: 14 }}>
+          <p style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>
             Sin actividades confirmadas en este viaje.
           </p>
         ) : (
@@ -252,14 +298,14 @@ export const SurpriseRevealPage = () => {
 const FunFactsSection = ({ facts }: { facts: string[] }) => (
   <section className="max-w-4xl mx-auto" style={{ padding: '20px 24px 40px' }}>
     <header className="flex items-center" style={{ gap: 12, marginBottom: 16 }}>
-      <Sparkles className="h-5 w-5" color="#a64dff" />
+      <Sparkles className="h-5 w-5" color={C.fg} />
       <h2
-        className="text-ink"
         style={{
-          fontFamily: 'Inter, var(--font-sf-pro-display)',
-          fontWeight: 700,
+          fontFamily: FONT_DISPLAY,
+          fontWeight: 600,
           fontSize: 'clamp(22px, 3vw, 28px)',
-          letterSpacing: '-0.4px',
+          letterSpacing: '-0.02em',
+          color: C.fg,
           margin: 0,
         }}
       >
@@ -277,28 +323,31 @@ const FunFactsSection = ({ facts }: { facts: string[] }) => (
         <article
           key={i}
           style={{
-            background: 'rgba(166,77,255,.06)',
-            border: '1px solid rgba(166,77,255,.18)',
-            borderRadius: 14,
-            padding: '16px 18px',
+            background: C.surface1,
+            border: `1px solid ${C.surface3}`,
+            borderRadius: 12,
+            padding: '18px 20px',
           }}
         >
           <span
-            className="font-mono"
-            style={{ fontSize: 11, color: '#a64dff', fontWeight: 700, letterSpacing: '.1em' }}
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 11,
+              color: C.fg,
+              fontWeight: 700,
+              letterSpacing: '.1em',
+            }}
           >
             ✦ {String(i + 1).padStart(2, '0')}
           </span>
-          <p className="text-ink" style={{ margin: '6px 0 0', fontSize: 14, lineHeight: 1.5 }}>
-            {f}
-          </p>
+          <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.5, color: C.fg }}>{f}</p>
         </article>
       ))}
     </div>
   </section>
 );
 
-/* ─── Reproductor del mensaje de voz ────────────────────────────────────── */
+/* ─── Reproductor del mensaje de voz · Módulo de audio Keynote ───────────── */
 const AudioMessage = ({ url }: { url: string }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -319,11 +368,11 @@ const AudioMessage = ({ url }: { url: string }) => {
           display: 'flex',
           alignItems: 'center',
           gap: 14,
-          background: '#fff',
-          border: '1px solid var(--color-silver-mist, #e5e5ea)',
+          background: C.surface1,
+          border: `1px solid ${C.border}`,
           borderRadius: 999,
           padding: '10px 16px 10px 10px',
-          boxShadow: '0 8px 24px rgba(0,0,0,.08)',
+          boxShadow: '0 8px 24px rgba(0,0,0,.4)',
         }}
       >
         <button
@@ -335,21 +384,30 @@ const AudioMessage = ({ url }: { url: string }) => {
             height: 44,
             borderRadius: 999,
             border: 'none',
-            background: '#FF5A5F',
-            color: '#fff',
+            background: C.fg,
+            color: C.bg,
             cursor: 'pointer',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
+            transition: 'transform .2s ease',
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = '')}
         >
           {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p
-            className="font-mono uppercase text-graphite"
-            style={{ fontSize: 10, letterSpacing: '.18em', margin: 0 }}
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: 10,
+              letterSpacing: '.18em',
+              textTransform: 'uppercase',
+              color: C.muted,
+              margin: 0,
+            }}
           >
             Mensaje de voz
           </p>
@@ -361,7 +419,7 @@ const AudioMessage = ({ url }: { url: string }) => {
             onPause={() => setPlaying(false)}
             onEnded={() => setPlaying(false)}
             controls
-            style={{ width: '100%', marginTop: 4 }}
+            style={{ width: '100%', marginTop: 4, colorScheme: 'dark' }}
           />
         </div>
       </div>
@@ -382,20 +440,21 @@ const ScratchCard = ({ onOpen }: { onOpen: () => void }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Capa metálica cepillada: borde superior claro → base oscura
     const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    grad.addColorStop(0, '#86868b');
-    grad.addColorStop(1, '#6e6e73');
+    grad.addColorStop(0, '#3a3a3c');
+    grad.addColorStop(1, '#1a1a1c');
     ctx.fillStyle = grad;
     ctx.roundRect(0, 0, canvas.width, canvas.height, 24);
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.font = 'bold 13px Inter, system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(245,245,247,0.35)';
+    ctx.font = 'bold 13px ui-monospace, SFMono-Regular, Menlo, monospace';
     ctx.textAlign = 'center';
-    ctx.letterSpacing = '0.14em';
+    ctx.letterSpacing = '0.2em';
     ctx.fillText('RASCA PARA DESCUBRIR', canvas.width / 2, canvas.height / 2 - 10);
     ctx.font = '28px serif';
-    ctx.fillText('✨', canvas.width / 2, canvas.height / 2 + 28);
+    ctx.fillText('✦', canvas.width / 2, canvas.height / 2 + 30);
   }, []);
 
   const checkReveal = () => {
@@ -437,7 +496,8 @@ const ScratchCard = ({ onOpen }: { onOpen: () => void }) => {
     <main
       className="min-h-screen flex flex-col items-center justify-center"
       style={{
-        background: 'radial-gradient(circle at 50% 40%, #FF5A5F22, #fff 70%)',
+        background: `radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), ${C.bg} 70%)`,
+        color: C.fg,
         padding: 24,
       }}
     >
@@ -450,19 +510,26 @@ const ScratchCard = ({ onOpen }: { onOpen: () => void }) => {
       `}</style>
 
       <span
-        className="font-mono uppercase"
-        style={{ fontSize: 11, letterSpacing: '.22em', color: '#FF5A5F' }}
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 11,
+          letterSpacing: '.22em',
+          textTransform: 'uppercase',
+          color: C.muted,
+        }}
       >
         ✦ Tienes un regalo
       </span>
       <h1
         style={{
-          fontFamily: 'Inter, var(--font-sf-pro-display)',
+          fontFamily: FONT_DISPLAY,
           fontWeight: 700,
-          fontSize: 'clamp(36px, 5vw, 64px)',
-          letterSpacing: '-1.5px',
-          margin: '12px 0 32px',
+          fontSize: 'clamp(40px, 6vw, 72px)',
+          letterSpacing: '-0.04em',
+          lineHeight: 1.05,
+          margin: '16px 0 32px',
           textAlign: 'center',
+          ...displayGradient,
         }}
       >
         ¿Adónde vamos?
@@ -472,9 +539,10 @@ const ScratchCard = ({ onOpen }: { onOpen: () => void }) => {
         style={{
           position: 'relative',
           width: 'min(380px, 88vw)',
-          borderRadius: 28,
+          borderRadius: 24,
           overflow: 'hidden',
-          boxShadow: '0 32px 64px rgba(0,0,0,.14), 0 8px 20px rgba(0,0,0,.08)',
+          border: `1px solid ${C.border}`,
+          boxShadow: '0 32px 64px rgba(0,0,0,.7), 0 8px 20px rgba(0,0,0,.5)',
         }}
       >
         {/* Destino oculto debajo del canvas */}
@@ -482,7 +550,7 @@ const ScratchCard = ({ onOpen }: { onOpen: () => void }) => {
           style={{
             width: '100%',
             height: 220,
-            background: 'linear-gradient(135deg, #FF5A5F 0%, #FF8588 100%)',
+            background: `linear-gradient(135deg, ${C.surface2} 0%, ${C.bg} 100%)`,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -495,8 +563,8 @@ const ScratchCard = ({ onOpen }: { onOpen: () => void }) => {
             style={{
               fontSize: 22,
               fontWeight: 700,
-              color: '#fff',
-              letterSpacing: '-0.5px',
+              letterSpacing: '-0.02em',
+              ...displayGradient,
             }}
           >
             ¡Sorpresa!
@@ -535,7 +603,7 @@ const ScratchCard = ({ onOpen }: { onOpen: () => void }) => {
         />
       </div>
 
-      <p className="scratch-hint text-graphite" style={{ marginTop: 32, fontSize: 14 }}>
+      <p className="scratch-hint" style={{ marginTop: 32, fontSize: 14, color: C.muted }}>
         Arrastra el dedo (o el ratón) para desvelar el destino.
       </p>
     </main>
@@ -560,7 +628,8 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
     <main
       className="min-h-screen flex flex-col items-center justify-center"
       style={{
-        background: 'radial-gradient(circle at 50% 40%, rgba(255,90,95,.12), #fff 70%)',
+        background: `radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), ${C.bg} 70%)`,
+        color: C.fg,
         padding: 24,
       }}
     >
@@ -587,19 +656,26 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
       `}</style>
 
       <span
-        className="font-mono uppercase"
-        style={{ fontSize: 11, letterSpacing: '.22em', color: '#FF5A5F' }}
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: 11,
+          letterSpacing: '.22em',
+          textTransform: 'uppercase',
+          color: C.muted,
+        }}
       >
         ✦ Tienes un regalo
       </span>
       <h1
         style={{
-          fontFamily: 'Inter, var(--font-sf-pro-display)',
+          fontFamily: FONT_DISPLAY,
           fontWeight: 700,
-          fontSize: 'clamp(36px, 5vw, 64px)',
-          letterSpacing: '-1.5px',
-          margin: '12px 0 40px',
+          fontSize: 'clamp(40px, 6vw, 72px)',
+          letterSpacing: '-0.04em',
+          lineHeight: 1.05,
+          margin: '16px 0 40px',
           textAlign: 'center',
+          ...displayGradient,
         }}
       >
         Tienes una carta.
@@ -624,9 +700,10 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
           style={{
             width: 280,
             height: 180,
-            background: 'linear-gradient(160deg, #fff8f0 0%, #fff 100%)',
+            background: `linear-gradient(160deg, ${C.surface2} 0%, ${C.bg} 100%)`,
+            border: `1px solid ${C.border}`,
             borderRadius: 12,
-            boxShadow: '0 24px 56px rgba(0,0,0,.15), 0 8px 18px rgba(0,0,0,.08)',
+            boxShadow: '0 24px 56px rgba(0,0,0,.7), 0 8px 18px rgba(0,0,0,.5)',
             position: 'relative',
             overflow: 'visible',
           }}
@@ -639,7 +716,7 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
               left: 0,
               right: 0,
               height: 90,
-              background: '#FFE4E5',
+              background: C.surface3,
               clipPath: 'polygon(0 100%, 50% 0, 100% 100%)',
             }}
           />
@@ -651,7 +728,7 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
               left: 0,
               width: 140,
               height: 180,
-              background: '#FFF0F0',
+              background: C.surface1,
               clipPath: 'polygon(0 0, 100% 50%, 0 100%)',
             }}
           />
@@ -663,11 +740,11 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
               right: 0,
               width: 140,
               height: 180,
-              background: '#FFF0F0',
+              background: C.surface1,
               clipPath: 'polygon(100% 0, 0 50%, 100% 100%)',
             }}
           />
-          {/* Corazón en el centro */}
+          {/* Sello central */}
           <span
             style={{
               position: 'absolute',
@@ -675,11 +752,12 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 32,
+              fontSize: 28,
+              color: C.muted,
               zIndex: 2,
             }}
           >
-            ❤️
+            ✦
           </span>
 
           {/* Letra emergiendo */}
@@ -692,10 +770,11 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
                 left: '50%',
                 transform: 'translateX(-50%)',
                 width: 220,
-                background: '#fff',
-                borderRadius: 8,
-                padding: '12px 16px',
-                boxShadow: '0 8px 24px rgba(0,0,0,.12)',
+                background: C.surface1,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+                padding: '14px 16px',
+                boxShadow: '0 8px 24px rgba(0,0,0,.6)',
                 zIndex: 10,
                 textAlign: 'center',
               }}
@@ -706,7 +785,7 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
                   margin: '6px 0 0',
                   fontSize: 13,
                   fontWeight: 700,
-                  color: '#FF5A5F',
+                  color: C.fg,
                   letterSpacing: '.06em',
                 }}
               >
@@ -724,7 +803,7 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
               left: 0,
               right: 0,
               height: 90,
-              background: '#FFD6D8',
+              background: C.surface2,
               clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
               zIndex: 5,
               transformOrigin: 'top center',
@@ -741,11 +820,12 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
             width: 32,
             height: 32,
             borderRadius: 4,
-            border: '2px solid #FF5A5F',
+            border: `1.5px solid ${C.borderHover}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 16,
+            color: C.fg,
             zIndex: 8,
           }}
         >
@@ -753,7 +833,7 @@ const EnvelopeBox = ({ onOpen }: { onOpen: () => void }) => {
         </div>
       </button>
 
-      <p className="text-graphite" style={{ marginTop: 32, fontSize: 14 }}>
+      <p style={{ marginTop: 32, fontSize: 14, color: C.muted }}>
         {phase === 'idle' ? 'Pulsa el sobre para abrirlo.' : '…'}
       </p>
     </main>
@@ -788,23 +868,31 @@ const RevealAlbum = ({ photos }: { photos: PublicTripPhoto[] }) => {
         style={{
           gap: 12,
           paddingTop: 32,
-          borderTop: '1px solid var(--color-silver-mist, #e5e5ea)',
+          borderTop: `1px solid ${C.border}`,
         }}
       >
-        <Images className="w-5 h-5" color="#FF5A5F" strokeWidth={1.8} />
+        <Images className="w-5 h-5" color={C.fg} strokeWidth={1.8} />
         <h2
-          className="text-ink"
           style={{
-            fontFamily: 'Inter, var(--font-sf-pro-display)',
-            fontWeight: 700,
+            fontFamily: FONT_DISPLAY,
+            fontWeight: 600,
             fontSize: 'clamp(22px, 3vw, 30px)',
-            letterSpacing: '-0.01em',
+            letterSpacing: '-0.02em',
+            color: C.fg,
             margin: 0,
           }}
         >
           Álbum de Recuerdos
         </h2>
-        <span className="font-mono text-graphite" style={{ fontSize: 11, letterSpacing: '.10em' }}>
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 11,
+            letterSpacing: '.10em',
+            textTransform: 'uppercase',
+            color: C.muted,
+          }}
+        >
           {items.length} {items.length === 1 ? 'foto' : 'fotos'}
         </span>
       </header>
@@ -823,9 +911,10 @@ const RevealAlbum = ({ photos }: { photos: PublicTripPhoto[] }) => {
             style={{
               animationDelay: `${Math.min(i, 12) * 60}ms`,
               margin: 0,
-              borderRadius: 16,
+              borderRadius: 12,
               overflow: 'hidden',
-              background: 'var(--color-fog, #f5f5f7)',
+              background: C.surface1,
+              border: `1px solid ${C.surface3}`,
               aspectRatio: '4 / 3',
               position: 'relative',
             }}
@@ -842,10 +931,17 @@ const RevealAlbum = ({ photos }: { photos: PublicTripPhoto[] }) => {
                 height: '100%',
                 objectFit: 'cover',
                 display: 'block',
-                transition: 'transform .5s ease',
+                opacity: 0.85,
+                transition: 'transform .5s ease, opacity .3s ease',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.04)')}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = '')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.04)';
+                e.currentTarget.style.opacity = '1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = '';
+                e.currentTarget.style.opacity = '0.85';
+              }}
             />
             {p.caption && (
               <figcaption
@@ -858,7 +954,7 @@ const RevealAlbum = ({ photos }: { photos: PublicTripPhoto[] }) => {
                   color: '#fff',
                   fontSize: 12,
                   fontWeight: 500,
-                  background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,.55) 100%)',
+                  background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,.8) 100%)',
                 }}
               >
                 {p.caption}
@@ -871,12 +967,13 @@ const RevealAlbum = ({ photos }: { photos: PublicTripPhoto[] }) => {
   );
 };
 
-/* ─── Caja de regalo CSS ─── */
+/* ─── Monolito de Regalo · superficie Keynote ─── */
 const GiftBox = ({ onOpen }: { onOpen: () => void }) => (
   <main
     className="min-h-screen flex flex-col items-center justify-center"
     style={{
-      background: 'radial-gradient(circle at 50% 40%, #FF5A5F22, #fff 70%)',
+      background: `radial-gradient(circle at 50% 40%, rgba(255,255,255,.06), ${C.bg} 70%)`,
+      color: C.fg,
       padding: 24,
     }}
   >
@@ -885,25 +982,36 @@ const GiftBox = ({ onOpen }: { onOpen: () => void }) => (
       .gift-box {
         animation: wobble 2.5s ease-in-out infinite;
         transform-origin: bottom center;
-        transition: transform .2s ease;
+        transition: transform .4s cubic-bezier(0.16, 1, 0.3, 1), border-color .4s ease;
       }
-      .gift-box:hover { animation-play-state: paused; transform: scale(1.05); }
+      .gift-box:hover {
+        animation-play-state: paused;
+        transform: scale(1.03);
+        border-color: ${C.borderHover} !important;
+      }
     `}</style>
 
     <span
-      className="font-mono uppercase"
-      style={{ fontSize: 11, letterSpacing: '.22em', color: '#FF5A5F' }}
+      style={{
+        fontFamily: FONT_MONO,
+        fontSize: 11,
+        letterSpacing: '.22em',
+        textTransform: 'uppercase',
+        color: C.muted,
+      }}
     >
       ✦ Tienes un regalo
     </span>
     <h1
       style={{
-        fontFamily: 'Inter, var(--font-sf-pro-display)',
+        fontFamily: FONT_DISPLAY,
         fontWeight: 700,
-        fontSize: 'clamp(40px, 6vw, 72px)',
-        letterSpacing: '-2px',
-        margin: '12px 0 32px',
+        fontSize: 'clamp(48px, 8vw, 96px)',
+        letterSpacing: '-0.05em',
+        lineHeight: 1.05,
+        margin: '16px 0 40px',
         textAlign: 'center',
+        ...displayGradient,
       }}
     >
       Una sorpresa te espera.
@@ -914,36 +1022,39 @@ const GiftBox = ({ onOpen }: { onOpen: () => void }) => (
       type="button"
       className="gift-box"
       style={{
-        background: 'linear-gradient(135deg, #FF5A5F 0%, #FF8588 100%)',
-        border: 'none',
+        width: 200,
+        height: 280,
+        background: `linear-gradient(135deg, ${C.surface2} 0%, ${C.bg} 100%)`,
+        border: `1px solid ${C.border}`,
         borderRadius: 24,
-        padding: '48px 56px',
         cursor: 'pointer',
-        boxShadow: '0 24px 48px rgba(255,90,95,.35), 0 8px 16px rgba(255,90,95,.25)',
+        boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.05), 0 24px 48px rgba(0,0,0,0.8)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
       }}
     >
-      <Gift className="h-20 w-20" color="#fff" strokeWidth={1.6} />
+      <Gift className="h-12 w-12" color={C.borderHover} strokeWidth={1.5} />
       <span
         style={{
           position: 'absolute',
-          top: -8,
+          top: 16,
           left: '50%',
           transform: 'translateX(-50%)',
-          background: '#febb02',
-          color: '#1d1d1f',
-          padding: '4px 10px',
-          borderRadius: 6,
-          fontSize: 11,
+          fontFamily: FONT_MONO,
+          fontSize: 10,
           fontWeight: 700,
-          letterSpacing: '.06em',
+          letterSpacing: '.18em',
+          textTransform: 'uppercase',
+          color: C.muted,
         }}
       >
-        ABRIR
+        Abrir
       </span>
     </button>
 
-    <p className="text-graphite" style={{ marginTop: 32, fontSize: 14, textAlign: 'center' }}>
+    <p style={{ marginTop: 32, fontSize: 14, textAlign: 'center', color: C.muted }}>
       Pulsa para desvelar tu viaje.
     </p>
   </main>
@@ -961,37 +1072,42 @@ const LockedScreen = ({ revealDate, messagePreview, coverUrl, hints = [] }: Lock
     style={{
       padding: 32,
       textAlign: 'center',
+      color: C.fg,
       background: coverUrl
-        ? `linear-gradient(180deg, rgba(255,255,255,.7) 0%, rgba(255,255,255,.95) 100%), url(${coverUrl}) center/cover no-repeat`
-        : 'radial-gradient(circle at 50% 30%, rgba(255,90,95,.10), #fff 70%)',
+        ? `linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.9) 100%), url(${coverUrl}) center/cover no-repeat`
+        : `radial-gradient(circle at 50% 30%, rgba(255,255,255,.06), ${C.bg} 70%)`,
     }}
   >
-    <Sparkles className="h-10 w-10" color="#FF5A5F" />
+    <Sparkles className="h-10 w-10" color={C.fg} />
     <h1
       style={{
-        fontFamily: 'Inter, var(--font-sf-pro-display)',
+        fontFamily: FONT_DISPLAY,
         fontWeight: 700,
-        fontSize: 'clamp(36px, 6vw, 64px)',
-        letterSpacing: '-1.5px',
+        fontSize: 'clamp(40px, 6vw, 72px)',
+        letterSpacing: '-0.04em',
+        lineHeight: 1.05,
         margin: '20px 0 12px',
-        background: 'linear-gradient(135deg, #1d1d1f 0%, #FF5A5F 100%)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
+        ...displayGradient,
       }}
     >
       Aún no es el momento.
     </h1>
     {messagePreview && (
       <p
-        className="text-graphite"
-        style={{ fontStyle: 'italic', fontSize: 16, maxWidth: 480, marginBottom: 12 }}
+        style={{
+          fontStyle: 'italic',
+          fontSize: 16,
+          maxWidth: 480,
+          marginBottom: 12,
+          color: C.mutedDark,
+        }}
       >
         "{messagePreview}…"
       </p>
     )}
-    <p className="text-graphite" style={{ fontSize: 13, maxWidth: 360 }}>
+    <p style={{ fontSize: 13, maxWidth: 360, color: C.muted }}>
       Se desvela el{' '}
-      <b>
+      <b style={{ color: C.fg }}>
         {new Date(revealDate).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' })}
       </b>
       .
@@ -1008,10 +1124,12 @@ const LockedScreen = ({ revealDate, messagePreview, coverUrl, hints = [] }: Lock
         }}
       >
         <p
-          className="font-mono uppercase text-graphite"
           style={{
+            fontFamily: FONT_MONO,
             fontSize: 11,
             letterSpacing: '.18em',
+            textTransform: 'uppercase',
+            color: C.muted,
             textAlign: 'center',
             marginBottom: 12,
           }}
@@ -1023,24 +1141,24 @@ const LockedScreen = ({ revealDate, messagePreview, coverUrl, hints = [] }: Lock
             <li
               key={i}
               style={{
-                background: '#fff',
-                border: '1px solid var(--color-silver-mist, #e5e5ea)',
+                background: C.surface1,
+                border: `1px solid ${C.surface3}`,
                 borderRadius: 12,
-                padding: '12px 16px',
+                padding: '14px 16px',
                 marginBottom: 8,
                 fontSize: 14,
-                color: 'var(--color-ink)',
+                color: C.fg,
                 lineHeight: 1.4,
                 animation: `hint-in .6s ease-out ${i * 0.1}s both`,
                 display: 'flex',
-                gap: 10,
+                gap: 12,
                 alignItems: 'flex-start',
               }}
             >
               <span
-                className="font-mono"
                 style={{
-                  color: '#FF5A5F',
+                  fontFamily: FONT_MONO,
+                  color: C.fg,
                   fontWeight: 700,
                   fontSize: 11,
                   letterSpacing: '.08em',
@@ -1073,14 +1191,21 @@ interface CenterMessageProps {
 const CenterMessage = ({ title, body, icon }: CenterMessageProps) => (
   <main
     className="min-h-screen flex flex-col items-center justify-center"
-    style={{ padding: 24, textAlign: 'center' }}
+    style={{ padding: 24, textAlign: 'center', background: C.bg, color: C.fg }}
   >
     {icon}
-    <h1 style={{ fontSize: 28, fontWeight: 700, margin: '16px 0 8px' }}>{title}</h1>
-    {body && (
-      <p className="text-graphite" style={{ fontSize: 15, maxWidth: 420 }}>
-        {body}
-      </p>
-    )}
+    <h1
+      style={{
+        fontFamily: FONT_DISPLAY,
+        fontSize: 28,
+        fontWeight: 700,
+        letterSpacing: '-0.02em',
+        margin: '16px 0 8px',
+        color: C.fg,
+      }}
+    >
+      {title}
+    </h1>
+    {body && <p style={{ fontSize: 15, maxWidth: 420, color: C.muted }}>{body}</p>}
   </main>
 );
