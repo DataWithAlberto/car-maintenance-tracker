@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Plus, AlertTriangle, Gauge } from 'lucide-react';
+import { Plus, AlertTriangle, Gauge, Pencil } from 'lucide-react';
 const CarViewer = lazy(() =>
   import('../components/3d/CarViewer').then((m) => ({ default: m.CarViewer })),
 );
@@ -51,6 +51,9 @@ export const CarPage = () => {
   const [showMaintenanceForm, setShowMaintenanceForm] = useState(false);
   const [prefilledType, setPrefilledType] = useState('');
   const [prefilledDescription, setPrefilledDescription] = useState('');
+  const [showKmEdit, setShowKmEdit] = useState(false);
+  const [kmInput, setKmInput] = useState('');
+  const [kmSaving, setKmSaving] = useState(false);
   const [modelUrl, setModelUrl] = useState<string | undefined>(undefined);
   const [modelResolved, setModelResolved] = useState(false);
 
@@ -141,6 +144,25 @@ export const CarPage = () => {
     setShowMaintenanceForm(false);
   };
 
+  const openKmEdit = () => {
+    setKmInput(String(selectedVehicle.current_km));
+    setShowKmEdit(true);
+  };
+
+  const handleKmSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const km = Number(kmInput);
+    if (isNaN(km) || km < 0) return;
+    setKmSaving(true);
+    try {
+      await updateVehicle(selectedVehicle.id, { current_km: km });
+      toast.success('Kilómetros actualizados');
+      setShowKmEdit(false);
+    } finally {
+      setKmSaving(false);
+    }
+  };
+
   return (
     <div className="px-6 sm:px-10 py-10">
       {/* ── Editorial header ── */}
@@ -172,6 +194,34 @@ export const CarPage = () => {
               <span className="text-ink font-medium tabular-nums">
                 {formatKm(selectedVehicle.current_km)}
               </span>
+              <button
+                onClick={openKmEdit}
+                title="Editar kilómetros"
+                className="focus-ring"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 22,
+                  height: 22,
+                  borderRadius: 6,
+                  border: '1px solid var(--color-silver-mist)',
+                  background: 'var(--color-snow)',
+                  cursor: 'pointer',
+                  color: 'var(--color-graphite)',
+                  transition: 'border-color 150ms, color 150ms',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-ink)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--color-ink)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-silver-mist)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--color-graphite)';
+                }}
+              >
+                <Pencil style={{ width: 11, height: 11 }} strokeWidth={1.8} />
+              </button>
             </span>
             {alerts.length > 0 && (
               <>
@@ -265,6 +315,131 @@ export const CarPage = () => {
           onClose={() => setShowMaintenanceForm(false)}
         />
       )}
+
+      {showKmEdit &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 24,
+              background: 'rgba(0,0,0,0.45)',
+              backdropFilter: 'blur(6px)',
+            }}
+            onClick={() => setShowKmEdit(false)}
+          >
+            <div
+              style={{
+                background: 'var(--color-snow)',
+                borderRadius: 20,
+                padding: '28px 28px 24px',
+                width: '100%',
+                maxWidth: 360,
+                boxShadow: '0 24px 48px rgba(0,0,0,0.18)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p
+                className="font-mono uppercase text-graphite"
+                style={{ fontSize: 10, letterSpacing: '0.12em', marginBottom: 8 }}
+              >
+                Actualizar kilometraje
+              </p>
+              <p
+                className="font-display text-ink"
+                style={{ fontWeight: 600, fontSize: 20, letterSpacing: '-0.2px', marginBottom: 20 }}
+              >
+                {selectedVehicle.brand} {selectedVehicle.model}
+              </p>
+              <form
+                onSubmit={handleKmSave}
+                style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+              >
+                <div>
+                  <label
+                    htmlFor="km-input"
+                    className="font-text text-graphite"
+                    style={{ fontSize: 13, display: 'block', marginBottom: 6 }}
+                  >
+                    Kilómetros actuales
+                  </label>
+                  <input
+                    id="km-input"
+                    type="number"
+                    min={0}
+                    value={kmInput}
+                    onChange={(e) => setKmInput(e.target.value)}
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      border: '1px solid var(--color-silver-mist)',
+                      background: 'var(--color-fog)',
+                      fontFamily: 'Inter, var(--font-sf-pro-display)',
+                      fontWeight: 600,
+                      fontSize: 22,
+                      color: 'var(--color-ink)',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                    onFocus={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-ink)';
+                    }}
+                    onBlur={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor =
+                        'var(--color-silver-mist)';
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowKmEdit(false)}
+                    className="font-text"
+                    style={{
+                      flex: 1,
+                      padding: '10px 0',
+                      borderRadius: 10,
+                      border: '1px solid var(--color-silver-mist)',
+                      background: 'transparent',
+                      color: 'var(--color-graphite)',
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={kmSaving}
+                    className="font-text"
+                    style={{
+                      flex: 1,
+                      padding: '10px 0',
+                      borderRadius: 10,
+                      border: 'none',
+                      background: 'var(--color-ink)',
+                      color: '#fff',
+                      fontSize: 15,
+                      fontWeight: 600,
+                      cursor: kmSaving ? 'not-allowed' : 'pointer',
+                      opacity: kmSaving ? 0.7 : 1,
+                    }}
+                  >
+                    {kmSaving ? 'Guardando…' : 'Guardar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
