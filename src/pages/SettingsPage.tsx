@@ -91,7 +91,7 @@ export const SettingsPage = () => {
       setPushEnabled(true);
       toast.success('Recordatorios activados');
     } else {
-      toast.error('El navegador denegó el permiso de notificaciones');
+      toast.error('Se denegó el permiso de notificaciones');
     }
   };
 
@@ -532,12 +532,12 @@ export const SettingsPage = () => {
               className="font-display text-ink"
               style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px' }}
             >
-              Avisos del navegador
+              Avisos del sistema
             </p>
             <p className="font-text text-graphite mt-1" style={{ fontSize: 14, lineHeight: 1.45 }}>
               {notificationsSupported()
-                ? 'Recibe alertas de mantenimiento y documentos al abrir el panel.'
-                : 'Este navegador no admite notificaciones.'}
+                ? 'Recibe alertas de mantenimiento, documentos y anomalías OBD2, aunque la app esté en segundo plano.'
+                : 'Este dispositivo no admite notificaciones.'}
             </p>
           </div>
           <Button

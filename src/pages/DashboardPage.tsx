@@ -111,7 +111,7 @@ export const DashboardPage = () => {
       setStats(map);
       setLoadedAt(new Date());
       if (pushEnabled) {
-        sendAlertNotifications(results.flatMap((r) => r.data.alerts));
+        void sendAlertNotifications(results.flatMap((r) => r.data.alerts));
       }
     });
   }, [vehicles, pushEnabled]);

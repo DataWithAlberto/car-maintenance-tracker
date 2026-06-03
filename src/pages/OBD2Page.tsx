@@ -34,6 +34,7 @@ import { obd2Service } from '../services/obd2.service';
 import { obd2PersistenceService } from '../services/obd2Persistence.service';
 import { exportService } from '../services/export.service';
 import { getDtcDescription } from '../utils/dtcCodes';
+import { sendAnomalyNotifications } from '../utils/notifications';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { KpiCard } from '../components/ui/KpiCard';
@@ -365,6 +366,8 @@ export const OBD2Page = () => {
               toast(`⚠️ ${anomaly.message}`);
             }
           }
+          // Aviso del sistema (nativo en Tauri) aunque la app esté en segundo plano.
+          void sendAnomalyNotifications(anomalies);
         }
       }
     }, 2000);
