@@ -18,6 +18,7 @@ import {
   Store,
   Images,
   Landmark,
+  PieChart,
 } from 'lucide-react';
 import { FloatingDock, type FloatingDockEntry } from './FloatingDock';
 import { BottomNav } from './BottomNav';
@@ -113,6 +114,12 @@ export const Layout = () => {
             icon: Landmark,
             href: '/prestamo',
           },
+          {
+            id: 'cost',
+            label: 'Coste total',
+            icon: PieChart,
+            href: '/coste',
+          },
         ],
       },
       {
@@ -192,6 +199,7 @@ export const Layout = () => {
     if (p === '/sharing' || p.startsWith('/sharing/')) return 'sharing';
     if (p === '/galeria' || p.startsWith('/galeria/')) return 'gallery';
     if (p === '/prestamo' || p.startsWith('/prestamo/')) return 'prestamo';
+    if (p === '/coste' || p.startsWith('/coste/')) return 'cost';
     if (p === '/settings' || p.startsWith('/settings/')) return 'settings';
     return '';
   }, [location.pathname]);

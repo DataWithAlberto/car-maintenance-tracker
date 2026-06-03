@@ -18,6 +18,7 @@ import {
   Settings,
   Images,
   Landmark,
+  PieChart,
   X,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
@@ -75,6 +76,11 @@ const MORE_ITEMS: TabDef[] = [
     to: '/prestamo',
     icon: Landmark,
     label: 'Préstamo',
+  },
+  {
+    to: '/coste',
+    icon: PieChart,
+    label: 'Coste total',
   },
   {
     to: '/documents',

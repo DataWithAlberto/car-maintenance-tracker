@@ -67,6 +67,9 @@ const PrestamoPage = lazy(() =>
 const CalendarPage = lazy(() =>
   import('./pages/CalendarPage').then((m) => ({ default: m.CalendarPage })),
 );
+const CostOverviewPage = lazy(() =>
+  import('./pages/CostOverviewPage').then((m) => ({ default: m.CostOverviewPage })),
+);
 
 const PageFallback = () => (
   <div className="px-6 sm:px-10 py-10 space-y-4">
@@ -153,6 +156,7 @@ function App() {
           <Route path="sharing" element={lazyRoute(<SharingPage />)} />
           <Route path="galeria" element={lazyRoute(<GalleryPage />)} />
           <Route path="prestamo" element={lazyRoute(<PrestamoPage />)} />
+          <Route path="coste" element={lazyRoute(<CostOverviewPage />)} />
           <Route path="calendario" element={lazyRoute(<CalendarPage />)} />
           <Route path="settings" element={lazyRoute(<SettingsPage />)} />
         </Route>
