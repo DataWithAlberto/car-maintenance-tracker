@@ -10,9 +10,11 @@ import {
   Trash2,
   RefreshCw,
   CloudDownload,
+  LineChart,
 } from 'lucide-react';
 import { telemetriaService } from '../../services/telemetria.service';
 import { TelemetryRouteMap } from './TelemetryRouteMap';
+import { TelemetryTripChart } from './TelemetryTripChart';
 import type { TelemetriaPunto, ViajeTelemetria, ViajeTelemetriaStats } from '../../types';
 import toast from 'react-hot-toast';
 
@@ -315,6 +317,20 @@ export const TelemetryTripsSection = ({ vehicleId }: Props) => {
                       value={stats.puntos.toLocaleString('es-ES')}
                       color="#bf5af2"
                     />
+                  </div>
+                )}
+                {puntos.length > 0 && (
+                  <div className="pt-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <LineChart className="h-3.5 w-3.5 text-graphite" strokeWidth={1.7} />
+                      <span
+                        className="font-mono uppercase text-graphite"
+                        style={{ fontSize: 10, letterSpacing: '0.12em' }}
+                      >
+                        Histórico de parámetros
+                      </span>
+                    </div>
+                    <TelemetryTripChart puntos={puntos} />
                   </div>
                 )}
               </>
