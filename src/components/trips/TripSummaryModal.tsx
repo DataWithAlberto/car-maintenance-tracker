@@ -10,6 +10,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Trip } from '../../types';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface Props {
   trip: Trip;
@@ -31,6 +32,7 @@ const fmtDuration = (min?: number) => {
 /* Página de recuerdo: vista editorial de un viaje completado.
  * Mapa estático de Mapbox + stats grandes + álbum si hay fotos. */
 export const TripSummaryModal = ({ trip, onClose }: Props) => {
+  useEscapeKey(onClose);
   const dateRange =
     trip.start_datetime && trip.end_datetime
       ? `${format(parseISO(trip.start_datetime), 'd MMM', { locale: es })} → ${format(parseISO(trip.end_datetime), 'd MMM yyyy', { locale: es })}`

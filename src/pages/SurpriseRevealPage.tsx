@@ -57,6 +57,22 @@ export const SurpriseRevealPage = () => {
       .catch((e: Error) => setError(e.message ?? 'Enlace no válido'));
   }, [token]);
 
+  // Precarga portada y música mientras se ve la caja de regalo, para que el
+  // reveal sea instantáneo y sin parpadeos.
+  useEffect(() => {
+    if (!data || data.locked || opened) return;
+    const cfg = data.trip.surprise_config;
+    if (cfg?.cover_url) {
+      const img = new Image();
+      img.src = cfg.cover_url;
+    }
+    if (cfg?.music_url) {
+      const a = new Audio();
+      a.preload = 'auto';
+      a.src = cfg.music_url;
+    }
+  }, [data, opened]);
+
   if (error) return <CenterMessage title="Enlace no válido" body={error} />;
   if (!data)
     return <CenterMessage icon={<Loader2 className="h-6 w-6 animate-spin" />} title="Cargando…" />;

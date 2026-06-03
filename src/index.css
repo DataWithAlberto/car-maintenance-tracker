@@ -472,9 +472,46 @@ body {
 
 body {
   min-height: 100vh;
+  min-height: 100dvh; /* dvh corrige el corte por la barra del navegador móvil */
+  overflow-x: hidden; /* nunca scroll horizontal accidental */
 }
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* iOS hace zoom automático al enfocar un input con fuente < 16px.
+ * Forzamos 16px en móvil para evitarlo. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Feedback táctil: el elemento se "hunde" al pulsar (no hay hover en móvil) */
+@media (hover: none) {
+  button:active,
+  a:active,
+  [role='button']:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Quita el delay de 300ms y el doble-tap-zoom en controles táctiles */
+button,
+a,
+[role='button'],
+label {
+  touch-action: manipulation;
+}
+
+/* Pantallas a altura completa usan dvh donde se soporte (evita cortes móvil) */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
 }
 
 h1,
@@ -715,6 +752,16 @@ a:hover {
   }
   .skeleton {
     animation: none;
+  }
+  /* Respeta "reducir movimiento" del sistema: corta cualquier animación
+   * y transición larga (confeti, vuelo, typewriter, wobble del regalo…). */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

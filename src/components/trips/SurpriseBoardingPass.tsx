@@ -3,6 +3,7 @@ import { Ticket, Download, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface Props {
   destination: string;
@@ -58,6 +59,7 @@ export const SurpriseBoardingPass = ({
 }: Props) => {
   const [open, setOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  useEscapeKey(() => setOpen(false), open);
 
   const fromCode = cityCode(safe(startLocation, 'ORI'));
   const toCode = cityCode(destination);

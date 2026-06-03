@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { QrCode, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface Props {
   url: string;
@@ -15,6 +16,7 @@ const buildQrUrl = (url: string, size = 512) =>
 export const SurpriseQRCode = ({ url, filename = 'sorpresa-qr.png' }: Props) => {
   const [open, setOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  useEscapeKey(() => setOpen(false), open);
 
   const download = async () => {
     setDownloading(true);
