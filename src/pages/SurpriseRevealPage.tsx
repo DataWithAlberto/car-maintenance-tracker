@@ -59,9 +59,7 @@ export const SurpriseRevealPage = () => {
 
   if (error) return <CenterMessage title="Enlace no válido" body={error} />;
   if (!data)
-    return (
-      <CenterMessage icon={<Loader2 className="h-6 w-6 animate-spin" />} title="Cargando viaje…" />
-    );
+    return <CenterMessage icon={<Loader2 className="h-6 w-6 animate-spin" />} title="Cargando…" />;
   if (data.locked) {
     return (
       <LockedScreen

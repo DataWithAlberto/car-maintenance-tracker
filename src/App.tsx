@@ -127,6 +127,8 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/invite/:token" element={lazyRoute(<InvitePage />)} />
         <Route path="/taller/:token" element={lazyRoute(<WorkshopPage />)} />
+        {/* Enlace neutro (sin spoiler en la URL) + alias antiguo por compat */}
+        <Route path="/s/:token" element={lazyRoute(<SurpriseRevealPage />)} />
         <Route path="/viajes/surprise/:token" element={lazyRoute(<SurpriseRevealPage />)} />
         <Route
           path="/"

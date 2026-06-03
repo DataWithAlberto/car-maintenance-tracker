@@ -26,7 +26,7 @@ const OPTIONS: { value: TripVisibility; label: string; icon: typeof Lock; help: 
 
 export const TripVisibilityControl = ({ visibility, shareToken, onChange }: Props) => {
   const [copied, setCopied] = useState(false);
-  const publicUrl = shareToken ? `${window.location.origin}/viajes/surprise/${shareToken}` : '';
+  const publicUrl = shareToken ? `${window.location.origin}/s/${shareToken}` : '';
 
   const copy = async () => {
     if (!publicUrl) return;

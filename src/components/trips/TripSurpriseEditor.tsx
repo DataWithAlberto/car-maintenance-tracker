@@ -94,9 +94,7 @@ export const TripSurpriseEditor = ({
   };
 
   const publicUrl =
-    shareToken && typeof window !== 'undefined'
-      ? `${window.location.origin}/viajes/surprise/${shareToken}`
-      : '';
+    shareToken && typeof window !== 'undefined' ? `${window.location.origin}/s/${shareToken}` : '';
   const whatsappUrl = publicUrl
     ? `https://wa.me/?text=${encodeURIComponent(`Tengo una sorpresa para ti ✦ ${publicUrl}`)}`
     : '';
@@ -294,7 +292,7 @@ export const TripSurpriseEditor = ({
             <div className="flex items-center" style={{ gap: 8, flexWrap: 'wrap' }}>
               {shareToken && (
                 <a
-                  href={`/viajes/surprise/${shareToken}`}
+                  href={`/s/${shareToken}`}
                   target="_blank"
                   rel="noreferrer"
                   className="transition-opacity hover:opacity-75"
