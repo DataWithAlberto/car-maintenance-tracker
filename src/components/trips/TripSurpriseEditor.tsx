@@ -65,6 +65,32 @@ export const TripSurpriseEditor = ({
 
   const openedAt = config?.opened_at ?? null;
 
+  if (openedAt) {
+    return (
+      <div
+        className="bg-snow flex items-center"
+        style={{
+          gap: 10,
+          border: '1px solid rgba(28,176,92,.3)',
+          borderLeft: '3px solid #1cb05c',
+          borderRadius: 18,
+          padding: '14px 20px',
+          background: 'rgba(28,176,92,.06)',
+        }}
+      >
+        <CheckCircle2 className="h-5 w-5 shrink-0" color="#1cb05c" />
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#1cb05c', margin: 0 }}>
+            Sorpresa entregada
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--color-graphite)', margin: '2px 0 0' }}>
+            Abierta el {format(parseISO(openedAt), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const toggle = async () => {
     setSaving(true);
     try {
