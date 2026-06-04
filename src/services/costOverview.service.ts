@@ -50,6 +50,23 @@ export interface CostOverview {
   pendingLoan: number;
   topSlice: CostSlice | null;
   maxMonth: CostMonth | null;
+  forecast: CostForecast;
+}
+
+export interface CostForecastItem {
+  key: CostCategoryKey;
+  label: string;
+  amount: number;
+  detail: string;
+  confidence: 'alta' | 'media' | 'baja';
+  color: string;
+}
+
+export interface CostForecast {
+  totalNext12: number;
+  avgPerMonth: number;
+  items: CostForecastItem[];
+  headline: string;
 }
 
 export interface CostInputs {
@@ -140,6 +157,152 @@ const insuranceCostForMonth = (policies: InsurancePolicy[], y: number, m: number
     if (ps < mEnd && pe >= mStart) total += annual / 12;
   }
   return total;
+};
+
+const last12Window = (now: Date): { from: Date; to: Date } => ({
+  from: startOfMonth(now.getFullYear(), now.getMonth() - 11),
+  to: now,
+});
+
+const plannedMaintenanceCost = (
+  maintenance: MaintenanceRecord[],
+  currentKm: number,
+  now: Date,
+): { amount: number; count: number; confidence: 'media' | 'baja' } => {
+  const inNextYear = new Date(now);
+  inNextYear.setFullYear(inNextYear.getFullYear() + 1);
+
+  let amount = 0;
+  let count = 0;
+  for (const r of maintenance) {
+    const dueByKm =
+      currentKm > 0 && r.next_service_km != null && r.next_service_km <= currentKm + 15000;
+    const dueByDate =
+      r.next_service_date != null &&
+      new Date(r.next_service_date).getTime() <= inNextYear.getTime();
+    if (!dueByKm && !dueByDate) continue;
+    count += 1;
+    amount += r.cost && r.cost > 0 ? r.cost : 180;
+  }
+
+  return { amount, count, confidence: count > 0 ? 'media' : 'baja' };
+};
+
+const buildForecast = (
+  inputs: CostInputs,
+  pendingLoan: number,
+  now: Date,
+): CostForecast => {
+  const { expenses, maintenance, insurance, prestamo, currentKm } = inputs;
+  const { from, to } = last12Window(now);
+
+  let fuelLast12 = 0;
+  let otherLast12 = 0;
+  const monthsWithFuel = new Set<string>();
+  const monthsWithOther = new Set<string>();
+  const keyFor = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${d.getMonth()}`;
+  };
+
+  for (const e of expenses) {
+    if (!inWindow(e.date, from, to)) continue;
+    if (e.category === 'Combustible') {
+      fuelLast12 += e.amount;
+      monthsWithFuel.add(keyFor(e.date));
+    } else if (!EXCLUDED_EXPENSE_CATEGORIES.has(e.category)) {
+      otherLast12 += e.amount;
+      monthsWithOther.add(keyFor(e.date));
+    }
+  }
+
+  const recentLoanPayments = prestamo
+    .filter((m) => !m.deleted_at && inWindow(m.fecha, from, to))
+    .map((m) => m.importe);
+  const avgLoanPayment =
+    recentLoanPayments.length > 0
+      ? recentLoanPayments.reduce((s, v) => s + v, 0) / recentLoanPayments.length
+      : 0;
+  const loanNext12 = pendingLoan > 0 ? Math.min(pendingLoan, avgLoanPayment * 12) : 0;
+  const insuranceNext12 = insuranceCostInWindow(
+    insurance,
+    now,
+    new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()),
+  );
+  const maintenancePlan = plannedMaintenanceCost(maintenance, currentKm, now);
+  const maintenanceFallback =
+    maintenance
+      .filter((r) => inWindow(r.date, from, to))
+      .reduce((sum, r) => sum + (r.cost ?? 0), 0) * 0.9;
+  const maintenanceNext12 =
+    maintenancePlan.amount > 0 ? maintenancePlan.amount : Math.round(maintenanceFallback);
+
+  const forecastItems: CostForecastItem[] = [
+    {
+      key: 'financiacion',
+      label: LABELS.financiacion,
+      amount: loanNext12,
+      detail:
+        pendingLoan > 0
+          ? `${recentLoanPayments.length || 0} pagos recientes como base`
+          : 'préstamo liquidado',
+      confidence: recentLoanPayments.length >= 3 ? 'alta' : 'baja',
+      color: COLORS.financiacion,
+    },
+    {
+      key: 'combustible',
+      label: LABELS.combustible,
+      amount: fuelLast12,
+      detail: `${monthsWithFuel.size} meses con repostajes`,
+      confidence: monthsWithFuel.size >= 6 ? 'alta' : monthsWithFuel.size >= 3 ? 'media' : 'baja',
+      color: COLORS.combustible,
+    },
+    {
+      key: 'mantenimiento',
+      label: LABELS.mantenimiento,
+      amount: maintenanceNext12,
+      detail:
+        maintenancePlan.count > 0
+          ? `${maintenancePlan.count} servicio${maintenancePlan.count > 1 ? 's' : ''} próximo${maintenancePlan.count > 1 ? 's' : ''}`
+          : 'estimado por histórico reciente',
+      confidence: maintenancePlan.count > 0 ? maintenancePlan.confidence : 'baja',
+      color: COLORS.mantenimiento,
+    },
+    {
+      key: 'seguro',
+      label: LABELS.seguro,
+      amount: insuranceNext12,
+      detail: insurance.length > 0 ? 'prima anualizada' : 'sin póliza activa registrada',
+      confidence: insurance.length > 0 ? 'alta' : 'baja',
+      color: COLORS.seguro,
+    },
+    {
+      key: 'otros',
+      label: LABELS.otros,
+      amount: otherLast12,
+      detail: `${monthsWithOther.size} meses con gastos varios`,
+      confidence: monthsWithOther.size >= 4 ? 'media' : 'baja',
+      color: COLORS.otros,
+    },
+  ];
+
+  const raw = forecastItems
+    .filter((item) => item.amount > 0)
+    .map((item) => ({ ...item, amount: Math.round(item.amount * 100) / 100 }))
+    .sort((a, b) => b.amount - a.amount);
+
+  const totalNext12 = raw.reduce((sum, item) => sum + item.amount, 0);
+  const headline =
+    raw.length === 0
+      ? 'Registra costes para generar una previsión'
+      : `La mayor presión prevista será ${raw[0].label.toLowerCase()}`;
+
+  return {
+    totalNext12,
+    avgPerMonth: totalNext12 / 12,
+    items: raw,
+    headline,
+  };
 };
 
 export const costOverviewService = {
@@ -258,6 +421,8 @@ export const costOverviewService = {
       null,
     );
 
+    const forecast = buildForecast(inputs, pendingLoan, now);
+
     return {
       total,
       slices,
@@ -268,6 +433,7 @@ export const costOverviewService = {
       pendingLoan,
       topSlice: slices[0] ?? null,
       maxMonth: maxMonth && maxMonth.total > 0 ? maxMonth : null,
+      forecast,
     };
   },
 };

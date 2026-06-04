@@ -13,4 +13,5 @@ export const env = {
   supabaseAnonKey: required('SUPABASE_ANON_KEY', process.env.SUPABASE_ANON_KEY),
   supabaseServiceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE_KEY),
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  geminiApiKey: process.env.GEMINI_API_KEY ?? '',
 };

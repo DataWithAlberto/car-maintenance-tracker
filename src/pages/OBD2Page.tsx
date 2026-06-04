@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Cpu,
@@ -44,6 +44,7 @@ import { OBD2ThresholdsPanel } from '../components/obd2/OBD2ThresholdsPanel';
 import { SyncStatusBadge } from '../components/obd2/SyncStatusBadge';
 import { TelemetryTripsSection } from '../components/obd2/TelemetryTripsSection';
 import type { OBD2Reading } from '../types';
+import type { LiveData } from '../services/obd2.service';
 import toast from 'react-hot-toast';
 
 // ─── Gauge bar ───────────────────────────────────────────────────────────────
@@ -87,6 +88,40 @@ const StatusBadge = ({ status }: { status: string }) => {
       {s.label}
     </span>
   );
+};
+
+const buildDemoLiveData = (tick: number, baseKm: number): LiveData => {
+  const wave = Math.sin(tick / 2.7);
+  const pulse = Math.cos(tick / 4.1);
+  const speed = Math.max(0, Math.round(54 + wave * 38 + pulse * 11));
+  const rpm = Math.max(760, Math.round(880 + speed * 34 + Math.sin(tick) * 220));
+
+  return {
+    rpm,
+    speed,
+    coolantTemp: Math.round(86 + Math.min(tick, 20) * 0.45 + Math.sin(tick / 6) * 3),
+    fuelLevel: Math.max(6, Math.round(64 - tick * 0.18)),
+    odometer: Math.round(baseKm + tick * 0.9),
+    oilPressure: Math.round(220 + rpm / 38),
+    batteryVoltage: Number((13.7 + Math.sin(tick / 5) * 0.18).toFixed(1)),
+    engineLoad: Math.max(14, Math.min(91, Math.round(32 + speed * 0.42 + wave * 12))),
+    timingAdvance: Number((8 + pulse * 5).toFixed(1)),
+    engineRuntime: tick * 2,
+    mafAirFlow: Number((3.8 + rpm / 520 + speed / 42).toFixed(1)),
+    fuelTrimBank1: Number((Math.sin(tick / 3) * 4.2).toFixed(1)),
+    fuelRate: Number((1.8 + speed / 28 + rpm / 2600).toFixed(1)),
+    shortTermFuelTrim1: Number((Math.sin(tick / 2.2) * 5).toFixed(1)),
+    longTermFuelTrim1: Number((Math.cos(tick / 7) * 2.8).toFixed(1)),
+    intakeManifoldPressure: Math.round(36 + speed * 0.33 + Math.max(0, wave) * 18),
+    absoluteLoad: Math.max(18, Math.min(100, Math.round(42 + speed * 0.5))),
+    relativeThrottlePos: Math.max(0, Math.min(94, Math.round(19 + speed * 0.37 + wave * 14))),
+    ambientAirTemp: 22,
+    absThrottlePosB: Math.max(0, Math.min(90, Math.round(17 + speed * 0.31))),
+    accPedalPosD: Math.max(0, Math.min(88, Math.round(14 + speed * 0.28 + wave * 13))),
+    accPedalPosE: Math.max(0, Math.min(88, Math.round(13 + speed * 0.26 + wave * 12))),
+    catalystTempBank1Sensor1: Math.round(360 + speed * 2.6 + Math.max(0, wave) * 38),
+    numEmissionsDtc: tick > 8 ? 1 : 0,
+  };
 };
 
 // ─── PID Card (small) ────────────────────────────────────────────────────────
@@ -170,6 +205,9 @@ export const OBD2Page = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [autoConnecting, setAutoConnecting] = useState(false);
   const [previousDevice, setPreviousDevice] = useState<string | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
+  const demoIntervalRef = useRef<number | null>(null);
+  const demoTickRef = useRef(0);
 
   useEffect(() => {
     if (!selectedVehicle) return;
@@ -299,6 +337,16 @@ export const OBD2Page = () => {
     }
   };
 
+  const stopDemo = useCallback((updateState = true) => {
+    if (demoIntervalRef.current != null) {
+      window.clearInterval(demoIntervalRef.current);
+      demoIntervalRef.current = null;
+    }
+    if (updateState) setDemoMode(false);
+  }, []);
+
+  useEffect(() => () => stopDemo(false), [stopDemo]);
+
   if (!selectedVehicle) {
     return (
       <div className="px-6 sm:px-10 py-16">
@@ -321,6 +369,7 @@ export const OBD2Page = () => {
   // ─── Actions ────────────────────────────────────────────────────────────────
 
   const handleConnect = async () => {
+    stopDemo();
     if (!obd2Service.isSupported) {
       toast.error('Web Bluetooth no disponible. Usa Chrome en Android o macOS.');
       return;
@@ -339,6 +388,7 @@ export const OBD2Page = () => {
   };
 
   const handleDisconnect = async () => {
+    stopDemo();
     obd2Service.stopPolling();
     setPolling(false);
     await obd2Service.disconnect();
@@ -347,6 +397,10 @@ export const OBD2Page = () => {
   };
 
   const handleStartPolling = () => {
+    if (demoMode) {
+      toast('El modo demo ya emite datos cada 2 segundos');
+      return;
+    }
     setPolling(true);
     obd2Service.startPolling(async (data) => {
       setLiveData(data);
@@ -378,6 +432,37 @@ export const OBD2Page = () => {
     setPolling(false);
   };
 
+  const handleStartDemo = () => {
+    obd2Service.stopPolling();
+    if (demoIntervalRef.current != null) window.clearInterval(demoIntervalRef.current);
+
+    demoTickRef.current = 0;
+    const emit = () => {
+      const next = buildDemoLiveData(demoTickRef.current, selectedVehicle.current_km);
+      demoTickRef.current += 1;
+      setLiveData(next);
+      addReading(next);
+    };
+
+    setDemoMode(true);
+    setStatus('connected');
+    setDeviceName('Simulador OBD-II');
+    setPolling(true);
+    setDtcs([{ code: 'P0420', raw: '430420' }], true);
+    setVin('DEMO1CMT2026VIN', true);
+    emit();
+    demoIntervalRef.current = window.setInterval(emit, 2000);
+    toast.success('Modo demo OBD-II activado');
+  };
+
+  const handleStopDemo = () => {
+    stopDemo();
+    setPolling(false);
+    setStatus('disconnected');
+    setDeviceName('');
+    toast.success('Modo demo detenido');
+  };
+
   const handleToggleRecording = () => {
     if (!selectedVehicle) {
       toast.error('Selecciona un vehículo primero');
@@ -388,6 +473,13 @@ export const OBD2Page = () => {
   };
 
   const handleReadOnce = async () => {
+    if (demoMode) {
+      const next = buildDemoLiveData(demoTickRef.current, selectedVehicle.current_km);
+      demoTickRef.current += 1;
+      setLiveData(next);
+      addReading(next);
+      return;
+    }
     try {
       const data = await obd2Service.readLiveData();
       setLiveData(data);
@@ -397,6 +489,11 @@ export const OBD2Page = () => {
   };
 
   const handleReadDtcs = async () => {
+    if (demoMode) {
+      setDtcs([{ code: 'P0420', raw: '430420' }], true);
+      toast.success('Código demo detectado');
+      return;
+    }
     setDtcLoading(true);
     try {
       const codes = await obd2Service.readDtcs();
@@ -414,6 +511,11 @@ export const OBD2Page = () => {
   };
 
   const handleClearDtcs = async () => {
+    if (demoMode) {
+      setDtcs([], true);
+      toast.success('Códigos demo borrados');
+      return;
+    }
     setClearLoading(true);
     try {
       await obd2Service.clearDtcs();
@@ -427,6 +529,11 @@ export const OBD2Page = () => {
   };
 
   const handleReadVin = async () => {
+    if (demoMode) {
+      setVin('DEMO1CMT2026VIN', true);
+      toast.success('VIN demo leído');
+      return;
+    }
     setVinLoading(true);
     try {
       const v = await obd2Service.readVin();
@@ -576,31 +683,58 @@ export const OBD2Page = () => {
             )}
           </div>
           {connected ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleDisconnect}
-              iconLeft={<BluetoothOff className="h-4 w-4" strokeWidth={1.6} />}
-            >
-              Desconectar
-            </Button>
+            demoMode ? (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleStopDemo}
+                iconLeft={<Square className="h-4 w-4" strokeWidth={1.6} />}
+              >
+                Detener demo
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleDisconnect}
+                iconLeft={<BluetoothOff className="h-4 w-4" strokeWidth={1.6} />}
+              >
+                Desconectar
+              </Button>
+            )
           ) : (
-            <Button
-              variant="accent"
-              size="sm"
-              loading={status === 'connecting'}
-              onClick={handleConnect}
-              disabled={!obd2Service.isSupported}
-              iconLeft={
-                status !== 'connecting' ? (
-                  <Bluetooth className="h-4 w-4" strokeWidth={1.6} />
-                ) : undefined
-              }
-            >
-              Conectar adaptador
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleStartDemo}
+                iconLeft={<Play className="h-4 w-4" strokeWidth={1.6} />}
+              >
+                Modo demo
+              </Button>
+              <Button
+                variant="accent"
+                size="sm"
+                loading={status === 'connecting'}
+                onClick={handleConnect}
+                disabled={!obd2Service.isSupported}
+                iconLeft={
+                  status !== 'connecting' ? (
+                    <Bluetooth className="h-4 w-4" strokeWidth={1.6} />
+                  ) : undefined
+                }
+              >
+                Conectar adaptador
+              </Button>
+            </div>
           )}
         </div>
+        {demoMode && (
+          <p className="font-text text-graphite mt-4" style={{ fontSize: 13, lineHeight: 1.45 }}>
+            Demo activa: genera telemetría realista, VIN y un DTC de ejemplo. No guarda lecturas en
+            Supabase aunque la grabación esté activada.
+          </p>
+        )}
       </section>
 
       {/* Viajes registrados automáticamente (OBDLink → Dropbox → Supabase) */}

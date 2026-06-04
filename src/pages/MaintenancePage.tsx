@@ -88,11 +88,6 @@ export const MaintenancePage = () => {
 
   const handleAnalyze = async () => {
     if (!selectedVehicle) return;
-    if (!geminiApiKey) {
-      toast.error('Configura la API key de Gemini en Ajustes');
-      navigate('/settings');
-      return;
-    }
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;

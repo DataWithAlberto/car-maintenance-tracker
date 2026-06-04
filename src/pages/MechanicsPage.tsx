@@ -82,10 +82,6 @@ export const MechanicsPage = () => {
   };
 
   const handleDiagnose = async () => {
-    if (!geminiApiKey) {
-      toast.error('Configura tu API key de Gemini en Ajustes');
-      return;
-    }
     if (symptom.trim().length < 8) {
       toast.error('Describe el problema con un poco más de detalle');
       return;
@@ -114,7 +110,7 @@ export const MechanicsPage = () => {
       setStatusMsg('Cargando historial del vehículo…');
       const records = await maintenanceService.getByVehicle(selectedVehicle.id).catch(() => []);
 
-      setStatusMsg('Consultando Gemini…');
+      setStatusMsg('Consultando IA…');
       const result = await claudeService.diagnose({
         apiKey: geminiApiKey,
         vehicle: selectedVehicle,
@@ -179,17 +175,17 @@ export const MechanicsPage = () => {
                 className="font-display text-ink"
                 style={{ fontWeight: 600, fontSize: 20, lineHeight: 1.2, letterSpacing: '-0.2px' }}
               >
-                Falta tu API key de Gemini
+                Gemini seguro por servidor
               </h3>
               <p
                 className="font-text text-graphite mt-2 mb-4 max-w-xl"
                 style={{ fontSize: 15, lineHeight: 1.45 }}
               >
-                Esta función usa la API gratuita de Google Gemini. Añade tu clave en Ajustes para
-                activar el diagnóstico inteligente.
+                Si el backend tiene GEMINI_API_KEY configurada, no necesitas escribir ninguna clave
+                aquí. La clave local de Ajustes queda como respaldo para desarrollo.
               </p>
               <Button variant="accent" size="sm" onClick={() => navigate('/settings')}>
-                Ir a Ajustes
+                Ajustes de IA
               </Button>
             </div>
           </div>
@@ -216,7 +212,6 @@ export const MechanicsPage = () => {
             variant="accent"
             onClick={handleDiagnose}
             loading={loading}
-            disabled={!geminiApiKey}
             iconLeft={!loading ? <Sparkles className="h-4 w-4" strokeWidth={1.8} /> : undefined}
           >
             Diagnosticar y buscar talleres

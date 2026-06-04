@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Info } from 'lucide-react';
+import { Info, TrendingUp } from 'lucide-react';
 import { useVehicleStore } from '../store/vehicleStore';
 import { expensesService } from '../services/expenses.service';
 import { maintenanceService } from '../services/maintenance.service';
@@ -14,6 +14,7 @@ import {
 } from '../services/costOverview.service';
 import { CostDonut } from '../components/cost/CostDonut';
 import { SkeletonRow } from '../components/ui/Skeleton';
+import { Button } from '../components/ui/Button';
 import type { Expense, MaintenanceRecord, InsurancePolicy, PrestamoMovimiento } from '../types';
 import { formatCurrency, formatKm } from '../utils/formatters';
 import { cn } from '../utils/cn';
@@ -71,7 +72,7 @@ export const CostOverviewPage = () => {
 
   if (!selectedVehicle) return null;
 
-  const { total, slices, monthly, costPerKm, avgPerMonth, pendingLoan, topSlice, maxMonth } =
+  const { total, slices, monthly, costPerKm, avgPerMonth, pendingLoan, topSlice, maxMonth, forecast } =
     overview;
 
   return (
@@ -393,6 +394,73 @@ export const CostOverviewPage = () => {
               </div>
             </section>
           </div>
+
+          {/* ── Predicción próximos 12 meses ─────────────────────── */}
+          <section className="bg-snow border border-silver-mist rounded-[28px] p-7">
+            <div className="flex items-start justify-between gap-6 flex-wrap mb-6">
+              <div>
+                <span
+                  className="inline-flex items-center gap-2 font-mono uppercase text-graphite"
+                  style={{ fontSize: 11, letterSpacing: '0.14em' }}
+                >
+                  <TrendingUp className="h-3.5 w-3.5" strokeWidth={1.7} />
+                  Previsión · próximos 12 meses
+                </span>
+                <h2
+                  className="font-display text-ink mt-3"
+                  style={{ fontWeight: 700, fontSize: 28, letterSpacing: '-0.5px' }}
+                >
+                  {formatCurrency(forecast.totalNext12)}
+                </h2>
+                <p className="font-text text-graphite mt-1" style={{ fontSize: 14 }}>
+                  {forecast.headline} · media prevista {formatCurrency(forecast.avgPerMonth)} / mes
+                </p>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => navigate('/maintenance')}>
+                Revisar plan
+              </Button>
+            </div>
+
+            {forecast.items.length === 0 ? (
+              <p className="font-text text-graphite" style={{ fontSize: 14 }}>
+                Añade repostajes, pólizas, mantenimiento o préstamo para activar la previsión.
+              </p>
+            ) : (
+              <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-px rounded-[18px] overflow-hidden bg-silver-mist">
+                {forecast.items.map((item) => (
+                  <div key={item.key} className="bg-snow p-5">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="rounded-full"
+                        style={{ width: 7, height: 7, background: item.color }}
+                      />
+                      <span
+                        className="font-mono uppercase text-graphite truncate"
+                        style={{ fontSize: 9, letterSpacing: '0.1em' }}
+                      >
+                        {item.label}
+                      </span>
+                    </div>
+                    <p
+                      className="font-display text-ink tabular-nums"
+                      style={{ fontWeight: 700, fontSize: 23, letterSpacing: '-0.35px', marginTop: 10 }}
+                    >
+                      {formatCurrency(item.amount)}
+                    </p>
+                    <p className="font-text text-graphite mt-1" style={{ fontSize: 12, lineHeight: 1.4 }}>
+                      {item.detail}
+                    </p>
+                    <span
+                      className="inline-flex rounded-full bg-fog px-2.5 py-1 font-mono uppercase text-graphite mt-3"
+                      style={{ fontSize: 9, letterSpacing: '0.08em' }}
+                    >
+                      Confianza {item.confidence}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       )}
     </div>

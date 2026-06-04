@@ -64,7 +64,7 @@ export const ExpenseForm = ({ vehicleId, initialData, onSubmit, onClose }: Props
       const url = await storageService.upload(path, file);
       setForm((f) => ({ ...f, receipt_url: url }));
 
-      if (geminiApiKey) {
+      try {
         const { base64, mediaType } = await fileToBase64(file);
         const scan = await claudeService.parseReceipt({ apiKey: geminiApiKey, base64, mediaType });
         setForm((f) => ({
@@ -79,8 +79,9 @@ export const ExpenseForm = ({ vehicleId, initialData, onSubmit, onClose }: Props
           description: scan.description ?? f.description,
         }));
         toast.success('Ticket leído por IA');
-      } else {
+      } catch (scanErr) {
         toast.success('Ticket adjuntado');
+        toast.error(scanErr instanceof Error ? scanErr.message : 'La IA no pudo leer el ticket');
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo procesar el ticket');
@@ -144,9 +145,7 @@ export const ExpenseForm = ({ vehicleId, initialData, onSubmit, onClose }: Props
               {form.receipt_url ? 'Ticket adjuntado' : 'Foto del ticket'}
             </p>
             <p className="font-text text-graphite" style={{ fontSize: 12 }}>
-              {geminiApiKey
-                ? 'La IA rellenará importe, fecha y categoría'
-                : 'Configura la API key de Gemini para lectura automática'}
+              La IA rellenará importe, fecha y categoría si el backend o la clave local están listos
             </p>
           </div>
           <Button

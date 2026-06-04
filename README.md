@@ -28,6 +28,7 @@ car-maintenance-tracker/
 ```bash
 cp .env.example .env.local
 # Edita .env.local con SUPABASE_URL y SUPABASE_ANON_KEY
+# Para IA segura, añade VITE_API_URL=http://localhost:3001
 npm install
 npm run dev   # http://localhost:5173
 ```
@@ -38,11 +39,12 @@ npm run dev   # http://localhost:5173
 cd server
 cp .env.example .env
 # Edita .env con SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+# Para diagnóstico/tickets/análisis IA, añade GEMINI_API_KEY
 npm install
 npm run dev   # http://localhost:3001
 ```
 
-El backend Express expone una API REST espejo (`/api/vehicles`, `/api/maintenance`, etc.) si prefieres centralizar lógica del lado del servidor. La app frontend usa Supabase JS directamente, así que el backend es opcional para el MVP.
+El backend Express expone una API REST espejo (`/api/vehicles`, `/api/maintenance`, etc.) y el proxy seguro de IA (`/api/ai/*`). La app frontend usa Supabase JS directamente para el CRUD, así que el backend sigue siendo opcional salvo que quieras que Gemini use una clave guardada en servidor.
 
 ## Features MVP
 
@@ -85,7 +87,7 @@ El backend Express expone una API REST espejo (`/api/vehicles`, `/api/maintenanc
 ## Despliegue
 
 - **Frontend:** Vercel / Netlify. Setea `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
-- **Backend:** Railway / Fly.io / Render. Setea las 3 vars de Supabase + `CORS_ORIGIN`.
+- **Backend:** Railway / Fly.io / Render. Setea las 3 vars de Supabase + `CORS_ORIGIN` + `GEMINI_API_KEY`.
 - **DB + Storage + Auth:** Supabase Cloud.
 
 ## Modelo 3D del vehículo
@@ -158,9 +160,11 @@ npm run lint    # 0 errores, 28 warnings (hooks: set-state-in-effect/deps)
 npm run build   # ✓ pasa; Vite avisa de chunks grandes dinámicos (Mapbox/HEIC)
 ```
 
+Nota: `cd server && npm run typecheck` requiere instalar primero las dependencias de `server/`. En esta sesión no se pudo completar `npm install` por `ENOTFOUND` contra `registry.npmjs.org`.
+
 ## Roadmap post-MVP
 
-- Predicción de costes (ML)
+- Predicción de costes avanzada con escenarios editables
 - Exportación PDF/CSV
 - Notificaciones email para alertas
 - Modelo 3D ST-Line 2023 definitivo (ver sección anterior)

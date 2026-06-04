@@ -9,6 +9,7 @@ import type {
 } from '../types';
 import type { AIConfig } from '../store/apiKeyStore';
 import { EXPENSE_CATEGORIES } from '../utils/constants';
+import { backendApi } from './backendApi.service';
 
 const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -267,6 +268,20 @@ SÍNTOMA DESCRITO POR EL USUARIO:
 TALLERES CERCANOS:
 ${JSON.stringify(mechanicList, null, 2)}`;
 
+    if (backendApi.configured) {
+      try {
+        return await backendApi.post<Diagnosis>(
+          '/api/ai/diagnose',
+          { vehicle, records: recentRecords, symptom, mechanics: mechanicList },
+          { signal },
+        );
+      } catch (err) {
+        if (!apiKey.trim()) throw err;
+      }
+    }
+
+    if (!apiKey.trim()) throw new Error('Configura GEMINI_API_KEY en el servidor o una clave en Ajustes');
+
     const text = await callGemini({
       apiKey,
       system: SYSTEM_PROMPT,
@@ -288,6 +303,20 @@ ${JSON.stringify(mechanicList, null, 2)}`;
     mediaType,
     signal,
   }: ParseReceiptInput): Promise<ReceiptScan> {
+    if (backendApi.configured) {
+      try {
+        return await backendApi.post<ReceiptScan>(
+          '/api/ai/receipt',
+          { base64, mediaType },
+          { signal },
+        );
+      } catch (err) {
+        if (!apiKey.trim()) throw err;
+      }
+    }
+
+    if (!apiKey.trim()) throw new Error('Configura GEMINI_API_KEY en el servidor o una clave en Ajustes');
+
     const text = await callGemini({
       apiKey,
       system: RECEIPT_SYSTEM,
@@ -324,6 +353,21 @@ ${JSON.stringify(mechanicList, null, 2)}`;
       fecha: e.date,
       importe: e.amount,
     }));
+
+    if (backendApi.configured) {
+      try {
+        const parsed = await backendApi.post<{ insights: MaintenanceInsight[] }>(
+          '/api/ai/maintenance-insights',
+          { vehicle, records: recordSummary, expenses: expenseSummary },
+          { signal },
+        );
+        return Array.isArray(parsed.insights) ? parsed.insights : [];
+      } catch (err) {
+        if (!apiKey.trim()) throw err;
+      }
+    }
+
+    if (!apiKey.trim()) throw new Error('Configura GEMINI_API_KEY en el servidor o una clave en Ajustes');
 
     const text = await callGemini({
       apiKey,

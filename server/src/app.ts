@@ -10,6 +10,7 @@ import maintenanceRoutes from './routes/maintenance.routes';
 import expensesRoutes from './routes/expenses.routes';
 import documentsRoutes from './routes/documents.routes';
 import sharingRoutes from './routes/sharing.routes';
+import aiRoutes from './routes/ai.routes';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/maintenance', authMiddleware, maintenanceRoutes);
 app.use('/api/expenses', authMiddleware, expensesRoutes);
 app.use('/api/documents', authMiddleware, documentsRoutes);
 app.use('/api/sharing', authMiddleware, sharingRoutes);
+app.use('/api/ai', authMiddleware, aiRoutes);
 
 app.use(errorHandler);
 

@@ -406,7 +406,8 @@ export const SettingsPage = () => {
               className="font-text text-graphite mt-2 mb-4 max-w-xl"
               style={{ fontSize: 15, lineHeight: 1.45 }}
             >
-              Necesaria para el diagnóstico de Talleres IA. Obtén tu clave gratis en{' '}
+              Opcional si el backend ya tiene <code>GEMINI_API_KEY</code>. Si trabajas sin backend,
+              obtén tu clave gratis en{' '}
               <a
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"
@@ -415,7 +416,7 @@ export const SettingsPage = () => {
               >
                 aistudio.google.com
               </a>
-              . Se mantiene solo en memoria durante esta sesión.
+              . La clave local se mantiene solo en memoria durante esta sesión.
             </p>
 
             <FloatingInput
@@ -457,8 +458,8 @@ export const SettingsPage = () => {
               className="font-text text-graphite mt-3 max-w-xl"
               style={{ fontSize: 12.5, lineHeight: 1.4 }}
             >
-              Nota: la clave se usa desde el navegador y no se guarda en localStorage. Tendrás que
-              introducirla de nuevo si recargas la app o cierras sesión.
+              Nota: con backend, la clave segura vive en el servidor. Esta clave local solo se usa
+              como respaldo y no se guarda en localStorage.
             </p>
           </div>
         </div>

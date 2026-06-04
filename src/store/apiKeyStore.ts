@@ -70,7 +70,7 @@ export const useAIConfig = (): AIConfig => useApiKeyStore(useShallow(selectAICon
 
 /** Comprueba si el provider activo está listo para usarse. */
 export const isAIReady = (cfg: AIConfig): boolean => {
-  if (cfg.provider === 'gemini') return cfg.geminiApiKey.trim().length > 0;
+  if (cfg.provider === 'gemini') return true;
   if (cfg.provider === 'ollama')
     return cfg.ollamaUrl.trim().length > 0 && cfg.ollamaModel.trim().length > 0;
   return false;
@@ -79,7 +79,7 @@ export const isAIReady = (cfg: AIConfig): boolean => {
 /** Mensaje amigable cuando no está listo. */
 export const aiReadinessMessage = (cfg: AIConfig): string | null => {
   if (isAIReady(cfg)) return null;
-  if (cfg.provider === 'gemini') return 'Configura tu API key de Gemini en Ajustes';
+  if (cfg.provider === 'gemini') return 'Configura GEMINI_API_KEY en el servidor o una clave de Gemini en Ajustes';
   if (cfg.provider === 'ollama') return 'Configura la URL y el modelo de Ollama en Ajustes';
   return 'Configura un proveedor de IA en Ajustes';
 };
