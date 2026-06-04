@@ -3,8 +3,6 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
 import {
   OrbitControls,
-  Environment,
-  ContactShadows,
   Html,
   useGLTF,
   Center,
@@ -23,6 +21,21 @@ import {
 // the right .glb — profesional o genérico — entra en caché solo cuando se
 // haya verificado que existe. Mantener un preload fijo aquí descargaba un
 // archivo que podía no existir.
+
+const StudioShadow = ({
+  position = [0, -0.8, 0],
+  scale = 6,
+  opacity = 0.28,
+}: {
+  position?: [number, number, number];
+  scale?: number;
+  opacity?: number;
+}) => (
+  <mesh position={position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+    <circleGeometry args={[scale, 64]} />
+    <shadowMaterial transparent opacity={opacity} />
+  </mesh>
+);
 
 interface PartClickInfo {
   partKey: string;
@@ -398,8 +411,7 @@ export const CarViewer = ({ onPartClick, autoRotate = false, modelUrl }: CarView
 
         <Suspense fallback={<CarLoader />}>
           <GLTFCarSafe url={modelUrl} onPartClick={handlePartClick} onError={handleGLTFError} />
-          <ContactShadows position={[0, -0.8, 0]} opacity={0.5} scale={12} blur={2} />
-          <Environment preset="city" />
+          <StudioShadow position={[0, -0.8, 0]} opacity={0.3} scale={6} />
         </Suspense>
 
         <OrbitControls

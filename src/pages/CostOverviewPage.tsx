@@ -61,7 +61,7 @@ export const CostOverviewPage = () => {
         setData({ expenses, maintenance, insurance, prestamo }),
       )
       .finally(() => setLoading(false));
-  }, [selectedVehicle?.id]);
+  }, [navigate, selectedVehicle]);
 
   const overview: CostOverview = useMemo(
     () =>

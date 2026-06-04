@@ -52,7 +52,7 @@ export const ExpensesPage = () => {
         setRecords(rec);
       })
       .finally(() => setLoading(false));
-  }, [selectedVehicle?.id]);
+  }, [navigate, selectedVehicle]);
 
   // Una sola pasada memoizada: acumula total y mes actual en un único bucle,
   // evitando 2 .reduce() + 1 .filter() + N new Date() en cada render. Se

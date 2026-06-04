@@ -154,8 +154,8 @@ archivo. **No se renderiza ninguna maqueta de primitivas como sustituto.**
 ## Validaciones
 
 ```bash
-npm run lint    # 0 errores, 24 warnings (set-state-in-effect en guards)
-npm run build   # ✓ pasa
+npm run lint    # 0 errores, 28 warnings (hooks: set-state-in-effect/deps)
+npm run build   # ✓ pasa; Vite avisa de chunks grandes dinámicos (Mapbox/HEIC)
 ```
 
 ## Roadmap post-MVP

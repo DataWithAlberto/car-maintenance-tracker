@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, Suspense, lazy, useRef } from 'react';
+import { useCallback, useEffect, useState, useMemo, Suspense, lazy, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { FileText, Gauge, Plus, Receipt, Wrench } from 'lucide-react';
 import { useVehicle } from '../hooks/useVehicle';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
@@ -9,6 +9,9 @@ import { maintenanceService } from '../services/maintenance.service';
 import { expensesService } from '../services/expenses.service';
 import { tripsService } from '../services/trips.service';
 import { TripAnniversaryBanner } from '../components/trips/TripAnniversaryBanner';
+import { ActionCard } from '../components/dashboard/ActionCard';
+import { AlertCenter } from '../components/dashboard/AlertCenter';
+import { OnboardingChecklist } from '../components/dashboard/OnboardingChecklist';
 import { documentsService } from '../services/documents.service';
 import { calculateAlerts, calculateDocumentAlerts } from '../utils/calculations';
 import { sendAlertNotifications } from '../utils/notifications';
@@ -365,11 +368,11 @@ export const DashboardPage = () => {
     }
   };
 
-  const openPrimary = () => {
+  const openPrimary = useCallback(() => {
     if (!primary) return;
     storeSet(primary);
     navigate('/car');
-  };
+  }, [navigate, primary, storeSet]);
 
   // ─── Subtitle copy (hero) ─────────────────────────────────────────────────
   const heroSubtitle = !primary ? (
@@ -392,6 +395,52 @@ export const DashboardPage = () => {
       — sigue así.
     </>
   );
+
+  const onboardingSteps = useMemo(() => {
+    if (!primary) return [];
+    const records = primaryStats?.records ?? [];
+    const documents = primaryStats?.documents ?? [];
+    const expenses = primaryStats?.expenses ?? [];
+
+    return [
+      {
+        id: 'mileage',
+        label: 'Kilometraje base',
+        detail: 'Define el km actual para que las alertas sean fiables.',
+        done: primary.current_km > 0,
+        actionLabel: 'Editar vehículo',
+        onAction: () => openPrimary(),
+        icon: Gauge,
+      },
+      {
+        id: 'maintenance',
+        label: 'Primer mantenimiento',
+        detail: 'Registra el último aceite o revisión para calcular próximos servicios.',
+        done: records.length > 0,
+        actionLabel: 'Añadir mantenimiento',
+        onAction: () => navigate('/maintenance'),
+        icon: Wrench,
+      },
+      {
+        id: 'documents',
+        label: 'Documentos clave',
+        detail: 'Sube seguro, ITV o permiso para recibir avisos de vencimiento.',
+        done: documents.length > 0,
+        actionLabel: 'Subir documento',
+        onAction: () => navigate('/documents'),
+        icon: FileText,
+      },
+      {
+        id: 'expenses',
+        label: 'Primer gasto',
+        detail: 'Añade combustible, seguro o reparación para medir el coste real.',
+        done: expenses.length > 0,
+        actionLabel: 'Añadir gasto',
+        onAction: () => navigate('/expenses'),
+        icon: Receipt,
+      },
+    ];
+  }, [navigate, openPrimary, primary, primaryStats]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -711,6 +760,81 @@ export const DashboardPage = () => {
         <div className="mx-5 md:mx-10 mt-5">
           <TripAnniversaryBanner trips={primaryStats.trips} />
         </div>
+      )}
+
+      {primary && (
+        <section
+          className="mx-5 md:mx-10 mt-5"
+          aria-label="Acciones recomendadas"
+          style={{
+            display: 'grid',
+            gap: 12,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          }}
+        >
+          {[
+            {
+              eyebrow: primaryStats?.alerts.length ? 'Atención inmediata' : 'Estado del coche',
+              title: primaryStats?.alerts.length
+                ? `${primaryStats.alerts.length} alerta${primaryStats.alerts.length === 1 ? '' : 's'} activa${primaryStats.alerts.length === 1 ? '' : 's'}`
+                : 'Sin alertas activas',
+              body: primaryStats?.alerts.length
+                ? 'Revisa vencimientos y mantenimientos antes de seguir acumulando kilómetros.'
+                : 'Añade una cita o consulta el historial si quieres dejarlo al día.',
+              cta: primaryStats?.alerts.length ? 'Revisar' : 'Ver historial',
+              href: '/maintenance',
+              tone: primaryStats?.alerts.length ? 'urgent' : 'neutral',
+            },
+            {
+              eyebrow: 'Siguiente servicio',
+              title: nextMaintenance
+                ? `${fmtN(nextMaintenance.kmRemaining)} km restantes`
+                : 'Plan despejado',
+              body: nextMaintenance
+                ? `Programa ${nextMaintenance.label} antes de agotar el intervalo recomendado.`
+                : 'No hay mantenimientos próximos calculados para este vehículo.',
+              cta: nextMaintenance ? 'Programar' : 'Añadir servicio',
+              href: '/maintenance',
+              tone: nextMaintenance ? 'warn' : 'neutral',
+            },
+            {
+              eyebrow: 'Coste real',
+              title: fmtEur(totalYtdPrimary),
+              body: 'Comprueba gasto por km, combustible, seguro y mantenimiento en una vista.',
+              cta: 'Ver costes',
+              href: '/coste',
+              tone: 'neutral',
+            },
+            {
+              eyebrow: 'Taller',
+              title: nextAppointment ? nextAppointment.dayLabel : 'Sin cita',
+              body: nextAppointment
+                ? `${nextAppointment.type} a las ${nextAppointment.time}.`
+                : 'Comparte el estado del vehículo con un taller o crea una cita desde mantenimiento.',
+              cta: nextAppointment ? 'Ver cita' : 'Compartir',
+              href: nextAppointment ? '/maintenance' : '/sharing',
+              tone: 'neutral',
+            },
+          ].map((item) => {
+            return (
+              <ActionCard
+                key={`${item.eyebrow}-${item.href}`}
+                eyebrow={item.eyebrow}
+                title={item.title}
+                body={item.body}
+                cta={item.cta}
+                tone={item.tone as 'neutral' | 'warn' | 'urgent'}
+                onClick={() => navigate(item.href)}
+              />
+            );
+          })}
+        </section>
+      )}
+
+      {primary && <OnboardingChecklist steps={onboardingSteps} />}
+
+      {primaryStats?.alerts && primaryStats.alerts.length > 0 && (
+        <AlertCenter alerts={primaryStats.alerts} onNavigate={navigate} />
       )}
 
       {/* ═══ BLOCK 2 · EDITORIAL BODY ════════════════════════════════════════ */}

@@ -32,7 +32,7 @@ export const DocumentsPage = () => {
       .getByVehicle(selectedVehicle.id)
       .then(setDocs)
       .finally(() => setLoading(false));
-  }, [selectedVehicle?.id]);
+  }, [navigate, selectedVehicle]);
 
   // Una sola pasada por docs, memoizada. Reusa la función canónica de
   // calculations.ts en lugar de duplicar la lógica de expiración con

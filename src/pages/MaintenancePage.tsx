@@ -60,7 +60,7 @@ export const MaintenancePage = () => {
       return;
     }
     fetchRecords();
-  }, [selectedVehicle?.id]);
+  }, [fetchRecords, navigate, selectedVehicle]);
 
   // Cancela cualquier análisis IA en vuelo al desmontar la página.
   useEffect(() => () => abortRef.current?.abort(), []);

@@ -118,7 +118,7 @@ export const InsurancePage = () => {
       .getByVehicle(selectedVehicle.id)
       .then(setPolicies)
       .finally(() => setLoading(false));
-  }, [selectedVehicle?.id]);
+  }, [navigate, selectedVehicle]);
 
   /* Póliza destacada: la activa más próxima a vencer; si no hay ninguna
      vigente, la vencida más reciente. */

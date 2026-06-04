@@ -13,6 +13,8 @@ const BACKGROUND_IMAGES = [
   'login-05.jpg',
 ];
 
+const BACKGROUND_IMAGE_SIZE = { width: 1500, height: 2000 };
+
 function Mark({ size = 20, color = '#ffffff' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -97,24 +99,41 @@ export const LoginPage = () => {
           outline: none;
         }
         .input-glass::placeholder { color: rgba(255, 255, 255, 0.3); }
+        @media (prefers-reduced-motion: reduce) {
+          .ken-burns {
+            animation: none;
+          }
+        }
       `}</style>
 
       {/* ── Background Image Carousel ── */}
       <div className="absolute inset-0 z-0 bg-black">
-        {BACKGROUND_IMAGES.map((img, idx) => (
-          <img
-            key={img}
-            src={`/${img}`} /* Ajusta esta ruta según la carpeta pública de tus assets (ej. /images/...) */
-            alt="Vehicle Background"
-            className={`absolute inset-0 w-full h-full object-cover ken-burns transition-opacity duration-[3000ms] ease-in-out ${idx === imageIndex ? 'opacity-90' : 'opacity-0'}`}
-            style={
-              {
-                filter: 'contrast(1.15) saturate(1.1) brightness(0.85)',
-                imageRendering: 'high-quality',
-              } as unknown as React.CSSProperties
-            }
-          />
-        ))}
+        {BACKGROUND_IMAGES.map((img, idx) => {
+          const nextIndex = (imageIndex + 1) % BACKGROUND_IMAGES.length;
+          const shouldMount = idx === imageIndex || idx === nextIndex;
+          if (!shouldMount) return null;
+
+          return (
+            <img
+              key={img}
+              src={`/${img}`}
+              alt=""
+              aria-hidden="true"
+              width={BACKGROUND_IMAGE_SIZE.width}
+              height={BACKGROUND_IMAGE_SIZE.height}
+              fetchPriority={idx === imageIndex ? 'high' : 'low'}
+              loading={idx === imageIndex ? 'eager' : 'lazy'}
+              decoding="async"
+              className={`absolute inset-0 w-full h-full object-cover ken-burns transition-opacity duration-[3000ms] ease-in-out ${idx === imageIndex ? 'opacity-90' : 'opacity-0'}`}
+              style={
+                {
+                  filter: 'contrast(1.15) saturate(1.1) brightness(0.85)',
+                  imageRendering: 'high-quality',
+                } as unknown as React.CSSProperties
+              }
+            />
+          );
+        })}
         <div className="film-grain" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,transparent_0%,rgba(0,0,0,0.8)_100%)]" />
       </div>
@@ -238,6 +257,7 @@ function AuthCard({
               onClick={() => setShowPassword((s) => !s)}
               aria-controls={passwordId}
               aria-pressed={showPassword}
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-[11px] font-mono uppercase tracking-wide text-white/50 hover:text-white transition-colors"
             >
               {showPassword ? 'Ocultar' : 'Mostrar'}
@@ -264,6 +284,7 @@ function AuthCard({
           <button
             type="button"
             onClick={() => toast('Contacta con soporte para recuperar tu acceso.')}
+            aria-label="Contactar con soporte técnico"
             className="hover:text-white transition-colors"
           >
             Soporte técnico

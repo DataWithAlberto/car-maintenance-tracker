@@ -75,7 +75,7 @@ export const CarPage = () => {
       return;
     }
     fetchRecords();
-  }, [selectedVehicle?.id]);
+  }, [fetchRecords, navigate, selectedVehicle]);
 
   // Esc to close part overlay
   useEffect(() => {

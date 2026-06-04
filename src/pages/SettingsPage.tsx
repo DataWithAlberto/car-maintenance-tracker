@@ -415,7 +415,7 @@ export const SettingsPage = () => {
               >
                 aistudio.google.com
               </a>
-              . Se guarda solo en este navegador.
+              . Se mantiene solo en memoria durante esta sesión.
             </p>
 
             <FloatingInput
@@ -457,8 +457,8 @@ export const SettingsPage = () => {
               className="font-text text-graphite mt-3 max-w-xl"
               style={{ fontSize: 12.5, lineHeight: 1.4 }}
             >
-              Nota: la clave se usa desde el navegador. No la compartas y revócala en Google AI
-              Studio si sospechas que se ha filtrado.
+              Nota: la clave se usa desde el navegador y no se guarda en localStorage. Tendrás que
+              introducirla de nuevo si recargas la app o cierras sesión.
             </p>
           </div>
         </div>

@@ -35,7 +35,14 @@ export const useApiKeyStore = create<ApiKeyState>()(
       ollamaModel: 'llama3.1',
       setOllamaModel: (ollamaModel) => set({ ollamaModel }),
     }),
-    { name: 'cmt-api-key' },
+    {
+      name: 'cmt-ai-config',
+      partialize: ({ aiProvider, ollamaUrl, ollamaModel }) => ({
+        aiProvider,
+        ollamaUrl,
+        ollamaModel,
+      }),
+    },
   ),
 );
 

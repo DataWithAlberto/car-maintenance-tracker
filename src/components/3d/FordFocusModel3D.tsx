@@ -28,9 +28,7 @@ import {
 } from 'react';
 import type { ComponentRef, CSSProperties, ErrorInfo, ReactNode, RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import {
-  ContactShadows, Environment, Html, OrbitControls, useGLTF, useProgress,
-} from '@react-three/drei';
+import { Html, OrbitControls, useGLTF, useProgress } from '@react-three/drei';
 import * as THREE from 'three';
 import { Box, RotateCcw } from 'lucide-react';
 
@@ -89,6 +87,21 @@ type OrbitControlsRef = ComponentRef<typeof OrbitControls>;
 const prefersReducedMotion = () =>
   typeof window !== 'undefined'
   && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+const StudioShadow = ({
+  position = [0, 0, 0],
+  scale = 7,
+  opacity = 0.28,
+}: {
+  position?: [number, number, number];
+  scale?: number;
+  opacity?: number;
+}) => (
+  <mesh position={position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+    <circleGeometry args={[scale, 64]} />
+    <shadowMaterial transparent opacity={opacity} />
+  </mesh>
+);
 
 // ─── Error boundary: captura fallos de carga/parseo del .glb ────────────────
 
@@ -286,22 +299,9 @@ function Viewer({ view, autoRotate, onUserInteract, onModelError }: {
         <R3FErrorBoundary onError={onModelError}>
           <CarModel />
         </R3FErrorBoundary>
-        {/* Entorno HDR solo para reflejos metálicos realistas. Si la CDN
-            fallara, degrada con elegancia (sin reflejos) en vez de romper. */}
-        <R3FErrorBoundary>
-          <Environment preset="city" />
-        </R3FErrorBoundary>
       </Suspense>
 
-      {/* Sombra de contacto suave — actúa como "suelo" neutro de estudio. */}
-      <ContactShadows
-        position={[0, 0, 0]}
-        opacity={0.5}
-        scale={14}
-        blur={2.6}
-        far={6}
-        resolution={1024}
-      />
+      <StudioShadow position={[0, 0, 0]} scale={7} opacity={0.32} />
 
       <CameraRig view={view} controls={controls} />
 
