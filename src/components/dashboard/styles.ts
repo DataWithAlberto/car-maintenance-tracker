@@ -1,17 +1,18 @@
-// ─── Fragmentos de clase Tailwind compartidos (lenguaje B&W editorial) ──────
-// Estética minimalista en blanco y negro inspirada en la imagen de referencia:
-// fondo blanco plano, borde negro fino, esquinas redondeadas, sin sombras.
-// Centralizar estas cadenas mantiene la coherencia entre subcomponentes.
+// ─── Fragmentos de clase Tailwind compartidos (editorial B&W, theme-aware) ──
+// Usa los tokens semánticos de la app (var(--color-*)) en lugar de colores
+// fijos, de modo que el dashboard responde automáticamente a [data-theme='dark']
+// igual que el resto de FocusHub. En claro `border-ink` ≈ negro; en oscuro
+// ≈ blanco, conservando el look editorial invertido sin código extra.
 
-/** Superficie de tarjeta base: blanco plano, borde negro fino, sin sombra. */
-export const CARD = 'rounded-2xl border border-black bg-white shadow-none';
+/** Superficie de tarjeta base: borde fuerte (ink), fondo de tarjeta, sin sombra. */
+export const CARD = 'rounded-2xl border border-ink bg-snow shadow-none';
 
-/** Tarjeta interactiva (hover sutil en gris muy claro). Combinar con CARD. */
-export const CARD_HOVER = 'transition-colors duration-200 hover:bg-zinc-50';
+/** Tarjeta interactiva: hover sutil hacia el lienzo (fog). Combinar con CARD. */
+export const CARD_HOVER = 'transition-colors duration-200 hover:bg-fog';
 
-/** Anillo de foco accesible sobre fondo blanco. */
+/** Anillo de foco accesible, theme-aware (offset = color del lienzo). */
 export const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus-visible:ring-offset-white';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-fog';
 
 /** Etiqueta superior tipo "eyebrow", discreta y en mayúsculas. */
-export const EYEBROW = 'text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-400';
+export const EYEBROW = 'text-[11px] font-medium uppercase tracking-[0.12em] text-mist';

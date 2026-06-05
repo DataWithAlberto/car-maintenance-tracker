@@ -15,29 +15,29 @@ interface MetricCardProps {
 }
 
 /**
- * Tarjeta de métrica B&W calcada a la imagen de referencia: borde negro fino,
- * fondo blanco plano, etiqueta arriba, valor grande y, opcionalmente, un icono
- * en la esquina o un anillo de progreso a la derecha. Si recibe `onClick` se
- * renderiza como botón accesible con hover sutil.
+ * Tarjeta de métrica editorial (theme-aware): borde fuerte, fondo de tarjeta,
+ * etiqueta arriba, valor grande y, opcionalmente, un icono en la esquina o un
+ * anillo de progreso a la derecha. Si recibe `onClick` se renderiza como botón
+ * accesible con hover sutil.
  */
 export const MetricCard = memo(
   ({ label, value, sub, icon, ring, onClick, loading = false }: MetricCardProps) => {
     const content = (
       <>
         {icon && (
-          <span className="absolute right-5 top-5 text-black sm:right-6 sm:top-6">{icon}</span>
+          <span className="absolute right-5 top-5 text-ink sm:right-6 sm:top-6">{icon}</span>
         )}
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="pr-7 text-base font-medium text-black">{label}</p>
+            <p className="pr-7 text-base font-medium text-ink">{label}</p>
             {loading ? (
-              <div className="mt-3 h-9 w-28 animate-pulse rounded bg-zinc-100" aria-hidden="true" />
+              <div className="skeleton mt-3 h-9 w-28 rounded" aria-hidden="true" />
             ) : (
-              <p className="mt-2 truncate font-semibold tracking-tight text-black text-4xl sm:text-[2.75rem] sm:leading-none">
+              <p className="mt-2 truncate font-semibold tracking-tight text-ink text-4xl sm:text-[2.75rem] sm:leading-none">
                 {value}
               </p>
             )}
-            {sub && <p className="mt-2 text-sm text-zinc-500">{sub}</p>}
+            {sub && <p className="mt-2 text-sm text-graphite">{sub}</p>}
           </div>
           {ring && <div className="shrink-0 self-center">{ring}</div>}
         </div>

@@ -63,6 +63,16 @@ export interface UpcomingItem {
   detail: string;
 }
 
+/** Próximo documento en vencer (ITV, seguro, permiso…). */
+export interface DocExpiry {
+  /** Días hasta el vencimiento (negativo si ya está vencido). */
+  days: number;
+  /** Tipo o nombre del documento. */
+  docType: string;
+  /** Fecha de vencimiento formateada (es-ES). */
+  dateLabel: string;
+}
+
 export interface DashboardData {
   vehicles: VehicleWithAccess[];
   loading: boolean;
@@ -90,6 +100,8 @@ export interface DashboardData {
   totalYtdPrimary: number;
   /** Servicios próximos del vehículo principal, ordenados por urgencia. */
   upcomingMaintenance: UpcomingItem[];
+  /** Documento del vehículo principal más próximo a vencer (o null). */
+  nextDocExpiry: DocExpiry | null;
   firstName: string;
   lastSyncLabel: string;
   fetchVehicles: () => void;
@@ -410,6 +422,35 @@ export const useDashboardData = (): DashboardData => {
       .map((a) => ({ id: a.id, label: a.description, detail: 'Requiere atención' }));
   }, [primary, primaryStats, loadedAt, nextMaintenance]);
 
+  // ─── Próximo documento en vencer (ITV / seguro / permiso) ───────────────────
+  // Prioriza el vencimiento futuro más cercano; si no hay ninguno futuro, usa
+  // el que venció más recientemente (más relevante por estar atrasado).
+  const nextDocExpiry = useMemo<DocExpiry | null>(() => {
+    if (!primaryStats) return null;
+    const nowMs = loadedAt ? loadedAt.getTime() : 0;
+    let future: { ms: number; doc: Document } | null = null;
+    let past: { ms: number; doc: Document } | null = null;
+    for (const d of primaryStats.documents) {
+      if (!d.expiry_date) continue;
+      const ms = new Date(d.expiry_date).getTime();
+      if (Number.isNaN(ms)) continue;
+      if (ms >= nowMs) {
+        if (!future || ms < future.ms) future = { ms, doc: d };
+      } else if (!past || ms > past.ms) {
+        past = { ms, doc: d };
+      }
+    }
+    const chosen = future ?? past;
+    if (!chosen) return null;
+    const days = Math.ceil((chosen.ms - nowMs) / 86_400_000);
+    const dateLabel = new Date(chosen.ms).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    return { days, docType: chosen.doc.doc_type || chosen.doc.file_name || 'Documento', dateLabel };
+  }, [primaryStats, loadedAt]);
+
   // ─── Nombre + copy de sync ──────────────────────────────────────────────────
   const firstName = useMemo(() => {
     const full = (user?.user_metadata?.full_name as string | undefined) ?? '';
@@ -458,6 +499,7 @@ export const useDashboardData = (): DashboardData => {
     expensesByCat,
     totalYtdPrimary,
     upcomingMaintenance,
+    nextDocExpiry,
     firstName,
     lastSyncLabel,
     fetchVehicles,
