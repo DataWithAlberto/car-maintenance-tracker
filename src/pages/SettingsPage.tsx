@@ -576,8 +576,9 @@ export const SettingsPage = () => {
                 className="font-text text-graphite mt-2 mb-4 max-w-xl"
                 style={{ fontSize: 15, lineHeight: 1.45 }}
               >
-                Genera un enlace de solo lectura con el historial de mantenimiento, gastos y
-                documentos. El taller lo abre sin cuenta ni contraseña.
+                Genera un enlace de solo lectura con historial técnico, documentos importantes,
+                seguro relevante y anomalías OBD. No comparte importes personales, tickets ni datos
+                financieros.
               </p>
 
               {shareUrl ? (

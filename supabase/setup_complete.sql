@@ -217,6 +217,60 @@ CREATE TABLE IF NOT EXISTS insurance_policies (
 CREATE INDEX IF NOT EXISTS idx_insurance_vehicle  ON insurance_policies(vehicle_id);
 CREATE INDEX IF NOT EXISTS idx_insurance_end_date ON insurance_policies(end_date);
 
+-- OBD2_READINGS
+CREATE TABLE IF NOT EXISTS obd2_readings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+  timestamp BIGINT NOT NULL,
+  rpm INTEGER,
+  speed INTEGER,
+  coolant_temp NUMERIC(5,2),
+  fuel_level NUMERIC(5,2),
+  odometer INTEGER,
+  oil_pressure NUMERIC(5,2),
+  battery_voltage NUMERIC(5,2),
+  engine_load NUMERIC(5,2),
+  timing_advance NUMERIC(5,2),
+  engine_runtime INTEGER,
+  maf_air_flow NUMERIC(10,2),
+  fuel_trim_bank1 NUMERIC(5,2),
+  fuel_rate NUMERIC(10,2),
+  short_term_fuel_trim_1 NUMERIC(5,2),
+  long_term_fuel_trim_1 NUMERIC(5,2),
+  intake_manifold_pressure NUMERIC(5,2),
+  absolute_load NUMERIC(5,2),
+  relative_throttle_pos NUMERIC(5,2),
+  ambient_air_temp NUMERIC(5,2),
+  abs_throttle_pos_b NUMERIC(5,2),
+  acc_pedal_pos_d NUMERIC(5,2),
+  acc_pedal_pos_e NUMERIC(5,2),
+  catalyst_temp_bank1_sensor1 NUMERIC(5,2),
+  num_emissions_dtc INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_obd2_readings_vehicle_timestamp
+  ON obd2_readings(vehicle_id, created_at DESC);
+
+-- OBD2_ANOMALIES
+CREATE TABLE IF NOT EXISTS obd2_anomalies (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+  reading_id UUID REFERENCES obd2_readings(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  severity TEXT NOT NULL CHECK (severity IN ('warn', 'critical')),
+  value NUMERIC(10,2) NOT NULL,
+  threshold NUMERIC(10,2) NOT NULL,
+  message TEXT NOT NULL,
+  dismissed BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_obd2_anomalies_vehicle_created
+  ON obd2_anomalies(vehicle_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_obd2_anomalies_type
+  ON obd2_anomalies(vehicle_id, type);
+
 
 -- ─── TRIGGER: sincronizar auth.users → public.users ──────────────────────────
 
@@ -279,6 +333,8 @@ ALTER TABLE alerts              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trips               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trip_waypoints      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE insurance_policies  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE obd2_readings       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE obd2_anomalies      ENABLE ROW LEVEL SECURITY;
 
 -- ─── Funciones helper (SECURITY DEFINER) ─────────────────────────────────────
 -- Rompen la recursión infinita entre las políticas de vehicles y shared_access.
@@ -445,6 +501,178 @@ DROP POLICY IF EXISTS "insurance_write" ON insurance_policies;
 CREATE POLICY "insurance_write" ON insurance_policies FOR ALL
   USING (public.can_edit_vehicle(vehicle_id))
   WITH CHECK (public.can_edit_vehicle(vehicle_id));
+
+-- OBD2 readings
+DROP POLICY IF EXISTS "obd2_readings_select" ON obd2_readings;
+CREATE POLICY "obd2_readings_select" ON obd2_readings FOR SELECT
+  USING (public.can_read_vehicle(vehicle_id));
+
+DROP POLICY IF EXISTS "obd2_readings_insert" ON obd2_readings;
+CREATE POLICY "obd2_readings_insert" ON obd2_readings FOR INSERT
+  WITH CHECK (public.can_edit_vehicle(vehicle_id));
+
+-- OBD2 anomalies
+DROP POLICY IF EXISTS "obd2_anomalies_select" ON obd2_anomalies;
+CREATE POLICY "obd2_anomalies_select" ON obd2_anomalies FOR SELECT
+  USING (public.can_read_vehicle(vehicle_id));
+
+DROP POLICY IF EXISTS "obd2_anomalies_insert" ON obd2_anomalies;
+CREATE POLICY "obd2_anomalies_insert" ON obd2_anomalies FOR INSERT
+  WITH CHECK (public.can_edit_vehicle(vehicle_id));
+
+DROP POLICY IF EXISTS "obd2_anomalies_update" ON obd2_anomalies;
+CREATE POLICY "obd2_anomalies_update" ON obd2_anomalies FOR UPDATE
+  USING (public.can_edit_vehicle(vehicle_id))
+  WITH CHECK (public.can_edit_vehicle(vehicle_id));
+
+
+-- ─── RPC pública: dossier técnico de taller por share_token ────────────────
+
+CREATE OR REPLACE FUNCTION public.get_workshop_view(p_token TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_vehicle vehicles%ROWTYPE;
+  v_records JSONB;
+  v_documents JSONB;
+  v_insurance JSONB;
+  v_latest_reading JSONB;
+  v_readings JSONB;
+  v_anomalies JSONB;
+BEGIN
+  SELECT *
+    INTO v_vehicle
+    FROM public.vehicles
+   WHERE share_token = p_token
+   LIMIT 1;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT COALESCE(jsonb_agg(row_to_json(r)::jsonb), '[]'::jsonb)
+    INTO v_records
+    FROM (
+      SELECT
+        id,
+        type,
+        date,
+        km_at_service,
+        description,
+        parts_location,
+        next_service_km,
+        next_service_date
+      FROM public.maintenance_records
+      WHERE vehicle_id = v_vehicle.id
+      ORDER BY date DESC, created_at DESC
+      LIMIT 50
+    ) r;
+
+  SELECT COALESCE(jsonb_agg(row_to_json(d)::jsonb), '[]'::jsonb)
+    INTO v_documents
+    FROM (
+      SELECT
+        id,
+        doc_type,
+        file_url,
+        file_name,
+        expiry_date,
+        is_important,
+        created_at
+      FROM public.documents
+      WHERE vehicle_id = v_vehicle.id
+        AND is_important = TRUE
+      ORDER BY expiry_date ASC NULLS LAST, created_at DESC
+    ) d;
+
+  SELECT row_to_json(i)::jsonb
+    INTO v_insurance
+    FROM (
+      SELECT
+        id,
+        provider,
+        coverage_type,
+        payment_frequency,
+        start_date,
+        end_date,
+        contact_phone
+      FROM public.insurance_policies
+      WHERE vehicle_id = v_vehicle.id
+      ORDER BY
+        CASE WHEN CURRENT_DATE BETWEEN start_date AND end_date THEN 0 ELSE 1 END,
+        end_date DESC
+      LIMIT 1
+    ) i;
+
+  SELECT row_to_json(o)::jsonb
+    INTO v_latest_reading
+    FROM (
+      SELECT *
+      FROM public.obd2_readings
+      WHERE vehicle_id = v_vehicle.id
+      ORDER BY created_at DESC
+      LIMIT 1
+    ) o;
+
+  SELECT COALESCE(jsonb_agg(row_to_json(o)::jsonb), '[]'::jsonb)
+    INTO v_readings
+    FROM (
+      SELECT *
+      FROM public.obd2_readings
+      WHERE vehicle_id = v_vehicle.id
+        AND created_at >= NOW() - INTERVAL '24 hours'
+      ORDER BY created_at ASC
+      LIMIT 240
+    ) o;
+
+  SELECT COALESCE(jsonb_agg(row_to_json(a)::jsonb), '[]'::jsonb)
+    INTO v_anomalies
+    FROM (
+      SELECT
+        id,
+        type,
+        severity,
+        value,
+        threshold,
+        message,
+        dismissed,
+        created_at
+      FROM public.obd2_anomalies
+      WHERE vehicle_id = v_vehicle.id
+        AND COALESCE(dismissed, FALSE) = FALSE
+      ORDER BY created_at DESC
+      LIMIT 20
+    ) a;
+
+  RETURN jsonb_build_object(
+    'vehicle', jsonb_build_object(
+      'id', v_vehicle.id,
+      'brand', v_vehicle.brand,
+      'model', v_vehicle.model,
+      'year', v_vehicle.year,
+      'license_plate', v_vehicle.license_plate,
+      'fuel_type', v_vehicle.fuel_type,
+      'transmission', v_vehicle.transmission,
+      'current_km', v_vehicle.current_km,
+      'vin', v_vehicle.vin,
+      'updated_at', v_vehicle.updated_at
+    ),
+    'records', v_records,
+    'documents', v_documents,
+    'insurance', v_insurance,
+    'obd2', jsonb_build_object(
+      'latest', v_latest_reading,
+      'readings', v_readings,
+      'anomalies', v_anomalies
+    )
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_workshop_view(TEXT) TO anon, authenticated;
 
 
 -- =============================================================================

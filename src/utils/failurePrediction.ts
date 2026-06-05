@@ -13,6 +13,9 @@ interface ComponentSpec {
   matchTypes: string[];
 }
 
+type PredictionVehicle = Pick<Vehicle, 'current_km'>;
+type PredictionRecord = Pick<MaintenanceRecord, 'type' | 'km_at_service'>;
+
 /** Expected service life per component, in km. Based on typical OEM intervals. */
 const COMPONENTS: ComponentSpec[] = [
   { key: 'oil', label: 'Aceite y filtro', lifespanKm: 15000, matchTypes: ['Cambio de aceite'] },
@@ -78,8 +81,8 @@ const COMPONENTS: ComponentSpec[] = [
  * (baseline 0 km).
  */
 export const predictFailures = (
-  vehicle: Vehicle,
-  records: MaintenanceRecord[],
+  vehicle: PredictionVehicle,
+  records: PredictionRecord[],
 ): FailurePrediction[] => {
   const km = vehicle.current_km;
 
@@ -122,8 +125,8 @@ export const predictFailures = (
 };
 
 export const predictFailuresWithOBD2 = (
-  vehicle: Vehicle,
-  records: MaintenanceRecord[],
+  vehicle: PredictionVehicle,
+  records: PredictionRecord[],
   obd2History: OBD2Reading[],
 ): FailurePrediction[] => {
   const predictions = predictFailures(vehicle, records);
