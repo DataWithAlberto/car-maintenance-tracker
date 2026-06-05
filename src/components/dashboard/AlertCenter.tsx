@@ -1,21 +1,23 @@
 import { AlertTriangle, CalendarClock, FileText, Share2 } from 'lucide-react';
-import type { Alert } from '../../types';
+import { cn } from '../../utils/cn';
+import { CARD, EYEBROW, FOCUS_RING } from './styles';
+import type { Alert, AlertSeverity } from '../../types';
 
 interface AlertCenterProps {
   alerts: Alert[];
   onNavigate: (href: string) => void;
 }
 
-const severityLabel = {
+const severityLabel: Record<AlertSeverity, string> = {
   high: 'Crítica',
   medium: 'Aviso',
   low: 'Info',
 };
 
-const severityColor = {
-  high: 'var(--color-caution)',
-  medium: 'var(--color-warn-500)',
-  low: 'var(--color-azure)',
+const severityColor: Record<AlertSeverity, string> = {
+  high: 'text-red-400',
+  medium: 'text-amber-400',
+  low: 'text-sky-400',
 };
 
 const alertRoute = (alert: Alert) =>
@@ -27,121 +29,75 @@ const alertIcon = (alert: Alert) => {
   return AlertTriangle;
 };
 
+const rank: Record<AlertSeverity, number> = { high: 0, medium: 1, low: 2 };
+
+/** Centro de alertas: lista priorizada por severidad (dark-tech). */
 export const AlertCenter = ({ alerts, onNavigate }: AlertCenterProps) => {
   if (alerts.length === 0) return null;
 
-  const sortedAlerts = [...alerts].sort((a, b) => {
-    const rank = { high: 0, medium: 1, low: 2 };
-    return rank[a.severity ?? 'low'] - rank[b.severity ?? 'low'];
-  });
+  const sortedAlerts = [...alerts].sort(
+    (a, b) => rank[a.severity ?? 'low'] - rank[b.severity ?? 'low'],
+  );
 
   return (
-    <section
-      className="mx-5 md:mx-10 mt-5 bg-snow border border-silver-mist rounded-[20px]"
-      aria-label="Centro de alertas"
-      style={{ padding: 22 }}
-    >
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <section className={cn(CARD, 'p-5 sm:p-6')} aria-label="Centro de alertas">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <span
-            className="font-mono uppercase"
-            style={{ fontSize: 10, letterSpacing: '0.14em', color: 'var(--color-caution)' }}
-          >
-            Centro de alertas
-          </span>
-          <h2
-            className="font-display text-ink"
-            style={{ fontWeight: 650, fontSize: 26, lineHeight: 1.08, marginTop: 8 }}
-          >
+          <span className={cn(EYEBROW, 'text-red-400')}>Centro de alertas</span>
+          <h2 className="mt-1.5 font-display text-2xl font-bold tracking-tight text-white">
             {alerts.length} pendiente{alerts.length === 1 ? '' : 's'}
           </h2>
         </div>
         <button
           type="button"
           onClick={() => onNavigate('/sharing')}
-          className="focus-ring"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            border: '1px solid var(--color-silver-mist)',
-            borderRadius: 999,
-            background: 'var(--color-snow)',
-            padding: '8px 12px',
-            color: 'var(--color-ink)',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
+          className={cn(
+            FOCUS_RING,
+            'inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-sm font-semibold text-slate-200',
+            'transition-colors duration-200 hover:bg-white/10 hover:text-white',
+          )}
         >
-          <Share2 className="h-4 w-4" strokeWidth={1.7} />
+          <Share2 className="h-4 w-4" strokeWidth={1.8} />
           Compartir con taller
         </button>
       </div>
 
-      <div className="mt-5 grid gap-2">
+      <div className="mt-5 grid gap-2.5">
         {sortedAlerts.slice(0, 5).map((alert) => {
           const Icon = alertIcon(alert);
           const severity = alert.severity ?? 'low';
           return (
             <div
               key={alert.id}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-                alignItems: 'center',
-                gap: 12,
-                border: '1px solid var(--color-silver-mist)',
-                borderRadius: 16,
-                padding: 12,
-                background: 'var(--color-fog)',
-              }}
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3"
             >
               <span
-                className="inline-flex items-center justify-center rounded-full"
-                style={{
-                  width: 34,
-                  height: 34,
-                  background: 'var(--color-snow)',
-                  color: severityColor[severity],
-                }}
+                className={cn(
+                  'inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5',
+                  severityColor[severity],
+                )}
               >
                 <Icon className="h-4 w-4" strokeWidth={1.8} />
               </span>
               <div className="min-w-0">
                 <span
-                  className="font-mono uppercase"
-                  style={{
-                    display: 'block',
-                    fontSize: 9,
-                    letterSpacing: '0.14em',
-                    color: severityColor[severity],
-                  }}
+                  className={cn(
+                    'block font-mono text-[9px] uppercase tracking-[0.16em]',
+                    severityColor[severity],
+                  )}
                 >
                   {severityLabel[severity]}
                 </span>
-                <p
-                  className="font-text text-ink"
-                  style={{ fontSize: 14, lineHeight: 1.35, margin: '3px 0 0' }}
-                >
-                  {alert.description}
-                </p>
+                <p className="mt-0.5 truncate text-sm text-slate-200">{alert.description}</p>
               </div>
               <button
                 type="button"
                 onClick={() => onNavigate(alertRoute(alert))}
-                className="focus-ring"
-                style={{
-                  border: 0,
-                  borderRadius: 999,
-                  background: 'var(--color-ink)',
-                  color: 'var(--color-snow)',
-                  padding: '8px 12px',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
+                className={cn(
+                  FOCUS_RING,
+                  'rounded-full bg-white px-3.5 py-2 text-xs font-semibold text-slate-900',
+                  'transition-colors duration-200 hover:bg-slate-200',
+                )}
               >
                 Atender
               </button>
@@ -149,8 +105,9 @@ export const AlertCenter = ({ alerts, onNavigate }: AlertCenterProps) => {
           );
         })}
       </div>
+
       {alerts.length > 5 && (
-        <p className="font-text text-graphite mt-3" style={{ fontSize: 12.5 }}>
+        <p className="mt-3 text-xs text-slate-500">
           Mostrando las 5 más importantes. Entra en mantenimiento o documentos para ver el resto.
         </p>
       )}

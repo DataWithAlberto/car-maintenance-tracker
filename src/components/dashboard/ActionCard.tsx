@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react';
+import { ArrowRight } from 'lucide-react';
+import { cn } from '../../utils/cn';
+import { FOCUS_RING } from './styles';
 
 type ActionTone = 'neutral' | 'warn' | 'urgent';
 
@@ -11,24 +14,22 @@ interface ActionCardProps {
   onClick: () => void;
 }
 
-const toneStyles: Record<ActionTone, { border: string; background: string; accent: string }> = {
+const toneStyles: Record<ActionTone, { surface: string; accent: string }> = {
   neutral: {
-    border: '1px solid var(--color-silver-mist)',
-    background: 'var(--color-snow)',
-    accent: 'var(--color-azure)',
+    surface: 'border-white/10 bg-white/[0.04] hover:border-white/20 hover:bg-white/[0.07]',
+    accent: 'text-sky-400',
   },
   warn: {
-    border: '1px solid rgba(199,119,0,0.28)',
-    background: 'rgba(199,119,0,0.08)',
-    accent: 'var(--color-warn-500)',
+    surface: 'border-amber-500/25 bg-amber-500/[0.07] hover:border-amber-500/40',
+    accent: 'text-amber-400',
   },
   urgent: {
-    border: '1px solid rgba(182,68,0,0.28)',
-    background: 'rgba(182,68,0,0.08)',
-    accent: 'var(--color-caution)',
+    surface: 'border-red-500/30 bg-red-500/[0.08] hover:border-red-500/45',
+    accent: 'text-red-400',
   },
 };
 
+/** Tarjeta de acción/estado (dark-tech). Altura uniforme para el grid. */
 export const ActionCard = ({
   eyebrow,
   title,
@@ -43,54 +44,30 @@ export const ActionCard = ({
     <button
       type="button"
       onClick={onClick}
-      className="focus-ring"
-      style={{
-        textAlign: 'left',
-        border: style.border,
-        borderRadius: 18,
-        background: style.background,
-        padding: 18,
-        cursor: 'pointer',
-        color: 'var(--color-ink)',
-        minHeight: 162,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        gap: 14,
-      }}
+      className={cn(
+        FOCUS_RING,
+        'flex min-h-[160px] flex-col justify-between gap-3 rounded-2xl border p-5 text-left backdrop-blur-sm',
+        'transition-colors duration-200 active:scale-[0.99]',
+        style.surface,
+      )}
     >
       <div>
         <span
-          className="font-mono uppercase"
-          style={{
-            fontSize: 10,
-            letterSpacing: '0.14em',
-            color: tone === 'neutral' ? 'var(--color-graphite)' : style.accent,
-          }}
+          className={cn(
+            'font-mono text-[10px] uppercase tracking-[0.16em]',
+            tone === 'neutral' ? 'text-slate-500' : style.accent,
+          )}
         >
           {eyebrow}
         </span>
-        <p
-          className="font-display"
-          style={{
-            fontWeight: 650,
-            fontSize: 22,
-            lineHeight: 1.08,
-            letterSpacing: '-0.35px',
-            margin: '8px 0 0',
-          }}
-        >
+        <p className="mt-2 font-display text-xl font-semibold leading-snug tracking-tight text-white">
           {title}
         </p>
-        <p
-          className="font-text text-graphite"
-          style={{ fontSize: 13, lineHeight: 1.45, margin: '8px 0 0' }}
-        >
-          {body}
-        </p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-400">{body}</p>
       </div>
-      <span className="font-text" style={{ fontSize: 13, fontWeight: 600, color: style.accent }}>
-        {cta} →
+      <span className={cn('inline-flex items-center gap-1 text-sm font-semibold', style.accent)}>
+        {cta}
+        <ArrowRight className="h-4 w-4" strokeWidth={2} />
       </span>
     </button>
   );
