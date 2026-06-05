@@ -1,28 +1,19 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, FileText, Gauge, Receipt, Route, Wallet, Wrench } from 'lucide-react';
+import { ArrowUpRight, Calendar, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { useVehicleStore } from '../store/vehicleStore';
 import { VehicleForm } from '../components/vehicle/VehicleForm';
-import { TripAnniversaryBanner } from '../components/trips/TripAnniversaryBanner';
 import { getErrorMessage } from '../utils/errors';
 
 import { useDashboardData } from '../components/dashboard/useDashboardData';
-import { DashboardHeader } from '../components/dashboard/DashboardHeader';
-import { UrgentBanner } from '../components/dashboard/UrgentBanner';
-import { KpiTile } from '../components/dashboard/KpiTile';
-import { VehicleSpotlight } from '../components/dashboard/VehicleSpotlight';
-import { ActionCard } from '../components/dashboard/ActionCard';
-import { QuickActions } from '../components/dashboard/QuickActions';
-import { UsageSparkline } from '../components/dashboard/UsageSparkline';
-import { ExpenseBreakdown } from '../components/dashboard/ExpenseBreakdown';
-import { OnboardingChecklist } from '../components/dashboard/OnboardingChecklist';
-import { AlertCenter } from '../components/dashboard/AlertCenter';
+import { MetricCard } from '../components/dashboard/MetricCard';
+import { UpcomingMaintenance } from '../components/dashboard/UpcomingMaintenance';
+import { HealthRing } from '../components/dashboard/HealthRing';
 import { FleetGrid } from '../components/dashboard/FleetGrid';
 import { EmptyGarage } from '../components/dashboard/EmptyGarage';
-import { CARD, EYEBROW } from '../components/dashboard/styles';
-import { fmtN, fmtEur } from '../components/dashboard/format';
+import { fmtN } from '../components/dashboard/format';
 import type { VehicleWithAccess } from '../types';
 
 // Visor 3D — carga diferida: mantiene el bundle de Three.js fuera del chunk
@@ -31,29 +22,23 @@ const FordFocusModel3D = lazy(() =>
   import('../components/3d/FordFocusModel3D').then((m) => ({ default: m.FordFocusModel3D })),
 );
 
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 export const DashboardPage = () => {
-  const data = useDashboardData();
   const {
     vehicles,
     loading,
     statsLoading,
     stats,
     primary,
-    primaryStats,
-    aggregate,
-    nextMaintenance,
-    nextAppointment,
     healthScore,
     healthCopy,
-    criticalCount,
-    overdueCount,
+    nextMaintenance,
+    nextAppointment,
     tripStats,
-    expensesByCat,
-    totalYtdPrimary,
-    firstName,
-    lastSyncLabel,
+    upcomingMaintenance,
     createVehicle,
-  } = data;
+  } = useDashboardData();
 
   const { setSelectedVehicle: storeSet } = useVehicleStore();
   const navigate = useNavigate();
@@ -103,255 +88,139 @@ export const DashboardPage = () => {
     if (primary) selectVehicle(primary);
   }, [primary, selectVehicle]);
 
-  // ─── Pasos de onboarding (necesitan navegación → viven en la página) ────────
-  const onboardingSteps = useMemo(() => {
-    if (!primary) return [];
-    const records = primaryStats?.records ?? [];
-    const documents = primaryStats?.documents ?? [];
-    const expenses = primaryStats?.expenses ?? [];
-    return [
-      {
-        id: 'mileage',
-        label: 'Kilometraje base',
-        detail: 'Define el km actual para que las alertas sean fiables.',
-        done: primary.current_km > 0,
-        actionLabel: 'Editar vehículo',
-        onAction: openPrimary,
-        icon: Gauge,
-      },
-      {
-        id: 'maintenance',
-        label: 'Primer mantenimiento',
-        detail: 'Registra el último aceite o revisión para calcular próximos servicios.',
-        done: records.length > 0,
-        actionLabel: 'Añadir mantenimiento',
-        onAction: () => navigate('/maintenance'),
-        icon: Wrench,
-      },
-      {
-        id: 'documents',
-        label: 'Documentos clave',
-        detail: 'Sube seguro, ITV o permiso para recibir avisos de vencimiento.',
-        done: documents.length > 0,
-        actionLabel: 'Subir documento',
-        onAction: () => navigate('/documents'),
-        icon: FileText,
-      },
-      {
-        id: 'expenses',
-        label: 'Primer gasto',
-        detail: 'Añade combustible, seguro o reparación para medir el coste real.',
-        done: expenses.length > 0,
-        actionLabel: 'Añadir gasto',
-        onAction: () => navigate('/expenses'),
-        icon: Receipt,
-      },
-    ];
-  }, [navigate, openPrimary, primary, primaryStats]);
+  // ─── Copys derivados del vehículo principal ─────────────────────────────────
+  const heroStatus = useMemo(() => {
+    if (!primary) return '';
+    return [primary.fuel_type, primary.license_plate, cap(healthCopy)].filter(Boolean).join(' · ');
+  }, [primary, healthCopy]);
 
-  const alertCount = primaryStats?.alerts.length ?? 0;
+  // Tarjeta 3 (próximo servicio): prioriza cita con fecha, si no km restantes.
+  const nextService = useMemo(() => {
+    if (nextAppointment) {
+      return {
+        value: cap(nextAppointment.dayLabel),
+        sub: `${nextAppointment.type} · ${nextAppointment.time}`,
+      };
+    }
+    if (nextMaintenance) {
+      return { value: `${fmtN(nextMaintenance.kmRemaining)} km`, sub: cap(nextMaintenance.label) };
+    }
+    return { value: 'Al día', sub: 'Sin servicios pendientes' };
+  }, [nextAppointment, nextMaintenance]);
 
-  // ─── Tarjetas de estado/acción del vehículo principal ───────────────────────
-  const actionCards = useMemo(
-    () =>
-      [
-        {
-          eyebrow: alertCount ? 'Atención inmediata' : 'Estado del coche',
-          title: alertCount
-            ? `${alertCount} alerta${alertCount === 1 ? '' : 's'} activa${alertCount === 1 ? '' : 's'}`
-            : 'Sin alertas activas',
-          body: alertCount
-            ? 'Revisa vencimientos y mantenimientos antes de seguir sumando kilómetros.'
-            : 'Añade una cita o consulta el historial para dejarlo al día.',
-          cta: alertCount ? 'Revisar' : 'Ver historial',
-          href: '/maintenance',
-          tone: (alertCount ? 'urgent' : 'neutral') as 'urgent' | 'neutral',
-        },
-        {
-          eyebrow: 'Siguiente servicio',
-          title: nextMaintenance
-            ? `${fmtN(nextMaintenance.kmRemaining)} km restantes`
-            : 'Plan despejado',
-          body: nextMaintenance
-            ? `Programa ${nextMaintenance.label} antes de agotar el intervalo recomendado.`
-            : 'No hay mantenimientos próximos calculados para este vehículo.',
-          cta: nextMaintenance ? 'Programar' : 'Añadir servicio',
-          href: '/maintenance',
-          tone: (nextMaintenance ? 'warn' : 'neutral') as 'warn' | 'neutral',
-        },
-        {
-          eyebrow: 'Coste real',
-          title: fmtEur(totalYtdPrimary),
-          body: 'Gasto por km, combustible, seguro y mantenimiento en una sola vista.',
-          cta: 'Ver costes',
-          href: '/coste',
-          tone: 'neutral' as const,
-        },
-        {
-          eyebrow: 'Taller',
-          title: nextAppointment ? nextAppointment.dayLabel : 'Sin cita',
-          body: nextAppointment
-            ? `${nextAppointment.type} a las ${nextAppointment.time}.`
-            : 'Comparte el estado del vehículo con un taller o crea una cita.',
-          cta: nextAppointment ? 'Ver cita' : 'Compartir',
-          href: nextAppointment ? '/maintenance' : '/sharing',
-          tone: 'neutral' as const,
-        },
-      ] as const,
-    [alertCount, nextMaintenance, nextAppointment, totalYtdPrimary],
-  );
+  const efficiencySub =
+    tripStats.pctVsAvg > 0
+      ? `${tripStats.pctVsAvg}% ${tripStats.moreOrLess} que tu media`
+      : 'Conducción registrada';
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="page-enter min-h-screen bg-[#0a0b12] text-white">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:gap-7 sm:px-6 lg:px-8 lg:py-8">
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <DashboardHeader
-          firstName={firstName}
-          lastSyncLabel={lastSyncLabel}
-          vehicles={vehicles}
-          primary={primary}
-          onSelectVehicle={selectVehicle}
-          onAddVehicle={handleAdd}
-        />
+    <div className="page-enter min-h-screen bg-white text-black">
+      <div className="mx-auto max-w-6xl px-6 py-10 sm:py-12">
+        {/* Barra de utilidad: añadir vehículo */}
+        <div className="mb-8 flex justify-end sm:mb-10">
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="inline-flex items-center gap-2 rounded-full border border-black bg-white px-4 py-2 text-sm font-medium text-black transition-colors duration-200 hover:bg-black hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} />
+            Añadir vehículo
+          </button>
+        </div>
 
-        {/* ── Banner de urgencia (solo si hay algo crítico) ──────────────── */}
-        <UrgentBanner
-          criticalCount={criticalCount}
-          overdueCount={overdueCount}
-          onReview={() => navigate('/maintenance')}
-        />
-
-        {/* ── KPIs de flota ──────────────────────────────────────────────── */}
-        <section
-          aria-label="Indicadores de flota"
-          className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-        >
-          <KpiTile
-            icon={Gauge}
-            label="Km totales"
-            value={fmtN(aggregate.totalKm)}
-            hint="Flota completa"
-            tone="brand"
-            loading={statsLoading}
-          />
-          <KpiTile
-            icon={Wrench}
-            label="Mantenimientos"
-            value={String(aggregate.totalRecords)}
-            hint="Histórico"
-            loading={statsLoading}
-          />
-          <KpiTile
-            icon={Wallet}
-            label={`Gasto ${aggregate.ytd}`}
-            value={fmtEur(aggregate.totalSpentYtd)}
-            hint="Año en curso"
-            tone="success"
-            loading={statsLoading}
-          />
-          <KpiTile
-            icon={AlertTriangle}
-            label="Alertas"
-            value={String(aggregate.totalAlerts)}
-            hint="Requieren atención"
-            tone={aggregate.totalAlerts > 0 ? 'danger' : 'neutral'}
-            loading={statsLoading}
-          />
-        </section>
-
-        {/* ── Cuerpo principal ───────────────────────────────────────────── */}
         {!primary ? (
           loading ? (
-            <HeroSkeleton />
+            <DashboardSkeleton />
           ) : (
             <EmptyGarage onAdd={handleAdd} />
           )
         ) : (
-          <>
-            {/* Estado actual destacado: spotlight + tarjetas de acción */}
+          <div className="flex flex-col gap-12 sm:gap-16">
+            {/* ── Hero ──────────────────────────────────────────────────── */}
             <section
-              aria-label="Estado del vehículo"
-              className="grid gap-4 lg:grid-cols-[1.35fr_1fr]"
+              aria-label="Vehículo principal"
+              className="grid grid-cols-1 items-center gap-8 md:grid-cols-2"
             >
-              <VehicleSpotlight
-                vehicle={primary}
-                alertCount={alertCount}
-                healthScore={healthScore}
-                healthCopy={healthCopy}
-                onOpen={openPrimary}
-              />
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {actionCards.map((c) => (
-                  <ActionCard
-                    key={`${c.eyebrow}-${c.href}`}
-                    eyebrow={c.eyebrow}
-                    title={c.title}
-                    body={c.body}
-                    cta={c.cta}
-                    tone={c.tone}
-                    onClick={() => navigate(c.href)}
-                  />
-                ))}
+              <div className="order-2 md:order-1">
+                <h1 className="font-semibold leading-[0.92] tracking-tight text-black text-5xl sm:text-6xl lg:text-7xl">
+                  {primary.year} {primary.brand}
+                  <br />
+                  {primary.model}
+                </h1>
+                <p className="mt-4 text-base text-zinc-500">{heroStatus}</p>
+              </div>
+              <div className="order-1 flex justify-center md:order-2 md:justify-end">
+                <img
+                  src="/ford-focus.png"
+                  alt={`${primary.brand} ${primary.model}`}
+                  className="w-full max-w-xl object-contain"
+                />
               </div>
             </section>
 
-            {/* Accesos rápidos */}
-            <QuickActions onNavigate={navigate} />
-
-            {/* Puesta a punto (se auto-oculta cuando está completa) */}
-            <OnboardingChecklist steps={onboardingSteps} />
-
-            {/* Centro de alertas */}
-            {alertCount > 0 && <AlertCenter alerts={primaryStats!.alerts} onNavigate={navigate} />}
-
-            {/* Aniversario de viaje (si aplica) */}
-            {primaryStats?.trips && primaryStats.trips.length > 0 && (
-              <TripAnniversaryBanner trips={primaryStats.trips} />
-            )}
-
-            {/* Análisis: uso + gasto */}
-            <section aria-label="Análisis" className="grid gap-4 lg:grid-cols-2">
-              <UsageSparkline
-                dailyKm={tripStats.dailyKm}
-                axisDates={tripStats.axisDates}
-                thisMonthKm={tripStats.thisMonthKm}
-                avgPerDay={tripStats.avgPerDay}
-                pctVsAvg={tripStats.pctVsAvg}
-                moreOrLess={tripStats.moreOrLess}
+            {/* ── KPIs ──────────────────────────────────────────────────── */}
+            <section
+              aria-label="Métricas principales"
+              className="grid grid-cols-1 gap-6 md:grid-cols-3"
+            >
+              <MetricCard
+                label="Salud del vehículo"
+                value={`${healthScore}%`}
+                sub={cap(healthCopy)}
+                ring={<HealthRing score={healthScore} size={92} stroke={6} />}
+                loading={statsLoading}
+                onClick={openPrimary}
               />
-              <ExpenseBreakdown
-                data={expensesByCat}
-                total={totalYtdPrimary}
-                year={aggregate.ytd}
-                onDetail={() => navigate('/coste')}
+              <MetricCard
+                label="Uso este mes"
+                value={`${fmtN(tripStats.thisMonthKm)} km`}
+                sub={efficiencySub}
+                icon={<ArrowUpRight className="h-5 w-5" strokeWidth={1.8} />}
+                loading={statsLoading}
+                onClick={() => navigate('/trips')}
+              />
+              <MetricCard
+                label="Próximo servicio"
+                value={nextService.value}
+                sub={nextService.sub}
+                icon={<Calendar className="h-5 w-5" strokeWidth={1.8} />}
+                loading={statsLoading}
+                onClick={() => navigate('/maintenance')}
               />
             </section>
-          </>
-        )}
 
-        {/* ── Flota registrada ───────────────────────────────────────────── */}
-        <FleetGrid
-          vehicles={vehicles}
-          stats={stats}
-          primaryId={primary?.id}
-          onSelect={selectVehicle}
-        />
+            {/* ── Próximos mantenimientos ───────────────────────────────── */}
+            <UpcomingMaintenance
+              items={upcomingMaintenance}
+              onSelect={() => navigate('/maintenance')}
+            />
 
-        {/* ── Visor 3D (lazy, fuera del bundle inicial) ──────────────────── */}
-        <section ref={viewer3dRef} aria-label="Visor 3D del vehículo">
-          <div className="mb-3 flex items-center gap-2">
-            <Route className="h-4 w-4 text-slate-500" strokeWidth={1.8} />
-            <span className={EYEBROW}>Vista 3D</span>
+            {/* ── Flota (solo con varios vehículos) ─────────────────────── */}
+            {vehicles.length > 1 && (
+              <FleetGrid
+                vehicles={vehicles}
+                stats={stats}
+                primaryId={primary.id}
+                onSelect={selectVehicle}
+              />
+            )}
+
+            {/* ── Visor 3D (lazy, fuera del bundle inicial) ─────────────── */}
+            <section ref={viewer3dRef} aria-label="Visor 3D del vehículo">
+              <h2 className="mb-5 text-xl font-semibold tracking-tight text-black sm:text-2xl">
+                Vista 3D
+              </h2>
+              {viewer3dInView ? (
+                <Suspense fallback={<Viewer3dSkeleton />}>
+                  <FordFocusModel3D className="overflow-hidden rounded-2xl border border-black" />
+                </Suspense>
+              ) : (
+                <Viewer3dSkeleton />
+              )}
+            </section>
           </div>
-          {viewer3dInView ? (
-            <Suspense fallback={<Viewer3dSkeleton />}>
-              <FordFocusModel3D className="overflow-hidden rounded-2xl" />
-            </Suspense>
-          ) : (
-            <Viewer3dSkeleton />
-          )}
-        </section>
+        )}
       </div>
 
       {showForm && <VehicleForm onSubmit={handleCreate} onClose={() => setShowForm(false)} />}
@@ -359,13 +228,16 @@ export const DashboardPage = () => {
   );
 };
 
-// ─── Skeletons ────────────────────────────────────────────────────────────────
-const HeroSkeleton = () => (
-  <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-    <div className={`${CARD} h-80 animate-pulse`} />
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className={`${CARD} h-40 animate-pulse`} />
+// ─── Skeletons (B&W) ──────────────────────────────────────────────────────────
+const DashboardSkeleton = () => (
+  <div className="flex flex-col gap-12">
+    <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
+      <div className="h-32 w-3/4 animate-pulse rounded-2xl bg-zinc-100" />
+      <div className="h-48 animate-pulse rounded-2xl bg-zinc-100" />
+    </div>
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="h-40 animate-pulse rounded-2xl border border-black bg-white" />
       ))}
     </div>
   </div>
@@ -374,7 +246,7 @@ const HeroSkeleton = () => (
 const Viewer3dSkeleton = () => (
   <div
     aria-hidden="true"
-    className={`${CARD} animate-pulse`}
+    className="animate-pulse rounded-2xl border border-black bg-white"
     style={{ minHeight: 'clamp(420px, 52vw, 700px)' }}
   />
 );

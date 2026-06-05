@@ -9,7 +9,7 @@ import { documentsService } from '../../services/documents.service';
 import { calculateAlerts, calculateDocumentAlerts } from '../../utils/calculations';
 import { sendAlertNotifications } from '../../utils/notifications';
 import { OIL_CHANGE_KM_INTERVAL } from '../../utils/constants';
-import { fmtMonthDay } from './format';
+import { fmtMonthDay, fmtN } from './format';
 import type {
   VehicleWithAccess,
   MaintenanceRecord,
@@ -56,6 +56,13 @@ export interface ExpenseBreakdown {
   seguro: number;
 }
 
+/** Fila de la lista "Próximos mantenimientos". */
+export interface UpcomingItem {
+  id: string;
+  label: string;
+  detail: string;
+}
+
 export interface DashboardData {
   vehicles: VehicleWithAccess[];
   loading: boolean;
@@ -81,6 +88,8 @@ export interface DashboardData {
   tripStats: TripStats;
   expensesByCat: ExpenseBreakdown;
   totalYtdPrimary: number;
+  /** Servicios próximos del vehículo principal, ordenados por urgencia. */
+  upcomingMaintenance: UpcomingItem[];
   firstName: string;
   lastSyncLabel: string;
   fetchVehicles: () => void;
@@ -342,6 +351,65 @@ export const useDashboardData = (): DashboardData => {
   const totalYtdPrimary =
     expensesByCat.combustible + expensesByCat.mantenimiento + expensesByCat.seguro;
 
+  // ─── Próximos mantenimientos (lista del vehículo principal) ─────────────────
+  // Una fila por registro con servicio futuro (por km o por fecha), ordenadas
+  // por urgencia. Si no hay registros con previsión, cae a las alertas activas
+  // (que ya incluyen vencimientos de documentos y mantenimientos atrasados).
+  const upcomingMaintenance = useMemo<UpcomingItem[]>(() => {
+    if (!primary || !primaryStats) return [];
+    const nowMs = loadedAt ? loadedAt.getTime() : 0;
+
+    const byKm: { item: UpcomingItem; sort: number }[] = [];
+    const byDate: { item: UpcomingItem; sort: number }[] = [];
+
+    for (const r of primaryStats.records) {
+      const futureKm = r.next_service_km && r.next_service_km > primary.current_km;
+      const dateMs = r.next_service_date ? new Date(r.next_service_date).getTime() : 0;
+      const futureDate = dateMs > nowMs;
+
+      if (futureKm) {
+        const km = r.next_service_km! - primary.current_km;
+        byKm.push({
+          item: { id: `${r.id}-km`, label: r.type, detail: `Faltan ${fmtN(km)} km` },
+          sort: km,
+        });
+      } else if (futureDate) {
+        const label = new Date(dateMs).toLocaleDateString('es-ES', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+        byDate.push({
+          item: { id: `${r.id}-date`, label: r.type, detail: `Vence ${label}` },
+          sort: dateMs,
+        });
+      }
+    }
+
+    byKm.sort((a, b) => a.sort - b.sort);
+    byDate.sort((a, b) => a.sort - b.sort);
+    const merged = [...byKm, ...byDate].map((x) => x.item);
+
+    // Añadir el cambio de aceite estimado si no está ya cubierto por un registro.
+    if (nextMaintenance && nextMaintenance.label === 'cambio de aceite') {
+      const already = merged.some((m) => m.label.toLowerCase().includes('aceite'));
+      if (!already) {
+        merged.unshift({
+          id: 'oil-estimate',
+          label: 'Cambio de aceite',
+          detail: `Faltan ${fmtN(nextMaintenance.kmRemaining)} km`,
+        });
+      }
+    }
+
+    if (merged.length > 0) return merged.slice(0, 6);
+
+    // Fallback: alertas activas (mantenimientos atrasados / documentos).
+    return primaryStats.alerts
+      .slice(0, 6)
+      .map((a) => ({ id: a.id, label: a.description, detail: 'Requiere atención' }));
+  }, [primary, primaryStats, loadedAt, nextMaintenance]);
+
   // ─── Nombre + copy de sync ──────────────────────────────────────────────────
   const firstName = useMemo(() => {
     const full = (user?.user_metadata?.full_name as string | undefined) ?? '';
@@ -389,6 +457,7 @@ export const useDashboardData = (): DashboardData => {
     tripStats,
     expensesByCat,
     totalYtdPrimary,
+    upcomingMaintenance,
     firstName,
     lastSyncLabel,
     fetchVehicles,

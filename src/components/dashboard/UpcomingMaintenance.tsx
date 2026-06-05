@@ -1,0 +1,52 @@
+import { memo } from 'react';
+import { ChevronRight } from 'lucide-react';
+import { cn } from '../../utils/cn';
+import { FOCUS_RING } from './styles';
+import type { UpcomingItem } from './useDashboardData';
+
+interface UpcomingMaintenanceProps {
+  items: UpcomingItem[];
+  onSelect: () => void;
+}
+
+/**
+ * Lista de "Próximos mantenimientos" en estilo editorial: filas a todo el
+ * ancho separadas por líneas negras finas, con la etiqueta y el detalle a la
+ * izquierda y un chevron `>` a la derecha. Calca la sección inferior de la
+ * imagen de referencia.
+ */
+export const UpcomingMaintenance = memo(({ items, onSelect }: UpcomingMaintenanceProps) => (
+  <section aria-label="Próximos mantenimientos">
+    <h2 className="text-xl font-semibold tracking-tight text-black sm:text-2xl">
+      Próximos mantenimientos
+    </h2>
+
+    <div className="mt-5 border-t border-black">
+      {items.length === 0 ? (
+        <p className="border-b border-black py-4 text-sm text-zinc-500">
+          Sin mantenimientos próximos. Tu vehículo está al día.
+        </p>
+      ) : (
+        items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={onSelect}
+            className={cn(
+              FOCUS_RING,
+              'flex w-full items-center justify-between gap-4 border-b border-black py-4 text-left',
+              'transition-colors duration-150 hover:bg-zinc-50',
+            )}
+          >
+            <span className="min-w-0 truncate text-[15px] text-black">
+              <span className="font-medium">{item.label}</span>
+              <span className="text-zinc-500"> — {item.detail}</span>
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-black" strokeWidth={1.6} />
+          </button>
+        ))
+      )}
+    </div>
+  </section>
+));
+UpcomingMaintenance.displayName = 'UpcomingMaintenance';
