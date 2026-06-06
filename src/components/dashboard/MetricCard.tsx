@@ -25,7 +25,7 @@ export const MetricCard = memo(
     const content = (
       <>
         {icon && (
-          <span className="absolute right-5 top-5 text-ink sm:right-6 sm:top-6">{icon}</span>
+          <span className="absolute right-5 top-5 text-graphite sm:right-6 sm:top-6">{icon}</span>
         )}
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">

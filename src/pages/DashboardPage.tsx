@@ -137,7 +137,7 @@ export const DashboardPage = () => {
           <button
             type="button"
             onClick={handleAdd}
-            className={`${FOCUS_RING} inline-flex items-center gap-2 rounded-full border border-ink bg-snow px-4 py-2 text-sm font-medium text-ink transition-colors duration-200 hover:bg-ink hover:text-snow`}
+            className={`${FOCUS_RING} inline-flex items-center gap-2 rounded-full border border-silver-mist bg-snow px-4 py-2 text-sm font-medium text-ink transition-colors duration-200 hover:bg-fog`}
           >
             <Plus className="h-4 w-4" strokeWidth={2} />
             Añadir vehículo
@@ -166,7 +166,7 @@ export const DashboardPage = () => {
                   {primary.model}
                 </h1>
                 <p className="mt-4 text-base text-graphite">{heroStatus}</p>
-                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink transition-[gap] duration-200 group-hover:gap-3">
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-azure transition-[gap] duration-200 group-hover:gap-3">
                   Ver vehículo
                   <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
                 </span>
@@ -250,7 +250,7 @@ export const DashboardPage = () => {
               </h2>
               {viewer3dInView ? (
                 <Suspense fallback={<Viewer3dSkeleton />}>
-                  <FordFocusModel3D className="overflow-hidden rounded-2xl border border-ink" />
+                  <FordFocusModel3D className="overflow-hidden rounded-2xl border border-silver-mist" />
                 </Suspense>
               ) : (
                 <Viewer3dSkeleton />
@@ -274,7 +274,7 @@ const DashboardSkeleton = () => (
     </div>
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="skeleton h-40 rounded-2xl border border-ink" />
+        <div key={i} className="skeleton h-40 rounded-2xl border border-silver-mist" />
       ))}
     </div>
   </div>
@@ -283,7 +283,7 @@ const DashboardSkeleton = () => (
 const Viewer3dSkeleton = () => (
   <div
     aria-hidden="true"
-    className="skeleton rounded-2xl border border-ink"
+    className="skeleton rounded-2xl border border-silver-mist"
     style={{ minHeight: 'clamp(420px, 52vw, 700px)' }}
   />
 );

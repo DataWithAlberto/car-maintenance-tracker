@@ -9,7 +9,7 @@ interface EmptyGarageProps {
 
 /** Estado vacío editorial (theme-aware): no hay vehículos todavía. */
 export const EmptyGarage = memo(({ onAdd }: EmptyGarageProps) => (
-  <div className="flex flex-col items-start gap-5 border-t border-ink py-12">
+  <div className="flex flex-col items-start gap-5 border-t border-silver-mist py-12">
     <h2 className="font-semibold leading-[0.95] tracking-tight text-ink text-4xl sm:text-6xl">
       Empieza añadiendo
       <br />
@@ -24,8 +24,8 @@ export const EmptyGarage = memo(({ onAdd }: EmptyGarageProps) => (
       onClick={onAdd}
       className={cn(
         FOCUS_RING,
-        'inline-flex items-center gap-2 rounded-full border border-ink bg-ink px-5 py-2.5 text-sm font-medium text-snow',
-        'transition-colors duration-200 hover:bg-snow hover:text-ink',
+        'inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-snow',
+        'transition-opacity duration-200 hover:opacity-90',
       )}
     >
       <Plus className="h-4 w-4" strokeWidth={2} />

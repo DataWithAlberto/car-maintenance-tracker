@@ -28,7 +28,7 @@ export const FleetGrid = memo(({ vehicles, stats, primaryId, onSelect }: FleetGr
         <span className="ml-2 text-base font-normal text-mist">{vehicles.length}</span>
       </h2>
 
-      <div className="mt-5 border-t border-ink">
+      <div className="mt-5 border-t border-silver-mist">
         {vehicles.map((v) => {
           const s = stats[v.id];
           const alertCount = s?.alerts.length ?? 0;
@@ -40,7 +40,7 @@ export const FleetGrid = memo(({ vehicles, stats, primaryId, onSelect }: FleetGr
               onClick={() => onSelect(v)}
               className={cn(
                 FOCUS_RING,
-                'flex w-full items-center justify-between gap-4 border-b border-ink py-4 text-left',
+                'flex w-full items-center justify-between gap-4 border-b border-silver-mist py-4 text-left',
                 'transition-colors duration-150 hover:bg-fog',
               )}
             >
@@ -50,7 +50,7 @@ export const FleetGrid = memo(({ vehicles, stats, primaryId, onSelect }: FleetGr
                     {v.brand} {v.model}
                   </span>
                   {isPrimary && (
-                    <span className="rounded-full border border-ink px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink">
+                    <span className="rounded-full border border-azure px-2 py-0.5 text-[10px] uppercase tracking-wide text-azure">
                       Principal
                     </span>
                   )}
@@ -60,7 +60,7 @@ export const FleetGrid = memo(({ vehicles, stats, primaryId, onSelect }: FleetGr
                   {alertCount > 0 && ` · ${alertCount} alerta${alertCount === 1 ? '' : 's'}`}
                 </span>
               </span>
-              <ChevronRight className="h-5 w-5 shrink-0 text-ink" strokeWidth={1.6} />
+              <ChevronRight className="h-5 w-5 shrink-0 text-mist" strokeWidth={1.6} />
             </button>
           );
         })}

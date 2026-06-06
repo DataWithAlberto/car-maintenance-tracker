@@ -8,10 +8,10 @@ interface HealthRingProps {
 }
 
 /**
- * Indicador radial de salud (SVG puro, sin dependencias) en estilo editorial:
- * arco en color de tinta (ink) sobre pista tenue (silver-mist), con el valor
- * centrado. Usa tokens CSS, por lo que invierte solo en modo oscuro. Accesible
- * vía `role` + `aria-valuenow`.
+ * Indicador radial de salud (SVG puro, sin dependencias): arco en el acento de
+ * la app (azure) sobre pista tenue (silver-mist), con el valor centrado. Usa
+ * tokens CSS, por lo que se adapta solo al modo oscuro. Accesible vía `role` +
+ * `aria-valuenow`.
  */
 export const HealthRing = memo(({ score, size = 96, stroke = 6 }: HealthRingProps) => {
   const clamped = Math.max(0, Math.min(100, score));
@@ -43,7 +43,7 @@ export const HealthRing = memo(({ score, size = 96, stroke = 6 }: HealthRingProp
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--color-ink)"
+          stroke="var(--color-azure)"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}

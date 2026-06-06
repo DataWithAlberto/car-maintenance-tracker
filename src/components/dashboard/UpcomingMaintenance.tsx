@@ -11,7 +11,7 @@ interface UpcomingMaintenanceProps {
 
 /**
  * Lista de "Próximos mantenimientos" en estilo editorial: filas a todo el
- * ancho separadas por líneas finas (border-ink, theme-aware), con la etiqueta y
+ * ancho separadas por hairlines sutiles (silver-mist, theme-aware), con la etiqueta y
  * el detalle a la izquierda y un chevron `>` a la derecha.
  */
 export const UpcomingMaintenance = memo(({ items, onSelect }: UpcomingMaintenanceProps) => (
@@ -20,9 +20,9 @@ export const UpcomingMaintenance = memo(({ items, onSelect }: UpcomingMaintenanc
       Próximos mantenimientos
     </h2>
 
-    <div className="mt-5 border-t border-ink">
+    <div className="mt-5 border-t border-silver-mist">
       {items.length === 0 ? (
-        <p className="border-b border-ink py-4 text-sm text-graphite">
+        <p className="border-b border-silver-mist py-4 text-sm text-graphite">
           Sin mantenimientos próximos. Tu vehículo está al día.
         </p>
       ) : (
@@ -33,7 +33,7 @@ export const UpcomingMaintenance = memo(({ items, onSelect }: UpcomingMaintenanc
             onClick={onSelect}
             className={cn(
               FOCUS_RING,
-              'flex w-full items-center justify-between gap-4 border-b border-ink py-4 text-left',
+              'flex w-full items-center justify-between gap-4 border-b border-silver-mist py-4 text-left',
               'transition-colors duration-150 hover:bg-fog',
             )}
           >
@@ -41,7 +41,7 @@ export const UpcomingMaintenance = memo(({ items, onSelect }: UpcomingMaintenanc
               <span className="font-medium">{item.label}</span>
               <span className="text-graphite"> — {item.detail}</span>
             </span>
-            <ChevronRight className="h-5 w-5 shrink-0 text-ink" strokeWidth={1.6} />
+            <ChevronRight className="h-5 w-5 shrink-0 text-mist" strokeWidth={1.6} />
           </button>
         ))
       )}
