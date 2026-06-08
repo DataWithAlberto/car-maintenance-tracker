@@ -1,17 +1,36 @@
 import { useState, useMemo } from 'react';
-import { MapPin, Navigation, Calendar, Gauge, Wind, Thermometer, Music, StickyNote, Loader2, LocateFixed, Clock } from 'lucide-react';
+import {
+  MapPin,
+  Navigation,
+  Calendar,
+  Gauge,
+  Wind,
+  Thermometer,
+  Music,
+  StickyNote,
+  Loader2,
+  LocateFixed,
+  Clock,
+  Wallet,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Modal } from '../ui/Modal';
 import { FloatingInput, FloatingTextarea, FloatingSelect } from '../ui/FloatingInput';
 import { Button } from '../ui/Button';
 import { tripsService } from '../../services/trips.service';
-import type { CreateTripInput } from '../../types';
+import type { CreateTripInput, Trip } from '../../types';
 
 interface TripFormProps {
   currentKm: number;
-  onSubmit: (data: CreateTripInput) => Promise<void>;
+  initialData?: Partial<Trip>;
+  mode?: 'create' | 'edit';
+  onSubmit: (data: TripFormValues) => Promise<void>;
   onClose: () => void;
 }
+
+export type TripFormValues = CreateTripInput & {
+  estimated_budget?: number;
+};
 
 const toLocalDatetimeString = (d: Date) =>
   new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -25,19 +44,52 @@ const SectionHeader = ({ icon, children }: { icon: ReactNode; children: ReactNod
   </p>
 );
 
-export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
-  const [loading, setLoading]         = useState(false);
-  const [geoLoading, setGeoLoading]   = useState(false);
+const toDatetimeInputValue = (value?: string) => {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value.slice(0, 16);
+  return toLocalDatetimeString(parsed);
+};
+
+export const TripForm = ({
+  currentKm,
+  initialData,
+  mode = 'create',
+  onSubmit,
+  onClose,
+}: TripFormProps) => {
+  const [loading, setLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState(false);
 
-  const [form, setForm] = useState<CreateTripInput>({
-    start_location: '',
-    end_location:   '',
-    start_datetime: toLocalDatetimeString(new Date()),
-    start_km:       currentKm,
+  const [form, setForm] = useState<TripFormValues>({
+    title: initialData?.title ?? undefined,
+    start_location: initialData?.start_location ?? '',
+    end_location: initialData?.end_location ?? '',
+    start_lat: initialData?.start_lat ?? undefined,
+    start_lng: initialData?.start_lng ?? undefined,
+    end_lat: initialData?.end_lat ?? undefined,
+    end_lng: initialData?.end_lng ?? undefined,
+    start_datetime:
+      toDatetimeInputValue(initialData?.start_datetime) || toLocalDatetimeString(new Date()),
+    end_datetime: toDatetimeInputValue(initialData?.end_datetime) || undefined,
+    start_km: initialData?.start_km ?? currentKm,
+    end_km: initialData?.end_km ?? undefined,
+    fuel_consumed: initialData?.fuel_consumed ?? undefined,
+    avg_speed: initialData?.avg_speed ?? undefined,
+    max_altitude: initialData?.max_altitude ?? undefined,
+    driving_time_minutes: initialData?.driving_time_minutes ?? undefined,
+    notes: initialData?.notes ?? undefined,
+    weather_condition: initialData?.weather_condition ?? undefined,
+    weather_temp: initialData?.weather_temp ?? undefined,
+    weather_humidity: initialData?.weather_humidity ?? undefined,
+    weather_wind_speed: initialData?.weather_wind_speed ?? undefined,
+    spotify_playlist_url: initialData?.spotify_playlist_url ?? undefined,
+    estimated_budget: initialData?.estimated_budget ?? undefined,
   });
 
-  const set = (k: keyof CreateTripInput, v: string | number | undefined) =>
+  const set = (k: keyof TripFormValues, v: string | number | undefined) =>
     setForm((f) => ({ ...f, [k]: v }));
 
   const handleGeolocate = () => {
@@ -69,7 +121,8 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
   // Derived: driving time from the two datetimes (no effect / no extra state).
   const drivingTimeMinutes = useMemo(() => {
     if (form.start_datetime && form.end_datetime) {
-      const diff = (new Date(form.end_datetime).getTime() - new Date(form.start_datetime).getTime()) / 60000;
+      const diff =
+        (new Date(form.end_datetime).getTime() - new Date(form.start_datetime).getTime()) / 60000;
       if (diff > 0) return Math.round(diff);
     }
     return undefined;
@@ -87,19 +140,40 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
   };
 
   // Auto-calculate total km
-  const totalKm = form.end_km != null && form.end_km > form.start_km
-    ? form.end_km - form.start_km
-    : null;
+  const totalKm =
+    form.end_km != null && form.end_km > form.start_km ? form.end_km - form.start_km : null;
 
-  const weatherConditions = ['Clear','Clouds','Rain','Drizzle','Thunderstorm','Snow','Mist','Fog','Haze','Windy'];
+  const weatherConditions = [
+    'Clear',
+    'Clouds',
+    'Rain',
+    'Drizzle',
+    'Thunderstorm',
+    'Snow',
+    'Mist',
+    'Fog',
+    'Haze',
+    'Windy',
+  ];
 
   return (
-    <Modal open onClose={onClose} title="Registrar viaje" description="Documenta tu ruta y experiencia de conducción" size="lg">
+    <Modal
+      open
+      onClose={onClose}
+      title={mode === 'edit' ? 'Editar viaje' : 'Registrar viaje'}
+      description={
+        mode === 'edit'
+          ? 'Actualiza ruta, fechas, consumo, presupuesto y notas'
+          : 'Documenta tu ruta y experiencia de conducción'
+      }
+      size="lg"
+    >
       <form onSubmit={handleSubmit} className="space-y-5">
-
         {/* Locations */}
         <div className="space-y-3">
-          <SectionHeader icon={<Navigation className="h-3 w-3" strokeWidth={1.6} />}>Ruta</SectionHeader>
+          <SectionHeader icon={<Navigation className="h-3 w-3" strokeWidth={1.6} />}>
+            Ruta
+          </SectionHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="relative">
               <FloatingInput
@@ -130,7 +204,9 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
               loading={geoLoading}
               iconLeft={<LocateFixed className="h-3.5 w-3.5" />}
             >
-              {form.start_lat != null ? `${form.start_lat.toFixed(4)}, ${form.start_lng?.toFixed(4)}` : 'Usar mi ubicación'}
+              {form.start_lat != null
+                ? `${form.start_lat.toFixed(4)}, ${form.start_lng?.toFixed(4)}`
+                : 'Usar mi ubicación'}
             </Button>
             {form.start_lat != null && (
               <Button
@@ -149,7 +225,9 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
 
         {/* Date & Time */}
         <div className="space-y-3">
-          <SectionHeader icon={<Calendar className="h-3 w-3" strokeWidth={1.6} />}>Fecha y hora</SectionHeader>
+          <SectionHeader icon={<Calendar className="h-3 w-3" strokeWidth={1.6} />}>
+            Fecha y hora
+          </SectionHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FloatingInput
               type="datetime-local"
@@ -166,16 +244,22 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
             />
           </div>
           {drivingTimeMinutes != null && (
-            <p className="font-text text-graphite flex items-center gap-1.5" style={{ fontSize: 13 }}>
+            <p
+              className="font-text text-graphite flex items-center gap-1.5"
+              style={{ fontSize: 13 }}
+            >
               <Clock className="h-3 w-3" strokeWidth={1.6} />
-              Tiempo de conducción: {Math.floor(drivingTimeMinutes / 60)}h {drivingTimeMinutes % 60}min
+              Tiempo de conducción: {Math.floor(drivingTimeMinutes / 60)}h {drivingTimeMinutes % 60}
+              min
             </p>
           )}
         </div>
 
         {/* Odometer */}
         <div className="space-y-3">
-          <SectionHeader icon={<Gauge className="h-3 w-3" strokeWidth={1.6} />}>Odómetro</SectionHeader>
+          <SectionHeader icon={<Gauge className="h-3 w-3" strokeWidth={1.6} />}>
+            Odómetro
+          </SectionHeader>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <FloatingInput
               type="number"
@@ -192,8 +276,16 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
             />
             <div className="flex items-center px-4 bg-fog border border-silver-mist rounded-[14px]">
               <div>
-                <p className="font-mono uppercase text-graphite" style={{ fontSize: 10, letterSpacing: '0.12em' }}>Total</p>
-                <p className="font-text text-ink font-medium tabular-nums mt-0.5" style={{ fontSize: 15 }}>
+                <p
+                  className="font-mono uppercase text-graphite"
+                  style={{ fontSize: 10, letterSpacing: '0.12em' }}
+                >
+                  Total
+                </p>
+                <p
+                  className="font-text text-ink font-medium tabular-nums mt-0.5"
+                  style={{ fontSize: 15 }}
+                >
                   {totalKm != null ? `${totalKm} km` : '—'}
                 </p>
               </div>
@@ -218,6 +310,19 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
             label="Altitud máxima (m)"
             value={form.max_altitude ?? ''}
             onChange={(e) => set('max_altitude', parseFloat(e.target.value) || undefined)}
+          />
+        </div>
+
+        {/* Budget */}
+        <div className="space-y-3">
+          <SectionHeader icon={<Wallet className="h-3 w-3" strokeWidth={1.6} />}>
+            Presupuesto
+          </SectionHeader>
+          <FloatingInput
+            type="number"
+            label="Presupuesto estimado (€)"
+            value={form.estimated_budget ?? ''}
+            onChange={(e) => set('estimated_budget', parseFloat(e.target.value) || undefined)}
           />
         </div>
 
@@ -256,7 +361,9 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
 
         {/* Extras */}
         <div className="space-y-3">
-          <SectionHeader icon={<StickyNote className="h-3 w-3" strokeWidth={1.6} />}>Notas y extras</SectionHeader>
+          <SectionHeader icon={<StickyNote className="h-3 w-3" strokeWidth={1.6} />}>
+            Notas y extras
+          </SectionHeader>
           <FloatingTextarea
             label="Notas del viaje"
             value={form.notes ?? ''}
@@ -272,9 +379,11 @@ export const TripForm = ({ currentKm, onSubmit, onClose }: TripFormProps) => {
         </div>
 
         <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
           <Button type="submit" loading={loading} iconLeft={<MapPin className="h-4 w-4" />}>
-            Guardar viaje
+            {mode === 'edit' ? 'Guardar cambios' : 'Guardar viaje'}
           </Button>
         </div>
       </form>

@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import MapGL, { Source, Layer, Marker, NavigationControl } from 'react-map-gl/mapbox';
 import type { LayerProps } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Route } from 'lucide-react';
-import { TripForm } from '../components/trips/TripForm';
+import { BookOpen, Car, CheckCircle2, Pencil, Route, Wallet } from 'lucide-react';
+import { TripForm, type TripFormValues } from '../components/trips/TripForm';
 import { TripBookingForm } from '../components/trips/TripBookingForm';
 import { QuickPlanTripForm } from '../components/trips/QuickPlanTripForm';
 import { TripPlanningBoard } from '../components/trips/TripPlanningBoard';
@@ -22,11 +22,14 @@ import { useVehicle } from '../hooks/useVehicle';
 import { tripsService } from '../services/trips.service';
 import { formatKm } from '../utils/formatters';
 import type {
-  CreateTripInput,
   CreateTripActivityInput,
   CreateDraftTripInput,
   TripVisibility,
   SurpriseConfig,
+  Trip,
+  TripActivity,
+  TripChecklistItem,
+  Vehicle,
 } from '../types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -54,7 +57,14 @@ const FILTER_LABEL: Record<FilterKey, string> = {
 
 const nf0 = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 });
 const nf1 = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const eur0 = new Intl.NumberFormat('es-ES', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 0,
+});
 const dotDate = (iso: string) => format(parseISO(iso), 'dd·MM·yy');
+const FUEL_PRICE_EUR_PER_L = 1.65;
+const DEFAULT_CONSUMPTION_L_100 = 6.5;
 
 /* ─── Chip de tipo de distancia ─────────────────────────────────────────── */
 const TripTag = ({ tag }: { tag: TagKind }) => {
@@ -123,6 +133,298 @@ const ROUTE_LAYER = {
   },
 } as unknown as LayerProps;
 
+const tripDistanceKm = (trip: Trip) => {
+  if (trip.total_km != null) return trip.total_km;
+  if (trip.end_km != null && trip.start_km != null && trip.end_km > trip.start_km) {
+    return trip.end_km - trip.start_km;
+  }
+  return 0;
+};
+
+const activityCost = (activities: TripActivity[]) =>
+  activities.reduce((sum, activity) => sum + (activity.price ?? 0), 0);
+
+const estimatedFuelLiters = (trip: Trip) => {
+  if (trip.fuel_consumed != null && trip.fuel_consumed > 0) return trip.fuel_consumed;
+  return (tripDistanceKm(trip) * DEFAULT_CONSUMPTION_L_100) / 100;
+};
+
+interface TripIntelligencePanelProps {
+  trip: Trip;
+  bookings: TripActivity[];
+  checklist: TripChecklistItem[];
+  vehicle: Vehicle;
+  onAddChecklist: (text: string) => Promise<void>;
+  onEdit: () => void;
+  onOpenSummary: () => void;
+}
+
+const TripIntelligencePanel = ({
+  trip,
+  bookings,
+  checklist,
+  vehicle,
+  onAddChecklist,
+  onEdit,
+  onOpenSummary,
+}: TripIntelligencePanelProps) => {
+  const [adding, setAdding] = useState(false);
+  const km = tripDistanceKm(trip);
+  const fuelLiters = estimatedFuelLiters(trip);
+  const fuelCost = fuelLiters * FUEL_PRICE_EUR_PER_L;
+  const bookingsCost = activityCost(bookings);
+  const realCost = fuelCost + bookingsCost;
+  const estimatedBudget = trip.estimated_budget ?? 0;
+  const budgetDiff = estimatedBudget > 0 ? realCost - estimatedBudget : null;
+  const costPerKm = km > 0 ? realCost / km : null;
+  const startDate = trip.start_datetime ?? trip.start_date;
+
+  const suggestions = [
+    {
+      text: 'Revisar presión y dibujo de neumáticos',
+      show: km >= 80 || trip.status === 'planning',
+    },
+    {
+      text: 'Comprobar nivel de aceite y refrigerante',
+      show: km >= 150 || trip.status === 'planning',
+    },
+    {
+      text: 'Verificar ITV, seguro y documentación',
+      show: km >= 150 || trip.status === 'planning',
+    },
+    {
+      text: 'Preparar cargador, chaleco, triángulos y botiquín',
+      show: km >= 250 || trip.status === 'planning',
+    },
+    {
+      text: 'Planificar parada de descanso y repostaje',
+      show: km >= 300,
+    },
+  ].filter((item) => item.show);
+
+  const normalizedChecklist = checklist.map((item) => item.text.toLowerCase());
+  const missingSuggestions = suggestions.filter(
+    (item) =>
+      !normalizedChecklist.some((text) => text.includes(item.text.toLowerCase().slice(0, 18))),
+  );
+  const doneCount = checklist.filter((item) => item.done).length;
+
+  const addMissing = async () => {
+    setAdding(true);
+    try {
+      for (const item of missingSuggestions) {
+        await onAddChecklist(item.text);
+      }
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <section
+        className="bg-snow"
+        style={{ border: '1px solid var(--color-silver-mist)', borderRadius: 18, padding: 22 }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span
+            className="font-mono uppercase text-graphite"
+            style={{ fontSize: 10, letterSpacing: '.16em' }}
+          >
+            Preparación del coche
+          </span>
+          <Car className="h-4 w-4 text-graphite" strokeWidth={1.7} />
+        </div>
+        <p className="mt-3 text-ink" style={{ fontSize: 18, fontWeight: 650 }}>
+          {km >= 250 ? 'Viaje largo' : km >= 80 ? 'Revisión rápida' : 'Salida ligera'}
+        </p>
+        <p className="mt-1 text-graphite" style={{ fontSize: 13, lineHeight: 1.45 }}>
+          {vehicle.brand} {vehicle.model} ·{' '}
+          {km > 0 ? `${nf0.format(km)} km previstos/registrados` : 'distancia pendiente'}
+        </p>
+        <div className="mt-4 space-y-2">
+          {suggestions.map((item) => {
+            const covered = !missingSuggestions.some((missing) => missing.text === item.text);
+            return (
+              <div key={item.text} className="flex items-start gap-2">
+                <CheckCircle2
+                  className="mt-0.5 h-4 w-4"
+                  strokeWidth={1.8}
+                  style={{ color: covered ? 'var(--color-mint)' : 'var(--color-mist)' }}
+                />
+                <span className="text-slate" style={{ fontSize: 13, lineHeight: 1.35 }}>
+                  {item.text}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={addMissing}
+          disabled={missingSuggestions.length === 0 || adding}
+          className="mt-5 transition-colors hover:bg-fog disabled:opacity-45"
+          style={{
+            border: '1px solid var(--color-silver-mist)',
+            borderRadius: 999,
+            background: 'var(--color-snow)',
+            color: 'var(--color-ink)',
+            padding: '8px 13px',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: missingSuggestions.length === 0 ? 'default' : 'pointer',
+          }}
+        >
+          {missingSuggestions.length === 0
+            ? `Checklist al día (${doneCount}/${checklist.length || suggestions.length})`
+            : adding
+              ? 'Añadiendo…'
+              : `Añadir ${missingSuggestions.length} al checklist`}
+        </button>
+      </section>
+
+      <section
+        className="bg-snow"
+        style={{ border: '1px solid var(--color-silver-mist)', borderRadius: 18, padding: 22 }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span
+            className="font-mono uppercase text-graphite"
+            style={{ fontSize: 10, letterSpacing: '.16em' }}
+          >
+            Coste estimado vs real
+          </span>
+          <Wallet className="h-4 w-4 text-graphite" strokeWidth={1.7} />
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div>
+            <p
+              className="font-mono uppercase text-graphite"
+              style={{ fontSize: 9, letterSpacing: '.12em' }}
+            >
+              Estimado
+            </p>
+            <p className="text-ink tabular-nums" style={{ fontSize: 24, fontWeight: 700 }}>
+              {estimatedBudget > 0 ? eur0.format(estimatedBudget) : '—'}
+            </p>
+          </div>
+          <div>
+            <p
+              className="font-mono uppercase text-graphite"
+              style={{ fontSize: 9, letterSpacing: '.12em' }}
+            >
+              Real
+            </p>
+            <p className="text-ink tabular-nums" style={{ fontSize: 24, fontWeight: 700 }}>
+              {realCost > 0 ? eur0.format(realCost) : '—'}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2 text-graphite" style={{ fontSize: 13 }}>
+          <p>
+            Combustible:{' '}
+            {fuelLiters > 0
+              ? `${nf1.format(fuelLiters)} L · ${eur0.format(fuelCost)}`
+              : 'sin datos'}
+          </p>
+          <p>
+            Reservas y actividades: {bookings.length ? eur0.format(bookingsCost) : 'sin reservas'}
+          </p>
+          <p>
+            Coste por km:{' '}
+            <span className="text-ink tabular-nums">
+              {costPerKm != null && realCost > 0 ? `${costPerKm.toFixed(2)} €/km` : '—'}
+            </span>
+          </p>
+        </div>
+        {budgetDiff != null && (
+          <p
+            className="mt-4"
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: budgetDiff > 0 ? 'var(--color-caution)' : 'var(--color-mint)',
+            }}
+          >
+            {budgetDiff > 0
+              ? `${eur0.format(budgetDiff)} por encima del presupuesto`
+              : `${eur0.format(Math.abs(budgetDiff))} por debajo del presupuesto`}
+          </p>
+        )}
+      </section>
+
+      <section
+        className="bg-snow"
+        style={{ border: '1px solid var(--color-silver-mist)', borderRadius: 18, padding: 22 }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span
+            className="font-mono uppercase text-graphite"
+            style={{ fontSize: 10, letterSpacing: '.16em' }}
+          >
+            Diario inteligente
+          </span>
+          <BookOpen className="h-4 w-4 text-graphite" strokeWidth={1.7} />
+        </div>
+        <p className="mt-3 text-ink" style={{ fontSize: 18, fontWeight: 650 }}>
+          {trip.title ?? trip.end_location ?? 'Viaje sin título'}
+        </p>
+        <div className="mt-3 space-y-2 text-graphite" style={{ fontSize: 13, lineHeight: 1.45 }}>
+          <p>
+            {trip.start_location || 'Origen'} → {trip.end_location || 'Destino'} ·{' '}
+            {startDate ? format(parseISO(startDate), 'd MMM yyyy', { locale: es }) : 'sin fecha'}
+          </p>
+          <p>
+            {bookings.length} {bookings.length === 1 ? 'evento' : 'eventos'} · {checklist.length}{' '}
+            tareas · {trip.weather_condition ?? 'clima sin registrar'}
+          </p>
+          {trip.notes && <p className="text-slate line-clamp-2">{trip.notes}</p>}
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="transition-colors hover:bg-fog"
+            style={{
+              border: '1px solid var(--color-silver-mist)',
+              borderRadius: 999,
+              background: 'var(--color-snow)',
+              color: 'var(--color-ink)',
+              padding: '8px 13px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <Pencil className="h-3.5 w-3.5" strokeWidth={1.8} />
+            Editar viaje
+          </button>
+          <button
+            type="button"
+            onClick={onOpenSummary}
+            className="transition-colors hover:bg-fog"
+            style={{
+              border: '1px solid rgba(255,90,95,.35)',
+              borderRadius: 999,
+              background: 'var(--color-snow)',
+              color: '#FF5A5F',
+              padding: '8px 13px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            ★ Ver recuerdo
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+};
+
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
 export const TripsPage = () => {
@@ -144,6 +446,7 @@ export const TripsPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [showQuickPlan, setShowQuickPlan] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [summaryTripId, setSummaryTripId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [statusFilter, setStatusFilter] = useState<'registered' | 'planning'>('registered');
@@ -346,7 +649,7 @@ export const TripsPage = () => {
   const visKmh = visMin > 0 ? visKm / (visMin / 60) : 0;
 
   /* ─── Handlers ─────────────────────────────────────────────────────────── */
-  const handleCreate = async (data: CreateTripInput) => {
+  const handleCreate = async (data: TripFormValues) => {
     await createTrip(user.id, data);
     toast.success('Viaje registrado');
     if (data.end_km != null && data.end_km > selectedVehicle.current_km) {
@@ -356,6 +659,21 @@ export const TripsPage = () => {
       } catch {
         toast.error('No se pudo actualizar el odómetro');
       }
+    }
+  };
+
+  const handleUpdateSelectedTrip = async (data: TripFormValues) => {
+    if (!editingTrip) return;
+    try {
+      await updateTrip(editingTrip.id, data);
+      if (data.end_km != null && data.end_km > selectedVehicle.current_km) {
+        await updateVehicle(selectedVehicle.id, { current_km: data.end_km });
+      }
+      setSelectedId(editingTrip.id);
+      toast.success('Viaje actualizado');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo actualizar el viaje');
+      throw e;
     }
   };
 
@@ -642,6 +960,18 @@ export const TripsPage = () => {
                   onChange={handleSurpriseChange}
                 />
               </div>
+            )}
+
+            {selectedTrip && selectedTrip.status === 'planning' && (
+              <TripIntelligencePanel
+                trip={selectedTrip}
+                bookings={bookings}
+                checklist={checklist}
+                vehicle={selectedVehicle}
+                onAddChecklist={handleAddChecklist}
+                onEdit={() => setEditingTrip(selectedTrip)}
+                onOpenSummary={() => setSummaryTripId(selectedTrip.id)}
+              />
             )}
 
             <div className="grid lg:grid-cols-[260px_1fr]" style={{ gap: 20 }}>
@@ -1451,6 +1781,35 @@ export const TripsPage = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  setEditingTrip(r.trip);
+                                }}
+                                aria-label="Editar viaje"
+                                className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                                style={{
+                                  position: 'absolute',
+                                  top: 10,
+                                  right: 118,
+                                  background: 'var(--color-snow)',
+                                  color: '#1d1d1f',
+                                  border: '1px solid var(--color-silver-mist)',
+                                  borderRadius: 999,
+                                  padding: '2px 9px',
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  letterSpacing: '.06em',
+                                  cursor: 'pointer',
+                                  height: 22,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                }}
+                              >
+                                <Pencil className="h-3 w-3" strokeWidth={1.8} />
+                                Editar
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSummaryTripId(r.trip.id);
                                 }}
                                 aria-label="Ver recuerdo del viaje"
@@ -1571,6 +1930,18 @@ export const TripsPage = () => {
               </div>
             </div>
 
+            {selectedTrip && (
+              <TripIntelligencePanel
+                trip={selectedTrip}
+                bookings={bookings}
+                checklist={checklist}
+                vehicle={selectedVehicle}
+                onAddChecklist={handleAddChecklist}
+                onEdit={() => setEditingTrip(selectedTrip)}
+                onOpenSummary={() => setSummaryTripId(selectedTrip.id)}
+              />
+            )}
+
             {/* ─── [6] Reservas del viaje seleccionado ────────────────────── */}
             {selectedTrip && (
               <div
@@ -1640,6 +2011,15 @@ export const TripsPage = () => {
           currentKm={selectedVehicle.current_km}
           onSubmit={handleCreate}
           onClose={() => setShowForm(false)}
+        />
+      )}
+      {editingTrip && (
+        <TripForm
+          mode="edit"
+          currentKm={selectedVehicle.current_km}
+          initialData={editingTrip}
+          onSubmit={handleUpdateSelectedTrip}
+          onClose={() => setEditingTrip(null)}
         />
       )}
       {showBookingForm && selectedTrip && (
